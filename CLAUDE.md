@@ -22,7 +22,7 @@ Sessions start in plan mode (`.claude/settings.json`), so no file can be edited 
 
 ### Git
 
-- Commit only after the user confirms. Never push without being asked.
+- Commit only after the user confirms. Every commit is pushed to `origin` right after it is created (`git push`); no separate confirmation is needed for the push.
 - Commits are authored by the user only (their git identity). Do not add `Co-Authored-By: Claude` or any other Claude/AI attribution to commit messages or PR descriptions.
 
 ## Project
