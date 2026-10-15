@@ -28,9 +28,9 @@ function slugify(title: string): string {
     .replace(/\s+/g, "-");
 }
 
+// The excerpt is shown as the lead above the body, so the body starts after it.
 function body(seed: Seed): string {
   return [
-    `<p>${seed.excerpt}</p>`,
     `<p>${seed.detail}</p>`,
     `<blockquote><p>${seed.quote}</p></blockquote>`,
     "<h2>What happens next</h2>",

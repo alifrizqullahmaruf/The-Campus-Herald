@@ -58,6 +58,76 @@
   }
 }
 
+/* Article body (docs/design.md 3, Article page parts).
+   The parent sets --cat-bg / --cat-fg to the article's category colours. */
+@utility prose-herald {
+  max-width: 68ch;
+  font-size: 1.125rem;
+  line-height: 1.7;
+
+  & > * + * {
+    margin-top: 1.25em;
+  }
+  & h2 {
+    margin-top: 2em;
+    font-family: var(--font-archivo), sans-serif;
+    font-stretch: 125%;
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  & ul,
+  & ol {
+    padding-left: 1.25em;
+  }
+  & ul {
+    list-style: square;
+  }
+  & ol {
+    list-style: decimal;
+  }
+  & li + li {
+    margin-top: 0.4em;
+  }
+  & li::marker {
+    color: var(--color-ink);
+  }
+  & a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+  }
+  & img {
+    border: 2px solid var(--color-ink);
+    border-radius: var(--radius-inner);
+  }
+  & blockquote {
+    position: relative;
+    margin-block: 2em;
+    padding: 1.25em 1.25em 1.25em 3.25em;
+    border: 3px solid var(--color-ink);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-hard);
+    background: var(--cat-bg, var(--color-cat-events));
+    color: var(--cat-fg, var(--color-ink));
+    font-family: var(--font-archivo), sans-serif;
+    font-stretch: 125%;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  & blockquote::before {
+    content: "“";
+    position: absolute;
+    top: 0.05em;
+    left: 0.25em;
+    font-size: 3em;
+    line-height: 1;
+  }
+}
+
 @layer base {
   body {
     background: var(--color-paper);
