@@ -43,6 +43,21 @@
   text-transform: uppercase;
 }
 
+/* Headline ticker: the track holds two copies, so -50% loops seamlessly. */
+@keyframes marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+
+@utility marquee-track {
+  animation: marquee 40s linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
 @layer base {
   body {
     background: var(--color-paper);
