@@ -119,6 +119,13 @@ export async function getCategoryCounts(): Promise<Record<CategorySlug, number>>
 
 // Dashboard queries. In Phase 3 these are only callable by a logged-in user.
 
+/** Published articles by one author, newest first, for the public author page. */
+export async function getPublishedArticlesByAuthor(authorId: number): Promise<ArticleWithRelations[]> {
+  return published()
+    .filter((article) => article.authorId === authorId)
+    .map(withRelations);
+}
+
 /** All articles by one author, any status unless filtered, most recently created first. */
 export async function getArticlesByAuthor(
   authorId: number,
