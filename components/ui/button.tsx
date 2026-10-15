@@ -13,7 +13,7 @@ const VARIANTS: Record<Variant, string> = {
 
 // Pill button with hard shadow: lifts on hover, presses on click (docs/design.md 3, Button).
 const BASE =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border-3 border-ink px-5 " +
+  "inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full border-3 border-ink px-5 " +
   "font-display text-[15px] font-extrabold shadow-hard transition-[translate,box-shadow] duration-150 ease-out " +
   "hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lift " +
   "active:translate-x-1 active:translate-y-1 active:shadow-none " +
