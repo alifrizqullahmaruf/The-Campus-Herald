@@ -77,7 +77,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       // A click on the backdrop lands on the dialog element itself.
       onClick={(event) => event.target === dialogRef.current && dialogRef.current?.close()}
-      className="m-auto mt-[10vh] w-[min(640px,calc(100vw-32px))] overflow-hidden rounded-card border-3 border-ink bg-surface p-0 text-ink shadow-hard-lift backdrop:bg-paper/80 backdrop:bg-[radial-gradient(var(--color-ink)_1px,transparent_1px)] backdrop:[background-size:24px_24px]"
+      className="m-auto mt-[10vh] w-[min(640px,calc(100vw-32px))] overflow-hidden rounded-card border-3 border-ink bg-surface p-0 text-ink shadow-hard-lift backdrop:bg-paper/80 backdrop:bg-[radial-gradient(var(--color-ink)_1px,transparent_1px)] backdrop:bg-size-[24px_24px]"
     >
       <div className="flex items-center gap-3 border-b-3 border-ink bg-cat-events px-4 py-3">
         <Search aria-hidden="true" className="size-5 shrink-0" strokeWidth={2.5} />
@@ -98,10 +98,11 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
         />
         <button
           type="button"
+          aria-label="Close search"
           onClick={() => dialogRef.current?.close()}
           className="rounded-md border-2 border-ink bg-surface px-1.5 py-0.5 text-meta"
         >
-          Esc<span className="sr-only"> to close</span>
+          Esc
         </button>
       </div>
 
