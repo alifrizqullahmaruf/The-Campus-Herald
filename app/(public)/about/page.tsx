@@ -73,7 +73,7 @@ export default async function AboutPage() {
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <li key={step.title} className="rounded-card border-3 border-ink bg-surface p-5 shadow-hard">
-                <span className="font-display text-5xl font-black text-ink/20">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-display text-5xl font-black text-ink/50">{String(i + 1).padStart(2, "0")}</span>
                 <h3 className="mt-2 font-display text-2xl font-black">{step.title}.</h3>
                 <p className="mt-2 text-ink-muted">{step.text}</p>
               </li>

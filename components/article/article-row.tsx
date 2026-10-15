@@ -44,7 +44,7 @@ export function ArticleRow({
       {rank !== undefined && (
         <span
           aria-hidden="true"
-          className="font-display text-3xl font-black text-ink/20 transition-colors group-hover:text-ink"
+          className="font-display text-3xl font-black text-ink/50 transition-colors group-hover:text-ink"
         >
           {String(rank).padStart(2, "0")}
         </span>

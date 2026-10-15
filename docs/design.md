@@ -323,5 +323,16 @@ Also remove the template leftover `font-family: Arial, Helvetica, sans-serif` fr
 ## 9. Open questions
 
 - ~~**UI copy language**~~ Decided 2026-10-15: **English** for all UI copy (menus, buttons, labels, section titles).
-- **Logo:** "CH" monogram placeholder until the society provides a real mark.
+- **Logo:** "CH" monogram placeholder until the society provides a real mark (also used as `app/icon.svg`).
 - **Dark mode:** deferred.
+- **Home page LCP:** 3.1 s in Lighthouse's simulated slow 4G (other pages 2.8–2.9 s), just over the 3 s target. The largest element is the hero headline waiting for Archivo (90 KB variable font). Options: subset the font to width 125 and weights 800–900 (smaller file, same look), or `display: "optional"` (fast, but the first visit on a slow connection shows the fallback font).
+
+## 10. Implementation notes from Phase 1
+
+Differences between this document and the build, decided while building:
+
+- **Pull quotes** are a coloured block inside the article column rather than a full-bleed band, because they live inside the article HTML.
+- **Faded decorative numbers** (Most read ranks, workflow steps) use `ink/50`, not `ink/20`, so large text still meets 3:1 contrast.
+- **Category tile names** scale with the tile through a container query so long names ("Organisations") fit half-width tiles.
+- **Author cards on the ink band** use paper-coloured outlines and shadows.
+- **Section names** in the build: "Pick a desk." (template: shelves), Authors (template: Writers).

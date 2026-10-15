@@ -666,11 +666,21 @@ _(not filled in)_
 
 ### Link to your wireframes, mockups or prototype
 
-_(not filled in)_
+- Design system: [`docs/design.md`](design.md) (tokens, components, page layouts)
+- Clickable prototype: the Phase 1 build of this repository, every page with sample data (`npm run build && npm run start`, then open `/`, `/dashboard` and `/styleguide`)
+- Visual reference: the "Crumpet Riot" Framer magazine template (style only; no text, images or assets copied)
 
 ### Design decisions, and how the client’s requests are reflected
 
-_(not filled in)_
+| Client request / requirement | How the design answers it |
+|---|---|
+| Five categories | Each category has its own colour (Academics blue, Organisations green, Events yellow, Opinion red, Achievements purple), used on every card, pill and badge, always with the category name next to it |
+| Authors separate from the administrator | Two dashboard areas: "Writing" for authors, "Editor" for the administrator, with a role chip on the signed-in user |
+| Every article reviewed before it goes live | Status badges (Draft, Waiting for review, Published, Needs changes); the editor reviews the article exactly as readers will see it; approving takes two clicks; sending back requires a note |
+| Most-read widget in the sidebar | "Most read." top-five list ranked by views, in the sidebar on category pages and beside the search box on the home page |
+| Readers on phones, pages under 3 s | Mobile-first layouts checked at 375px; Lighthouse mobile: performance 93–95, LCP 2.8–3.1 s |
+| Non-technical authors | Editor limited to headings, bold, italic, lists, pull quotes and images; inline validation messages |
+| Accessible to all students | WCAG 2.1 AA: contrast checked for every colour, keyboard access, visible focus, reduced-motion support; axe and Lighthouse accessibility both clean |
 
 ---
 
@@ -694,7 +704,7 @@ _(not filled in)_
 
 ### Repository link
 
-_(not filled in)_
+https://github.com/alifrizqullahmaruf/The-Campus-Herald
 
 ### Live demo link
 

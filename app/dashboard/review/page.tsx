@@ -27,7 +27,7 @@ export default async function ReviewQueuePage() {
               key={article.id}
               className="relative flex items-center gap-4 rounded-card border-3 border-ink bg-surface p-4 transition-shadow hover:shadow-hard focus-within:shadow-hard"
             >
-              <span aria-hidden="true" className="font-display text-3xl font-black text-ink/20">
+              <span aria-hidden="true" className="font-display text-3xl font-black text-ink/50">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0 flex-1">

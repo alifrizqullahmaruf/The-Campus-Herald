@@ -10,6 +10,9 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  // Only used for small labels; not preloading it leaves bandwidth for the
+  // display face, which paints the largest element (LCP) on most pages.
+  preload: false,
 });
 
 // Display face; the width axis gives the wide, heavy headline look (docs/design.md 2.2).
