@@ -29,6 +29,8 @@ Sessions start in plan mode (`.claude/settings.json`), so no file can be edited 
 
 The Campus Herald: an internal news portal for one university's student press society, replacing news sharing over WhatsApp groups and Instagram. The full spec (brief, requirements, SRS scope, diagrams, ER model, PostgreSQL schema) is in `docs/the-campus-herald.md`. Read it before building features. Some of its later sections are written in Indonesian.
 
+The visual design system (colour tokens, category colours, typography, components, page layouts for public pages and the author/admin dashboard, and template features that are out of scope) is in `docs/design.md`. Follow it for any UI work.
+
 `resource_private/` is git-ignored and holds the user's private reference material (e.g. a screen recording of the "Crumpet Riot" Framer template used as UI inspiration). It exists only on the user's machine.
 
 The codebase is still the `create-next-app` scaffold (`app/layout.tsx`, `app/page.tsx`). No backend, database or auth exists yet, and the stack beyond Next.js has not been chosen (spec stages 07–09 are still empty).
