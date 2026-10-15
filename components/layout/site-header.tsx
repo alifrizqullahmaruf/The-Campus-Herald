@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import Link from "next/link";
+import { OpenPaletteButton } from "@/components/search/command-palette-trigger";
 import { Logo } from "./logo";
 import { MobileMenu } from "./mobile-menu";
 import { NAV_LINKS } from "./nav-links";
@@ -38,9 +39,7 @@ export function SiteHeader() {
                 placeholder="Search articles"
                 className="w-36 bg-transparent text-sm outline-none placeholder:text-ink-muted lg:w-44"
               />
-              <kbd className="rounded border border-ink px-1 text-[10px] font-semibold" aria-hidden="true">
-                ⌘K
-              </kbd>
+              <OpenPaletteButton className="rounded border border-ink px-1 text-[10px] font-semibold hover:bg-cat-events" />
             </div>
           </form>
           <Link

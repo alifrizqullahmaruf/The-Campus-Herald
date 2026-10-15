@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { CommandPaletteTrigger } from "@/components/search/command-palette-trigger";
 
 export default function PublicLayout({ children }: LayoutProps<"/">) {
   return (
@@ -15,6 +16,7 @@ export default function PublicLayout({ children }: LayoutProps<"/">) {
         {children}
       </main>
       <SiteFooter />
+      <CommandPaletteTrigger />
     </>
   );
 }

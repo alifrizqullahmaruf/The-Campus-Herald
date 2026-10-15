@@ -5,6 +5,7 @@
 import { getCategoryById, getCategoryBySlug } from "../categories";
 import { MOCK_ARTICLES } from "../mock/articles";
 import { MOCK_USERS } from "../mock/users";
+import { matchesQuery } from "../search";
 import type {
   Article,
   ArticleStatus,
@@ -78,16 +79,10 @@ export async function searchArticles(
   query: string,
   category?: CategorySlug,
 ): Promise<ArticleWithRelations[]> {
-  const needle = query.trim().toLowerCase();
   const categoryId = category ? getCategoryBySlug(category)?.id : undefined;
   return published()
     .filter((article) => categoryId === undefined || article.categoryId === categoryId)
-    .filter(
-      (article) =>
-        needle === "" ||
-        article.title.toLowerCase().includes(needle) ||
-        article.excerpt.toLowerCase().includes(needle),
-    )
+    .filter((article) => matchesQuery(article, query))
     .map(withRelations);
 }
 
