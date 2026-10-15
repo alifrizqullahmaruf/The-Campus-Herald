@@ -322,6 +322,6 @@ Also remove the template leftover `font-family: Arial, Helvetica, sans-serif` fr
 
 ## 9. Open questions
 
-- **UI copy language** (Indonesian or English): the spec says articles use one language but does not say which. Example copy in this file is English and should be translated if the site is Indonesian.
+- ~~**UI copy language**~~ Decided 2026-10-15: **English** for all UI copy (menus, buttons, labels, section titles).
 - **Logo:** "CH" monogram placeholder until the society provides a real mark.
 - **Dark mode:** deferred.

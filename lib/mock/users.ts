@@ -1,0 +1,68 @@
+import type { User } from "../types";
+
+// Fictional people. Replaced by the users table in Phase 2.
+export const MOCK_USERS: User[] = [
+  {
+    id: 1,
+    name: "Dewi Lestari",
+    email: "dewi.admin@herald.test",
+    role: "admin",
+    isActive: true,
+    bio: "Editor-in-chief. Reads every article before it goes live.",
+    beat: "Editor",
+  },
+  {
+    id: 2,
+    name: "Rafi Pratama",
+    email: "rafi@herald.test",
+    role: "author",
+    isActive: true,
+    bio: "Covers lecture halls, labs and the timetable nobody understands.",
+    beat: "Academics writer",
+  },
+  {
+    id: 3,
+    name: "Nadia Putri",
+    email: "nadia@herald.test",
+    role: "author",
+    isActive: true,
+    bio: "Sits in on student council meetings so you do not have to.",
+    beat: "Organisations writer",
+  },
+  {
+    id: 4,
+    name: "Bima Santoso",
+    email: "bima@herald.test",
+    role: "author",
+    isActive: true,
+    bio: "Goes to every gig, seminar and bazaar on campus, then writes it up.",
+    beat: "Events writer",
+  },
+  {
+    id: 5,
+    name: "Sekar Ayu",
+    email: "sekar@herald.test",
+    role: "author",
+    isActive: true,
+    bio: "Strong opinions about canteens, parking and group projects.",
+    beat: "Opinion columnist",
+  },
+  {
+    id: 6,
+    name: "Yoga Firmansyah",
+    email: "yoga@herald.test",
+    role: "author",
+    isActive: true,
+    bio: "Tracks the medals, grants and competition wins.",
+    beat: "Achievements writer",
+  },
+  {
+    id: 7,
+    name: "Laras Wibowo",
+    email: "laras@herald.test",
+    role: "author",
+    isActive: false,
+    bio: "Former features writer, graduated last year.",
+    beat: "Features writer",
+  },
+];
