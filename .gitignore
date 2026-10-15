@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# private reference material (large videos, personal notes); never commit
+/resource_private/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
