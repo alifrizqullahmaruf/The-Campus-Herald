@@ -22,7 +22,7 @@ export function ArticleCard({
         <CategoryBadge name={article.category.name} />
         <span className="text-meta">{article.readingMinutes} min</span>
       </div>
-      <ArticleCover article={article} className="aspect-[4/3]" />
+      <ArticleCover article={article} className="aspect-4/3" />
       <div className="flex flex-1 flex-col px-1 pt-4">
         <Heading className="font-display text-xl font-extrabold leading-tight">
           {/* The stretched link makes the whole card clickable with one tab stop. */}

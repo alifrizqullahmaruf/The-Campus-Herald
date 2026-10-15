@@ -63,7 +63,7 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
           article={article}
           priority
           sizes="(min-width: 1120px) 1056px, 100vw"
-          className="mt-8 aspect-[16/9] rounded-card border-3 shadow-hard"
+          className="mt-8 aspect-16/9 rounded-card border-3 shadow-hard"
         />
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[240px_1fr]">

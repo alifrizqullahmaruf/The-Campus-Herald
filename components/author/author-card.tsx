@@ -28,7 +28,7 @@ export function AuthorCard({
   return (
     <Link
       href={`/authors/${author.id}`}
-      className={cx("group block aspect-[4/5] [perspective:1200px] focus-visible:outline-offset-4", className)}
+      className={cx("group block aspect-4/5 [perspective:1200px] focus-visible:outline-offset-4", className)}
     >
       <div
         className={cx(

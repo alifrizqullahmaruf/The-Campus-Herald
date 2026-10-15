@@ -17,7 +17,7 @@ export function FeatureCard({ article }: { article: ArticleWithRelations }) {
   const quote = firstQuote(article.body);
   return (
     <Card className="grid gap-6 p-4 md:grid-cols-2 md:p-6">
-      <ArticleCover article={article} className="aspect-[4/3]" priority sizes="(min-width: 768px) 520px, 100vw" />
+      <ArticleCover article={article} className="aspect-4/3" priority sizes="(min-width: 768px) 520px, 100vw" />
       <div className="flex flex-col">
         <div className="flex flex-wrap items-center gap-2">
           <Eyebrow>Cover story</Eyebrow>

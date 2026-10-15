@@ -45,7 +45,7 @@ export default async function AboutPage() {
 
       <div className="border-t-3 border-ink">
         <Container className="grid items-center gap-10 py-14 md:grid-cols-2 md:py-20">
-          <div className="aspect-[4/3] -rotate-2 overflow-hidden rounded-card border-3 border-ink shadow-hard">
+          <div className="aspect-4/3 -rotate-2 overflow-hidden rounded-card border-3 border-ink shadow-hard">
             <CoverArt seed={3} category="events" />
           </div>
           <div>
