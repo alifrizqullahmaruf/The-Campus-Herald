@@ -34,7 +34,7 @@ function body(seed: Seed): string {
     `<p>${seed.detail}</p>`,
     `<blockquote><p>${seed.quote}</p></blockquote>`,
     "<h2>What happens next</h2>",
-    "<p>The Herald will keep following the story. Here is what to watch for over the coming weeks:</p>",
+    "<p>We will keep following the story. Here is what to watch for over the coming weeks:</p>",
     "<ul><li>An official statement from the people involved.</li><li>Reactions from students across faculties.</li><li>A follow-up piece once the numbers are in.</li></ul>",
     "<p>Have something to add? Talk to any member of the student press society on campus.</p>",
   ].join("");

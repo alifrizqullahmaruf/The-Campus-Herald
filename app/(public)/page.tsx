@@ -30,16 +30,19 @@ export default async function Home() {
       <section className="relative overflow-hidden">
         <Container className="grid gap-10 py-14 md:py-20 lg:grid-cols-[1fr_340px] lg:items-end">
           <div>
-            <h1 className="font-display text-[clamp(48px,9vw,112px)] font-black leading-[0.95]">
-              Campus news,{" "}
-              <span className="inline-block -rotate-2 rounded-xl border-3 border-ink bg-cat-academics px-3 text-white shadow-hard">
-                loud
-              </span>{" "}
-              and clear.
+            <h1 className="font-display text-[clamp(44px,6.5vw,84px)] font-black leading-[0.95]">
+              The campus, written in the{" "}
+              {/* nowrap keeps the full stop on the same line as the highlighted word */}
+              <span className="whitespace-nowrap">
+                <span className="inline-block -rotate-2 rounded-xl border-3 border-ink bg-cat-academics px-3 text-white shadow-hard">
+                  margins
+                </span>
+                .
+              </span>
             </h1>
             <p className="mt-6 max-w-lg text-lg text-ink-muted">
-              Written by the student press, checked by an editor before it goes live, and sorted into five
-              desks so you can find it again next week.
+              Stories, opinions and small wins from students, written by The Campus Herald community and read by an
+              editor before they go up. Sorted into five topics so you can find them again next week.
             </p>
           </div>
 
@@ -75,9 +78,9 @@ export default async function Home() {
       {/* Categories */}
       <Container className="py-16 md:py-24">
         <SectionHeader
-          eyebrow="Five desks"
-          title="Pick a desk."
-          aside="Every article lives on one of five desks, each with its own colour. Tap one to see everything on it."
+          eyebrow="Five topics"
+          title="Pick a topic."
+          aside="Every note lives in one of five topics, each with its own colour. Tap one to see everything in it."
         />
         <ul className="mt-10 flex flex-wrap gap-4">
           {CATEGORIES.map((category) => (
@@ -100,7 +103,7 @@ export default async function Home() {
       <Container className="py-16 md:py-24">
         <SectionHeader
           eyebrow="Newest first"
-          title="Fresh from the newsroom."
+          title="Fresh off the notebook."
           aside={
             <Button href="/search" variant="secondary" arrow>
               See every article

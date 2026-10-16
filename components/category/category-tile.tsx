@@ -21,7 +21,7 @@ export function CategoryTile({
           {count} {count === 1 ? "article" : "articles"} in the archive
         </span>
         <span aria-hidden="true" className="text-meta">
-          Open the desk ↗
+          Open the topic ↗
         </span>
       </div>
       <h2 className="mt-auto pt-8 font-display text-[clamp(26px,9.5cqi,80px)] font-black leading-none">

@@ -34,10 +34,10 @@ for (const path of [...PUBLIC_PAGES, ...DASHBOARD_PAGES]) {
 
 test("unknown pages show the styled 404", async ({ page }) => {
   await page.goto("/this-does-not-exist");
-  await expect(page.getByRole("heading", { name: "This page is not on any desk." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This page is not in the margins." })).toBeVisible();
 });
 
 test("drafts and pending articles are not public", async ({ page }) => {
   await page.goto("/articles/in-defence-of-the-7-am-lecture");
-  await expect(page.getByRole("heading", { name: "This page is not on any desk." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This page is not in the margins." })).toBeVisible();
 });

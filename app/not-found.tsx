@@ -18,10 +18,10 @@ export default function NotFound() {
           404
         </p>
         <h1 className="mt-8 font-display text-[clamp(32px,6vw,52px)] font-black leading-none">
-          This page is not on any desk.
+          This page is not in the margins.
         </h1>
         <p className="mt-4 text-lg text-ink-muted">
-          It may have moved, or it was never published. Try a desk below or search the archive.
+          It may have moved, or it was never published. Try a topic below or search the archive.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button href="/" arrow>

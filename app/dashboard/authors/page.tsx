@@ -21,7 +21,7 @@ export default async function ManageAuthorsPage() {
     <>
       <PageHeader
         title="Authors."
-        description="Add new society members, deactivate accounts when people leave, and reset forgotten passwords. Accounts are never deleted, so old articles keep their author."
+        description="Add new Campus Herald members, deactivate accounts when people leave, and reset forgotten passwords. Accounts are never deleted, so old articles keep their author."
       />
       <AuthorManager initialAuthors={authors} />
     </>

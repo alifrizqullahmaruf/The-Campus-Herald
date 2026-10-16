@@ -17,7 +17,7 @@ export default function LoginPage() {
         </div>
         <div className="mt-8 rounded-card border-3 border-ink bg-surface p-6 shadow-hard">
           <h1 className="font-display text-3xl font-black">Author log in.</h1>
-          <p className="mt-1 text-ink-muted">For society members who write for the Herald.</p>
+          <p className="mt-1 text-ink-muted">For Campus Herald members who write for Side Notes.</p>
           <LoginForm />
           <p className="mt-5 text-sm text-ink-muted">
             Forgot your password? Ask the administrator to reset it.
@@ -28,7 +28,7 @@ export default function LoginPage() {
         </p>
         <p className="mt-6 text-center">
           <Link href="/" className="font-display text-sm font-extrabold underline underline-offset-4">
-            ← Back to the Herald
+            ← Back to Side Notes
           </Link>
         </p>
       </div>

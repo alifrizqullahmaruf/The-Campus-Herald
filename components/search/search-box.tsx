@@ -29,7 +29,7 @@ export function SearchBox() {
           />
         </div>
       </form>
-      <p className="mt-4 text-meta">Browse a desk</p>
+      <p className="mt-4 text-meta">Browse a topic</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {CATEGORIES.map((category) => (
           <CategoryPill key={category.slug} slug={category.slug} size="sm" />

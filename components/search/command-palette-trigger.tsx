@@ -5,7 +5,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 // The palette UI is only downloaded the first time someone opens it.
 const CommandPalette = lazy(() => import("./command-palette"));
 
-const OPEN_EVENT = "herald:open-search";
+const OPEN_EVENT = "sidenotes:open-search";
 
 /** Asks the mounted trigger to open the palette (used by header buttons). */
 export function openSearchPalette() {

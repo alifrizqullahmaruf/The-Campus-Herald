@@ -93,7 +93,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={onInputKeyDown}
-          placeholder="Search articles, desks…"
+          placeholder="Search articles, topics…"
           className="w-full bg-transparent font-display text-lg font-extrabold outline-none placeholder:text-ink/50"
         />
         <button

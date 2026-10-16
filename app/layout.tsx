@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE } from "@/lib/site";
 import { Archivo, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -24,10 +25,12 @@ const archivo = Archivo({
 
 export const metadata: Metadata = {
   title: {
-    default: "The Campus Herald",
-    template: "%s · The Campus Herald",
+    default: `${SITE.name} · ${SITE.tagline}`,
+    template: `%s · ${SITE.name}`,
   },
-  description: "Campus news from the student press, organised in one place.",
+  description: SITE.description,
+  applicationName: SITE.name,
+  openGraph: { siteName: SITE.name },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

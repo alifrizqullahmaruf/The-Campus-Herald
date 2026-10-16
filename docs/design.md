@@ -1,10 +1,28 @@
-# The Campus Herald: Design System
+# Side Notes: Design System
 
-How The Campus Herald looks and behaves. Read this before building any UI. Product scope and rules live in [`the-campus-herald.md`](the-campus-herald.md); this file only covers presentation.
+How Side Notes, the community blog of The Campus Herald, looks and behaves. Read this before building any UI. Product scope and rules live in [`the-campus-herald.md`](the-campus-herald.md); this file only covers presentation.
 
 **Visual reference:** the "Crumpet Riot" Framer magazine template (screen recording in `resource_private/`, not in the repo). We borrow its *style*: colour-coded categories, thick ink outlines, hard shadows, loud display type. We do **not** copy its text, photos, illustrations, logo or layout one-to-one.
 
-**Status:** v1 draft (2026-10-15). Light theme only; dark mode is deferred until UI/UX research is done.
+**Status:** v1.1 (2026-10-16). Rebranded from "The Campus Herald" to "Side Notes". Light theme only; dark mode is deferred until UI/UX research is done.
+
+---
+
+## 0. Brand
+
+The playful, sticker-wall style reads as a community blog, not an official newspaper, so the site has its own name. The client and organisation do not change.
+
+| | |
+|---|---|
+| **Name** | **Side Notes** |
+| **Byline** | "by The Campus Herald" (always next to the name in the logo) |
+| **Relationship** | The Campus Herald is the student press society that runs the site; Side Notes is its community blog. Authors are Herald members, and the Herald's administrator is the editor |
+| **Tagline** | "The campus, in the margins." |
+| **Monogram** | "SN", yellow on an ink tile tilted −3°, used as the favicon (`app/icon.svg`) |
+| **Voice** | Casual, warm, short sentences; still edited ("read by an editor before they go up"). Section titles stay short and end with a full stop |
+| **Vocabulary** | Categories are **topics** ("Pick a topic.", "Open the topic ↗"); writing is a **note** or an **article**; people are **writers** or **authors**. Avoid newsroom words such as "desk" and "newsroom" |
+
+Name, byline, tagline and description live in `lib/site.ts`; read them from there instead of typing them.
 
 ---
 
@@ -76,7 +94,7 @@ Sampled from the reference recording and rounded.
 
 | Token | Size | Use |
 |---|---|---|
-| `display-xl` | clamp(48px, 9vw, 112px) | Home hero only |
+| `display-xl` | clamp(44px, 6.5vw, 84px) | Home hero only (smaller since the longer Side Notes headline) |
 | `display-lg` | clamp(36px, 6vw, 72px) | Page and section titles ("Most read.") |
 | `display-md` | clamp(28px, 4vw, 48px) | Category card names, article title |
 | `display-sm` | 20–24px | Card titles, author names |
@@ -84,7 +102,7 @@ Sampled from the reference recording and rounded.
 | `body` | 16px | Default text, card excerpts (min 15px) |
 | `meta` | 11–12px | Mono labels |
 
-Section titles are short and end with a full stop, in sentence case: "Most read.", "Fresh from the newsroom.", "Pick a desk."
+Section titles are short and end with a full stop, in sentence case: "Most read.", "Fresh off the notebook.", "Pick a topic."
 
 ### 2.3 Shape, border, shadow
 
@@ -125,7 +143,7 @@ All motion is disabled under `prefers-reduced-motion: reduce` (the marquee becom
 ## 3. Components
 
 ### Header
-Sticky, `paper` background, 3px ink rule at the bottom. Left: square logo mark (ink, yellow monogram "CH") + wordmark. Centre (≥ `md`): Latest · Categories · Authors · About. Right: search field with `⌘K` hint and, in place of the template's Subscribe button, nothing on public pages. Logged-in users see a "Dashboard" button. Phone: logo, search icon, menu icon; menu opens a full-screen sheet.
+Sticky, `paper` background, 3px ink rule at the bottom. Left: square logo mark (ink, yellow monogram "SN", tilted) + wordmark "Side Notes" with "by The Campus Herald" beneath. Centre (≥ `md`): Latest · Categories · Authors · About. Right: search field with `⌘K` hint and, in place of the template's Subscribe button, nothing on public pages. Logged-in users see a "Dashboard" button. Phone: logo, search icon, menu icon; menu opens a full-screen sheet.
 
 ### Button
 Pill shape, `border`, `shadow`, display font 15–16px weight 800, trailing arrow "→" for navigation.
@@ -139,7 +157,7 @@ Lift on hover, press on active. Minimum touch target 44×44px.
 Small mono uppercase label in a yellow pill with `border-thin`, rotated −3deg, placed above section titles ("THIS WEEK", "NEWEST FIRST"). One per section.
 
 ### Category pill
-Pill in the category colour, `border` + `shadow`, display font, optional icon on the left and a count bubble (surface circle, mono number) on the right. Links to the category page. Large version on the home "Pick a desk" row; small version (`border-thin`, 12px) as filters in search.
+Pill in the category colour, `border` + `shadow`, display font, optional icon on the left and a count bubble (surface circle, mono number) on the right. Links to the category page. Large version on the home "Pick a topic" row; small version (`border-thin`, 12px) as filters in search.
 
 ### Category badge
 Small surface pill with `border-thin`, mono uppercase category name ("ACADEMICS"). Sits top-left on every article card.
@@ -171,7 +189,7 @@ Client request. Eyebrow "THIS WEEK", title "Most read.", five compact rows ranke
 Ink band under the home hero, scrolling the latest headlines, each prefixed with a small category badge. Pauses on hover and focus. Hidden from screen readers (`aria-hidden`), because the same headlines appear in the "Latest" section.
 
 ### Category tile
-Large card in the category colour: mono "N articles in the archive" chip top-left, "Open the desk ↗" top-right, category name in display-lg, one-line description. Used on the Categories page.
+Large card in the category colour: mono "N articles in the archive" chip top-left, "Open the topic ↗" top-right, category name in display-lg, one-line description. Used on the Categories page.
 
 ### Author card
 Coloured square (author's most-used category colour), initials in display-xl, name in a surface pill at the bottom, role in mono at the top ("OPINION WRITER"). Hover or focus flips to a short bio; tap on phone goes straight to the author page. Flip is disabled under reduced motion (show the bio on the author page instead).
@@ -189,7 +207,7 @@ Coloured square (author's most-used category colour), initials in display-xl, na
 Full-bleed background in a category or accent colour with ink rules top and bottom. Use at most one band between two paper sections.
 
 ### Footer
-Ink background, oversized "CAMPUS HERALD" wordmark in display font (paper and red), a row of link pills (Latest, Categories, Search, Authors, About), and a mono line with the society name and year. No draggable links.
+Ink background, oversized "SIDE NOTES" wordmark in display font (paper and red), a row of link pills (Latest, Categories, Search, Authors, About), and a mono line: "© 2026 Side Notes · A community blog by The Campus Herald". No draggable links.
 
 ### Form controls (dashboard and login)
 Inputs: surface, `border`, `radius-inner`, 48px height, mono placeholder. Focus: yellow 3px outline outside the border. Errors: red border + message in ink below with a warning icon. Labels above the field, body font, weight 600.
@@ -208,7 +226,7 @@ Centred surface card with a tilted eyebrow and one sentence, plus one button ("W
 
 | Page | Sections, top to bottom |
 |---|---|
-| **Home** `/` | Header · Hero: display-xl headline with one word highlighted in a blue box, short intro, mini card linking to the newest published article (category badge, title, author) · Marquee · "Pick a desk." category pills · Feature card on a yellow band · "Fresh from the newsroom." 3-up card grid + "See every article →" · Two-column: Most read + inline search · Footer |
+| **Home** `/` | Header · Hero: display-xl headline with one word highlighted in a blue box, short intro, mini card linking to the newest published article (category badge, title, author) · Marquee · "Pick a topic." category pills · Feature card on a yellow band · "Fresh off the notebook." 3-up card grid + "See every article →" · Two-column: Most read + inline search · Footer |
 | **Categories** `/categories` | Title · 5 category tiles (2-col grid, last one spans or centres) · Most read · Footer |
 | **Category** `/categories/[slug]` | Coloured header band with category name and description · card grid (newest first) with "Load more" · Most read in sidebar (≥ `lg`) · Footer |
 | **Article** `/articles/[slug]` | Article header · body with "Filed under" aside · pull quote band · author box · More in this category · prev/next · Footer. View count increments here. |
@@ -323,7 +341,7 @@ Also remove the template leftover `font-family: Arial, Helvetica, sans-serif` fr
 ## 9. Open questions
 
 - ~~**UI copy language**~~ Decided 2026-10-15: **English** for all UI copy (menus, buttons, labels, section titles).
-- **Logo:** "CH" monogram placeholder until the society provides a real mark (also used as `app/icon.svg`).
+- **Logo:** "SN" monogram placeholder until a real Side Notes mark is designed (also used as `app/icon.svg`).
 - **Dark mode:** deferred.
 - **Home page LCP:** 3.1 s in Lighthouse's simulated slow 4G (other pages 2.8–2.9 s), just over the 3 s target. The largest element is the hero headline waiting for Archivo (90 KB variable font). Options: subset the font to width 125 and weights 800–900 (smaller file, same look), or `display: "optional"` (fast, but the first visit on a slow connection shows the fallback font).
 
@@ -335,4 +353,4 @@ Differences between this document and the build, decided while building:
 - **Faded decorative numbers** (Most read ranks, workflow steps) use `ink/50`, not `ink/20`, so large text still meets 3:1 contrast.
 - **Category tile names** scale with the tile through a container query so long names ("Organisations") fit half-width tiles.
 - **Author cards on the ink band** use paper-coloured outlines and shadows.
-- **Section names** in the build: "Pick a desk." (template: shelves), Authors (template: Writers).
+- **Section names** in the build: "Pick a topic." (template: shelves), Authors (template: Writers).

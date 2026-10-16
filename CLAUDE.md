@@ -27,7 +27,7 @@ Sessions start in plan mode (`.claude/settings.json`), so no file can be edited 
 
 ## Project
 
-The Campus Herald: an internal news portal for one university's student press society, replacing news sharing over WhatsApp groups and Instagram. The full spec (brief, requirements, SRS scope, diagrams, ER model, PostgreSQL schema) is in `docs/the-campus-herald.md`. Read it before building features. Some of its later sections are written in Indonesian.
+**Side Notes**, the community blog of **The Campus Herald** (one university's student press society), replacing news sharing over WhatsApp groups and Instagram. The spec and the client are "The Campus Herald"; the site's brand is "Side Notes · by The Campus Herald" (see `docs/design.md` section 0, and `lib/site.ts` for the name, tagline and description). UI copy calls categories "topics", not "desks". The full spec (brief, requirements, SRS scope, diagrams, ER model, PostgreSQL schema) is in `docs/the-campus-herald.md`. Read it before building features. Some of its later sections are written in Indonesian.
 
 The visual design system (colour tokens, category colours, typography, components, page layouts for public pages and the author/admin dashboard, and template features that are out of scope) is in `docs/design.md`. Follow it for any UI work.
 

@@ -8,7 +8,7 @@ import { getCategoryCounts } from "@/lib/data/articles";
 
 export const metadata: Metadata = {
   title: "Categories",
-  description: "Academics, Organisations, Events, Opinion and Achievements: every article on its own desk.",
+  description: "Academics, Organisations, Events, Opinion and Achievements: every note in its own topic.",
 };
 
 export default async function CategoriesPage() {
@@ -18,9 +18,9 @@ export default async function CategoriesPage() {
       <Container className="py-14 md:py-20">
         <SectionHeader
           as="h1"
-          eyebrow="Five desks"
-          title="Five desks. Pick one."
-          aside="Every article we publish sits on exactly one desk, and every desk has its own colour."
+          eyebrow="Five topics"
+          title="Five topics. Pick one."
+          aside="Every note we publish sits in exactly one topic, and every topic has its own colour."
         />
         <ul className="mt-12 grid gap-6 md:grid-cols-2">
           {CATEGORIES.map((category, i) => (

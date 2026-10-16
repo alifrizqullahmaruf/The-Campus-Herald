@@ -672,6 +672,8 @@ _(not filled in)_
 
 ### Design decisions, and how the client’s requests are reflected
 
+**Brand:** the site is called **Side Notes**, the community blog of The Campus Herald ("Side Notes · by The Campus Herald"). The playful visual style reads as a community blog rather than an official newspaper, so the site carries its own name while the Herald stays the organisation behind it. Nothing in the brief changes: five categories (called "topics" in the UI), editor review before publishing, separate author and administrator roles, and the most-read widget.
+
 | Client request / requirement | How the design answers it |
 |---|---|
 | Five categories | Each category has its own colour (Academics blue, Organisations green, Events yellow, Opinion red, Achievements purple), used on every card, pill and badge, always with the category name next to it |

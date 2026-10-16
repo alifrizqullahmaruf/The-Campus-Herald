@@ -6,7 +6,7 @@ import { getAuthorProfiles } from "@/lib/data/users";
 
 export const metadata: Metadata = {
   title: "Authors",
-  description: "The student press society members who write for The Campus Herald.",
+  description: "The Campus Herald members who write for Side Notes.",
 };
 
 export default async function AuthorsPage() {
@@ -16,9 +16,9 @@ export default async function AuthorsPage() {
       <Container className="py-14 md:py-20">
         <SectionHeader
           as="h1"
-          eyebrow="The newsroom"
+          eyebrow="The writers"
           title="The people behind the pages."
-          aside="Every author covers one desk more than the others. Hover or focus a card to flip it; open it to read everything they have written."
+          aside="Every writer has a favourite topic. Hover or focus a card to flip it; open it to read everything they have written."
         />
       </Container>
       <section aria-label="Authors" className="border-y-3 border-ink bg-ink py-14 md:py-20">

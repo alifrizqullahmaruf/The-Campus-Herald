@@ -35,13 +35,13 @@ export function SiteFooter() {
           aria-hidden="true"
           className="mt-10 font-display text-[clamp(56px,15vw,200px)] font-black uppercase leading-[0.85]"
         >
-          Campus
+          Side
           <br />
-          <span className="text-cat-opinion">Herald</span>
+          <span className="text-cat-opinion">Notes</span>
         </p>
 
         <div className="mt-8 flex flex-col gap-2 border-t-2 border-paper/30 pt-4 text-meta sm:flex-row sm:justify-between">
-          <p>© 2026 The Campus Herald · Run by the student press society</p>
+          <p>© 2026 Side Notes · A community blog by The Campus Herald</p>
           <Link href="/login" className="underline underline-offset-4">
             Author log in
           </Link>

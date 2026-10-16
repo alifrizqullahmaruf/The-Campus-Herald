@@ -12,13 +12,13 @@ import { getAuthorProfiles } from "@/lib/data/users";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Why the student press society built its own news site, and how an article goes live.",
+  description: "What Side Notes is, how it relates to The Campus Herald, and how a note goes live.",
 };
 
 const STEPS = [
-  { title: "An author writes", text: "A society member drafts the article, adds images and saves it as often as they like." },
+  { title: "An author writes", text: "A Campus Herald member drafts the note, adds images and saves it as often as they like." },
   { title: "An editor checks", text: "The administrator reads every submission and approves it, or sends it back with notes." },
-  { title: "Students read", text: "Only approved articles go live, filed on one of five desks and easy to find again." },
+  { title: "Students read", text: "Only approved articles go live, filed in one of five topics and easy to find again." },
 ];
 
 const STAT_TONES = ["bg-cat-events", "bg-surface", "bg-cat-opinion", "bg-cat-organisations"];
@@ -28,7 +28,7 @@ export default async function AboutPage() {
   const stats = [
     { value: articles.length, label: "Articles published" },
     { value: authors.length, label: "Authors writing" },
-    { value: CATEGORIES.length, label: "Desks to browse" },
+    { value: CATEGORIES.length, label: "Topics to browse" },
     { value: 0, label: "Articles live without an editor's check" },
   ];
 
@@ -38,8 +38,8 @@ export default async function AboutPage() {
         <SectionHeader
           as="h1"
           eyebrow="About us"
-          title="A newsroom with sharp corners."
-          aside="The Campus Herald is the student press society's own news site: one place for campus news, checked before it goes live."
+          title="Notes from the side of campus."
+          aside="Side Notes is the community blog of The Campus Herald, the student press society: the stories, opinions and small wins that do not fit a front page."
         />
       </Container>
 
@@ -59,7 +59,7 @@ export default async function AboutPage() {
                 nothing could be searched, and anyone could post anything without a second pair of eyes.
               </p>
               <p>
-                So the society built a site of its own. Every article sits on one of five desks, stays in the archive
+                So the Herald started Side Notes, a blog of its own. Every note sits in one of five topics, stays in the archive
                 for good, and is read by an editor before anyone else sees it.
               </p>
             </div>
@@ -86,7 +86,7 @@ export default async function AboutPage() {
         <Container>
           <Eyebrow>So far</Eyebrow>
           <h2 id="numbers-title" className="mt-2 font-display text-[clamp(32px,5vw,56px)] font-black leading-[0.95]">
-            Small newsroom, loud numbers.
+            Small blog, loud numbers.
           </h2>
           <dl className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {stats.map((stat, i) => (
@@ -104,7 +104,7 @@ export default async function AboutPage() {
 
       <Container className="py-16 md:py-24">
         <SectionHeader
-          eyebrow="The newsroom"
+          eyebrow="The writers"
           title="Meet the authors."
           aside={
             <Button href="/authors" variant="secondary" arrow>

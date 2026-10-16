@@ -7,7 +7,7 @@ import { getPublishedArticles } from "@/lib/data/articles";
 
 export const metadata: Metadata = {
   title: "Search",
-  description: "Search every article published by The Campus Herald.",
+  description: "Search every note published on Side Notes.",
 };
 
 function first(value: string | string[] | undefined): string {
@@ -37,7 +37,7 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
         as="h1"
         eyebrow="Find anything"
         title="Search the archive."
-        aside="Type a word or pick a desk. Press ⌘K (Ctrl+K) on any page to search from anywhere."
+        aside="Type a word or pick a topic. Press ⌘K (Ctrl+K) on any page to search from anywhere."
       />
       <Suspense
         fallback={<div className="mt-8 h-40 animate-pulse rounded-card border-3 border-ink bg-cat-events/50" />}

@@ -6,7 +6,7 @@ import { getAllUsers } from "@/lib/data/users";
 import { PREVIEW_ADMIN_ID, PREVIEW_AUTHOR_ID } from "@/lib/mock/session";
 
 export const metadata: Metadata = {
-  title: { default: "Dashboard", template: "%s · Dashboard · The Campus Herald" },
+  title: { default: "Dashboard", template: "%s · Dashboard · Side Notes" },
   robots: { index: false, follow: false },
 };
 

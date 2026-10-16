@@ -4,6 +4,7 @@ import { Marquee } from "../components/layout/marquee";
 import { SiteFooter } from "../components/layout/site-footer";
 import { SiteHeader } from "../components/layout/site-header";
 import { getPublishedArticles } from "../lib/data/articles";
+import { SITE } from "../lib/site";
 
 afterEach(cleanup);
 
@@ -47,5 +48,23 @@ describe("Marquee", () => {
     // Two copies of the list for a seamless loop.
     expect(links).toHaveLength(6);
     links.forEach((link) => expect(link.getAttribute("tabindex")).toBe("-1"));
+  });
+});
+
+describe("brand", () => {
+  test("header logo says Side Notes, by The Campus Herald", () => {
+    render(<SiteHeader />);
+    const home = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/")!;
+    expect(home.textContent).toContain("Side Notes");
+    expect(home.textContent).toContain("by The Campus Herald");
+  });
+
+  test("footer credits The Campus Herald", () => {
+    render(<SiteFooter />);
+    expect(screen.getByText("© 2026 Side Notes · A community blog by The Campus Herald")).toBeDefined();
+  });
+
+  test("one source for the brand", () => {
+    expect(SITE).toMatchObject({ name: "Side Notes", parent: "The Campus Herald", monogram: "SN" });
   });
 });

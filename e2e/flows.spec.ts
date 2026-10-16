@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 
 test("Ctrl+K opens quick search; Enter opens the selected article", async ({ page }) => {
   await page.goto("/");
+  // The shortcut listener attaches on hydration; wait for it before pressing keys.
+  await page.waitForLoadState("networkidle");
   await page.keyboard.press("Control+K");
   const input = page.getByRole("combobox", { name: "Search articles" });
   await expect(input).toBeFocused();
@@ -14,6 +16,7 @@ test("Ctrl+K opens quick search; Enter opens the selected article", async ({ pag
 
 test("Esc closes quick search and returns focus", async ({ page }) => {
   await page.goto("/categories");
+  await page.waitForLoadState("networkidle");
   const chip = page.getByRole("button", { name: "Open quick search" });
   await chip.click();
   await expect(page.getByRole("dialog", { name: "Quick search" })).toBeVisible();
@@ -30,7 +33,7 @@ test("header search form works without the palette", async ({ page }) => {
   await expect(page.getByText(/1 of \d+ articles match “robot”/)).toBeVisible();
 });
 
-test("search page filters by desk and keeps the URL in sync", async ({ page }) => {
+test("search page filters by topic and keeps the URL in sync", async ({ page }) => {
   await page.goto("/search");
   await page.getByRole("button", { name: "Opinion", exact: true }).click();
   await expect(page).toHaveURL(/category=opinion/);

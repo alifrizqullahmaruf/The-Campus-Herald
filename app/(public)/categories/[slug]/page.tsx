@@ -9,7 +9,7 @@ import { CATEGORIES, getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import { getPublishedArticles } from "@/lib/data/articles";
 
-// Cache Components requires at least one param; all five desks are known up front.
+// Cache Components requires at least one param; all five topics are known up front.
 export function generateStaticParams() {
   return CATEGORIES.map((category) => ({ slug: category.slug }));
 }
@@ -30,7 +30,7 @@ export default async function CategoryPage({ params }: PageProps<"/categories/[s
     <>
       <header className={cx("border-b-3 border-ink py-14 md:py-20", category.bgClass, category.textClass)}>
         <Container>
-          <Eyebrow>Desk</Eyebrow>
+          <Eyebrow>Topic</Eyebrow>
           <h1 className="mt-3 flex items-center gap-4 font-display text-[clamp(48px,9vw,112px)] font-black leading-[0.95]">
             <Icon aria-hidden="true" className="size-[0.8em] shrink-0" strokeWidth={2.5} />
             {category.name}
@@ -46,7 +46,7 @@ export default async function CategoryPage({ params }: PageProps<"/categories/[s
         <section aria-label={`${category.name} articles`}>
           {articles.length === 0 ? (
             <p className="rounded-card border-3 border-ink bg-surface p-6 text-ink-muted shadow-hard">
-              Nothing on this desk yet. Check back soon.
+              Nothing in this topic yet. Check back soon.
             </p>
           ) : (
             <LoadMore className="grid gap-6 sm:grid-cols-2">

@@ -7,7 +7,7 @@ import { getCategoryBySlug } from "../lib/categories";
 afterEach(cleanup);
 
 describe("CategoryTile", () => {
-  test("links to the desk and shows the archive count", () => {
+  test("links to the topic and shows the archive count", () => {
     render(<CategoryTile category={getCategoryBySlug("events")!} count={4} />);
     expect(screen.getByRole("link", { name: "Events" }).getAttribute("href")).toBe("/categories/events");
     expect(screen.getByText("4 articles in the archive")).toBeDefined();
