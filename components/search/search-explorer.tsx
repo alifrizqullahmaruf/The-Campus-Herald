@@ -106,12 +106,18 @@ export function SearchExplorer({
       <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {articles.map((article) => {
           const hit = matches.has(article.id);
+          const filtering = query.trim() !== "" || category !== null;
           return (
             <li
               key={article.id}
               aria-hidden={!hit}
               inert={!hit}
-              className={cx("flex transition-opacity duration-200", !hit && "opacity-30 grayscale")}
+              className={cx(
+                "flex transition-[opacity,translate,rotate] duration-200 ease-out",
+                !hit && "opacity-30 grayscale",
+                // While a filter is active, matches pop forward with a slight tilt.
+                hit && filtering && "-translate-y-1 -rotate-1 [&>*]:shadow-hard-lift",
+              )}
             >
               <ArticleCard article={article} className="w-full" headingLevel="h2" />
             </li>

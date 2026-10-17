@@ -34,7 +34,6 @@ describe("AuthorBox", () => {
     render(
       <AuthorBox
         author={{ id: 5, name: "Sekar Ayu", bio: "Strong opinions.", beat: "Opinion columnist" }}
-        category="opinion"
       />,
     );
     expect(screen.getByText("Sekar Ayu")).toBeDefined();

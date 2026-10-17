@@ -4,6 +4,7 @@ import { AlertTriangle, KeyRound, UserPlus, UserRoundCheck, UserRoundX } from "l
 import { useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { cx } from "@/lib/cx";
+import { Avatar } from "@/components/author/avatar";
 import { initials } from "@/lib/format";
 
 export interface ManagedAuthor {
@@ -12,6 +13,8 @@ export interface ManagedAuthor {
   email: string;
   isActive: boolean;
   articleCount: number;
+  /** Accounts that exist on the server have a generated avatar; ones added in this preview do not. */
+  hasAvatar: boolean;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -78,9 +81,13 @@ export function AuthorManager({ initialAuthors }: { initialAuthors: ManagedAutho
             )}
           >
             <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-ink bg-cat-events font-display font-black">
-                {initials(author.name)}
-              </span>
+              {author.hasAvatar ? (
+                <Avatar userId={author.id} className="size-12 shrink-0 rounded-full border-2 border-ink" />
+              ) : (
+                <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-ink bg-cat-events font-display font-black">
+                  {initials(author.name)}
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-display text-lg font-extrabold leading-tight">{author.name}</p>
                 <p className="truncate text-sm text-ink-muted">{author.email}</p>
@@ -131,7 +138,7 @@ export function AuthorManager({ initialAuthors }: { initialAuthors: ManagedAutho
         onAdd={(name, email) => {
           setAuthors((list) => [
             ...list,
-            { id: Math.max(0, ...list.map((a) => a.id)) + 1, name, email, isActive: true, articleCount: 0 },
+            { id: Math.max(0, ...list.map((a) => a.id)) + 1, name, email, isActive: true, articleCount: 0, hasAvatar: false },
           ]);
           setMessage(`${name} can now log in with the temporary password (preview only).`);
         }}

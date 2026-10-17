@@ -131,14 +131,30 @@ Images inside cards are framed: `border-thin`, `radius-inner`, inset 12px from t
 
 ### 2.5 Motion
 
-| Name | Effect | Duration |
-|---|---|---|
-| Lift | translate(−2px, −2px), `shadow` → `shadow-lift`, rotate(−1deg) | 150ms ease-out |
-| Press | translate(4px, 4px), shadow → 0 | 80ms |
-| Marquee | horizontal scroll of latest headlines | ~40s per loop, linear |
-| Modal | fade + scale 0.98 → 1 | 150ms |
+Measured from the template recording (2026-10-17): micro-interactions are quick and ease out; things rest slightly tilted; bounce comes only from physics.
 
-All motion is disabled under `prefers-reduced-motion: reduce` (the marquee becomes a static row). No scroll-triggered animations, no physics or drag on public pages in v1.
+| Name | Effect | Duration | Where |
+|---|---|---|---|
+| Lift | translate(−4px, −6px), `shadow` → `shadow-lift`, rotate(−2deg) | 150ms ease-out | Cards (`Card lift`) |
+| Press | translate(4px, 4px), shadow → 0 | 80ms | Buttons |
+| Rank pop | rank number scales 1.25, rotates −6deg, turns ink | 150ms ease-out | Most read rows |
+| Filter pop | matches rise 4px, tilt −1deg, shadow-lift; others fade to 30% + grayscale | 200ms ease-out | Search page |
+| Line rise | each headline line rises out of a mask, 90ms stagger | 320ms | Home hero |
+| Logo wobble | sticky note wobbles from its stuck edge, corner lifts | 1s, once on load and on hover | Logo (`.mark-note`) |
+| Marquee | horizontal scroll of latest headlines | ~40s per loop, linear | Under the hero |
+| Drifting rows | topic pill rows drift in opposite directions (36 px/s); drag with momentum | continuous | Home "Pick a topic." (`TopicRows`) |
+| Physics pile | items drop in, tumble and collide (Matter.js), can be thrown | ~2s to settle | Home hero cards, footer nav pills (`PhysicsPile`) |
+| Hero tilt | hero rotates 6deg and lifts as it scrolls out | scroll-linked | Home hero (`hero-tilt`) |
+| Pile → grid | latest cards start as a tilted pile and settle into the grid | scroll-linked | Home "Fresh off the notebook." (`pile-card`) |
+| Page crossfade | old and new page crossfade; header stays put | 200ms | Public layout (`<ViewTransition>`) |
+| Modal | fade + scale 0.98 → 1 | 150ms | Search palette |
+
+Rules:
+
+- **Reduced motion:** everything above stops. Piles show their static tilted rest poses, rows stop drifting (still draggable), scroll-linked effects are off, page changes swap instantly.
+- **Drag is optional:** every draggable item is a normal link; a press that moves less than 5px is a click. Keyboard users tab to the links as usual.
+- **Performance:** Matter.js (~25 KB gzip) loads only after the page has loaded (hero) or when the pile scrolls into view (footer); simulations pause off screen and in background tabs. Scroll-linked effects are CSS only; browsers without scroll-driven animations show the final layout.
+- **Phones:** same behaviour as desktop (user decision). The hero shows 4 cards instead of 6 so the pile fits above the headline. Cards use `touch-action: none` so they can be dragged; scrolling works anywhere else.
 
 ---
 
@@ -193,8 +209,13 @@ Ink band under the home hero, scrolling the latest headlines, each prefixed with
 ### Category tile
 Large card in the category colour: mono "N articles in the archive" chip top-left, "Open the topic ↗" top-right, category name in display-lg, one-line description. Used on the Categories page.
 
+### Images
+
+- **Article covers:** stock photos from Unsplash for sample articles, chosen per article by search terms in `scripts/fetch-covers.mjs` (`npm run covers`, needs `UNSPLASH_ACCESS_KEY`) and stored in `lib/mock/covers.json`. Photos are hotlinked from Unsplash with its own sizing parameters (custom `next/image` loader) and always show "Photo: Name on Unsplash" with UTM links, as Unsplash requires. Without a photo, the generated `CoverArt` pattern is used. Authors upload their own covers in Phase 4.
+- **Writer avatars:** DiceBear "Notionists" (CC0, no attribution), generated from the writer's name on their main topic colour; served as static SVG files from `/avatars/[id]` so they stay out of the HTML. Initials remain the fallback (e.g. accounts added in the preview).
+
 ### Author card
-Coloured square (author's most-used category colour), initials in display-xl, name in a surface pill at the bottom, role in mono at the top ("OPINION WRITER"). Hover or focus flips to a short bio; tap on phone goes straight to the author page. Flip is disabled under reduced motion (show the bio on the author page instead).
+Coloured square (author's most-used category colour), the writer's avatar filling the middle, name in a surface pill at the bottom, role in mono at the top ("OPINION WRITER"). Hover or focus flips to a short bio; tap on phone goes straight to the author page. Flip is disabled under reduced motion (show the bio on the author page instead).
 
 ### Article page parts
 - **Header:** category badge, display-lg title, lead paragraph, author + date + read time in mono, framed cover image.
@@ -256,7 +277,7 @@ Shell: left sidebar (≥ `lg`; bottom tab bar on phone) with the logo, nav items
 
 ## 5. Not taken from the template
 
-These template features are out of scope in the SRS and must not be built:
+These template features are out of scope in the SRS and must not be built. (Draggable hero cards and footer links were listed here until 2026-10-17; they are now built, see 2.5.)
 
 | Template feature | Reason |
 |---|---|
@@ -265,7 +286,6 @@ These template features are out of scope in the SRS and must not be built:
 | Reader letters wall | Equivalent to comments, which are out of scope |
 | "Pitch it" form for outside writers | No self-registration; authors are created by the admin |
 | Paid-contributor copy, follower counts | Not applicable |
-| Draggable hero cards and draggable footer links | Heavy JS and poor on touch; replaced by static tilted cards |
 | Issue/binder archive ("Every Friday, filed in a binder") | No issue concept; the archive is browsed by category and search |
 
 ---

@@ -15,6 +15,8 @@ export interface CategoryStyle extends Category {
   bgClass: string;
   /** Text colour that passes WCAG AA on bgClass (docs/design.md 2.1). */
   textClass: string;
+  /** Same colour as bgClass, for places that cannot use classes (avatars, images). */
+  hex: string;
 }
 
 // The single source of truth for category colours. Cards, pills, badges and
@@ -28,6 +30,7 @@ export const CATEGORIES: readonly CategoryStyle[] = [
     icon: GraduationCap,
     bgClass: "bg-cat-academics",
     textClass: "text-white",
+    hex: "#354BF6",
   },
   {
     id: 2,
@@ -37,6 +40,7 @@ export const CATEGORIES: readonly CategoryStyle[] = [
     icon: Users,
     bgClass: "bg-cat-organisations",
     textClass: "text-ink",
+    hex: "#4AF5A2",
   },
   {
     id: 3,
@@ -46,6 +50,7 @@ export const CATEGORIES: readonly CategoryStyle[] = [
     icon: CalendarDays,
     bgClass: "bg-cat-events",
     textClass: "text-ink",
+    hex: "#F9DE43",
   },
   {
     id: 4,
@@ -55,6 +60,7 @@ export const CATEGORIES: readonly CategoryStyle[] = [
     icon: MessageSquareQuote,
     bgClass: "bg-cat-opinion",
     textClass: "text-ink",
+    hex: "#F04939",
   },
   {
     id: 5,
@@ -64,6 +70,7 @@ export const CATEGORIES: readonly CategoryStyle[] = [
     icon: Trophy,
     bgClass: "bg-cat-achievements",
     textClass: "text-ink",
+    hex: "#B28EF8",
   },
 ];
 

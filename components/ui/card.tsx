@@ -12,7 +12,7 @@ interface CardProps extends ComponentProps<"div"> {
 
 const LIFT =
   "transition-[translate,rotate,box-shadow] duration-150 ease-out " +
-  "hover:-translate-x-0.5 hover:-translate-y-0.5 hover:-rotate-1 hover:shadow-hard-lift " +
+  "hover:-translate-x-1 hover:-translate-y-1.5 hover:-rotate-2 hover:shadow-hard-lift " +
   "focus-within:-translate-x-0.5 focus-within:-translate-y-0.5 focus-within:shadow-hard-lift";
 
 /** Outlined card with hard shadow; the shell for article cards, tiles and widgets. */

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import type { AuthorProfile } from "@/lib/data/users";
-import { initials } from "@/lib/format";
+import { Avatar } from "./avatar";
 
 /**
  * Initials card that flips on hover or keyboard focus to show the bio
@@ -44,12 +44,7 @@ export function AuthorCard({
           )}
         >
           <span className="text-meta">{author.beat}</span>
-          <span
-            aria-hidden="true"
-            className="my-auto font-display text-[clamp(56px,9vw,96px)] font-black leading-none tracking-tighter"
-          >
-            {initials(author.name)}
-          </span>
+          <Avatar userId={author.id} className="my-2 min-h-0 w-full flex-1 object-contain" />
           <span className="flex items-center justify-between gap-2 rounded-full border-2 border-ink bg-surface px-3 py-1 font-display text-sm font-extrabold text-ink">
             {author.name}
             <span aria-hidden="true">↗</span>

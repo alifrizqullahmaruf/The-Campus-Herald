@@ -158,7 +158,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
                 <CoverArt seed={result.id} category={result.categorySlug as CategorySlug} />
               </span>
               <span className="min-w-0">
-                <span className="block text-meta opacity-80">
+                <span className="block text-meta">
                   {result.categoryName} · {result.authorName} · {result.readingMinutes} min
                 </span>
                 <span className="block truncate font-display font-extrabold">{result.title}</span>

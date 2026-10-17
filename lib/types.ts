@@ -24,6 +24,16 @@ export interface User {
   beat: string;
 }
 
+/** Photographer credit shown next to a stock photo. */
+export interface CoverCredit {
+  name: string;
+  /** Photographer profile on the photo source. */
+  profileUrl: string;
+  /** The photo page on the source. */
+  photoUrl: string;
+  source: "Unsplash";
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -39,6 +49,8 @@ export interface Article {
   /** One- or two-sentence summary for cards. Derived from the body once a database exists. */
   excerpt: string;
   coverImage: string | null;
+  /** Credit for a stock cover photo (Unsplash requires it); null for author uploads. Not in the stage 06 schema yet. */
+  coverCredit: CoverCredit | null;
   status: ArticleStatus;
   reviewNote: string | null;
   viewCount: number;

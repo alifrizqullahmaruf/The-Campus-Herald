@@ -1,0 +1,42 @@
+// Small pure helpers shared by the draggable / physics components.
+
+/** Pointer travel (px) before a press counts as a drag instead of a click. */
+export const DRAG_THRESHOLD = 5;
+
+/** True once the pointer has moved far enough from where it went down. */
+export function isDrag(dx: number, dy: number, threshold = DRAG_THRESHOLD): boolean {
+  return Math.hypot(dx, dy) >= threshold;
+}
+
+/**
+ * Keeps a looping track's offset within (-period, 0], so a track made of two
+ * identical copies can scroll forever in either direction without a jump.
+ */
+export function wrapOffset(x: number, period: number): number {
+  if (period <= 0) return 0;
+  const r = x % period;
+  return r > 0 ? r - period : r;
+}
+
+/** True when the user asked the OS for less motion (false on the server). */
+export function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/**
+ * Deterministic pseudo-random number in [0, 1) from an integer seed, so server
+ * and browser agree on "random" tilts and positions (no hydration mismatch).
+ */
+export function seeded(seed: number): number {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/** Browsers (and test environments) without the APIs the animated pieces rely on. */
+export function canAnimate(): boolean {
+  return typeof window !== "undefined" && typeof IntersectionObserver !== "undefined" && typeof requestAnimationFrame !== "undefined";
+}

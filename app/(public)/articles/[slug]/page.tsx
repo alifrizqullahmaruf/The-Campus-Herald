@@ -75,7 +75,7 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
           <div className="min-w-0">
             <ArticleBody article={article} />
             <div className="mt-12 max-w-[68ch]">
-              <AuthorBox author={article.author} category={article.category.slug} />
+              <AuthorBox author={article.author} />
             </div>
           </div>
         </div>

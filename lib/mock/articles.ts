@@ -1,4 +1,8 @@
-import type { Article, ArticleStatus } from "../types";
+import type { Article, ArticleStatus, CoverCredit } from "../types";
+// Stock cover photos, filled by `npm run covers` (scripts/fetch-covers.mjs).
+import COVERS from "./covers.json";
+
+const covers = COVERS as Record<string, { url: string; credit: CoverCredit }>;
 
 // Fictional articles. Replaced by the articles table in Phase 2.
 // Category ids: 1 Academics, 2 Organisations, 3 Events, 4 Opinion, 5 Achievements.
@@ -50,7 +54,8 @@ function toArticle(seed: Seed): Article {
     slug: slugify(seed.title),
     body: body(seed),
     excerpt: seed.excerpt,
-    coverImage: null,
+    coverImage: covers[seed.id]?.url ?? null,
+    coverCredit: covers[seed.id]?.credit ?? null,
     status,
     reviewNote: seed.reviewNote ?? null,
     viewCount: status === "published" ? seed.viewCount : 0,

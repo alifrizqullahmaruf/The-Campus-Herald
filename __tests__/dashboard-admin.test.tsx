@@ -71,8 +71,8 @@ describe("AllArticles", () => {
 
 describe("AuthorManager", () => {
   const authors: ManagedAuthor[] = [
-    { id: 2, name: "Rafi Pratama", email: "rafi@herald.test", isActive: true, articleCount: 4 },
-    { id: 7, name: "Laras Wibowo", email: "laras@herald.test", isActive: false, articleCount: 1 },
+    { id: 2, name: "Rafi Pratama", email: "rafi@herald.test", isActive: true, articleCount: 4, hasAvatar: true },
+    { id: 7, name: "Laras Wibowo", email: "laras@herald.test", isActive: false, articleCount: 1, hasAvatar: true },
   ];
 
   test("new author rules, including unique email", () => {

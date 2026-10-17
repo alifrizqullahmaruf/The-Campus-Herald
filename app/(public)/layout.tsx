@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { CommandPaletteTrigger } from "@/components/search/command-palette-trigger";
@@ -13,7 +14,8 @@ export default function PublicLayout({ children }: LayoutProps<"/">) {
       </a>
       <SiteHeader />
       <main id="main" className="flex flex-1 flex-col">
-        {children}
+        {/* Route changes crossfade (template: plain ~200 ms crossfade). */}
+        <ViewTransition>{children}</ViewTransition>
       </main>
       <SiteFooter />
       <CommandPaletteTrigger />

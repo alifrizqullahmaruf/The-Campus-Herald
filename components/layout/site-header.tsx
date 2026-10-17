@@ -8,8 +8,9 @@ import { NAV_LINKS } from "./nav-links";
 /** Sticky public header (docs/design.md 3, Header). */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b-3 border-ink bg-paper">
-      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    // Named so page crossfades leave the header in place (globals.css).
+    <header className="sticky top-0 z-40 border-b-3 border-ink bg-paper" style={{ viewTransitionName: "site-header" }}>
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Logo />
 
         <nav aria-label="Main" className="hidden md:block">

@@ -14,6 +14,7 @@ export default async function ManageAuthorsPage() {
       email: user.email,
       isActive: user.isActive,
       articleCount: (await getAuthorProfile(user.id))?.articleCount ?? 0,
+      hasAvatar: true,
     })),
   );
 

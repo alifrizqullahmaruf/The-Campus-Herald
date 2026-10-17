@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/layout/logo-mark";
 import { cx } from "@/lib/cx";
-import { initials } from "@/lib/format";
+import { Avatar } from "@/components/author/avatar";
 import { isAdminPath } from "@/lib/mock/session";
 import type { User } from "@/lib/types";
 
@@ -67,7 +67,7 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
     <>
       {/* Large screens */}
       <aside className="hidden w-64 shrink-0 flex-col border-r-3 border-ink bg-paper p-4 lg:flex">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="logo-link flex items-center gap-2.5">
           <LogoMark className="w-11" />
           <span className="font-display text-sm font-black uppercase leading-none">
             Side Notes
@@ -89,9 +89,7 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
 
         <div className="mt-6 rounded-card border-3 border-ink bg-surface p-3 shadow-hard">
           <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="grid size-10 place-items-center rounded-full border-2 border-ink bg-cat-organisations font-display font-black">
-              {initials(user.name)}
-            </span>
+            <Avatar userId={user.id} className="size-10 shrink-0 rounded-full border-2 border-ink" />
             <div className="min-w-0">
               <p className="truncate font-display text-sm font-extrabold">{user.name}</p>
               <span className="rounded-full border-2 border-ink bg-cat-events px-1.5 text-meta">{user.role}</span>
