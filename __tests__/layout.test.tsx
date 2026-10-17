@@ -65,6 +65,14 @@ describe("brand", () => {
   });
 
   test("one source for the brand", () => {
-    expect(SITE).toMatchObject({ name: "Side Notes", parent: "The Campus Herald", monogram: "SN" });
+    expect(SITE).toMatchObject({ name: "Side Notes", parent: "The Campus Herald" });
+  });
+
+  test("the logo mark is decorative SVG, not letters", () => {
+    render(<SiteHeader />);
+    const home = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/")!;
+    const mark = home.querySelector("span[aria-hidden=\"true\"] > svg");
+    expect(mark).not.toBeNull();
+    expect(mark!.textContent).toBe("");
   });
 });

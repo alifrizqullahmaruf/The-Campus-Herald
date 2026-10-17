@@ -18,7 +18,9 @@ The playful, sticker-wall style reads as a community blog, not an official newsp
 | **Byline** | "by The Campus Herald" (always next to the name in the logo) |
 | **Relationship** | The Campus Herald is the student press society that runs the site; Side Notes is its community blog. Authors are Herald members, and the Herald's administrator is the editor |
 | **Tagline** | "The campus, in the margins." |
-| **Monogram** | "SN", yellow on an ink tile tilted −3°, used as the favicon (`app/icon.svg`) |
+| **Logo mark** | A page with three lines of text and a yellow sticky note stuck to its margin, tilted, with an ink-and-pink scribble; thick ink outlines and hard shadows. Source artwork: `docs/brand/side-notes-logo-source.jpg`; vector version: `lib/brand-mark.ts` (rendered by `components/layout/logo-mark.tsx`). No letters in the mark |
+| **Favicon** | Simplified mark with heavier strokes so it reads at 16–32px (`app/icon.svg`) |
+| **Link preview** | `app/opengraph-image.tsx`: mark + name + byline + tagline on paper with a yellow bottom bar |
 | **Voice** | Casual, warm, short sentences; still edited ("read by an editor before they go up"). Section titles stay short and end with a full stop |
 | **Vocabulary** | Categories are **topics** ("Pick a topic.", "Open the topic ↗"); writing is a **note** or an **article**; people are **writers** or **authors**. Avoid newsroom words such as "desk" and "newsroom" |
 
@@ -143,7 +145,7 @@ All motion is disabled under `prefers-reduced-motion: reduce` (the marquee becom
 ## 3. Components
 
 ### Header
-Sticky, `paper` background, 3px ink rule at the bottom. Left: square logo mark (ink, yellow monogram "SN", tilted) + wordmark "Side Notes" with "by The Campus Herald" beneath. Centre (≥ `md`): Latest · Categories · Authors · About. Right: search field with `⌘K` hint and, in place of the template's Subscribe button, nothing on public pages. Logged-in users see a "Dashboard" button. Phone: logo, search icon, menu icon; menu opens a full-screen sheet.
+Sticky, `paper` background, 3px ink rule at the bottom. Left: logo mark (page + sticky note, 44px wide) + wordmark "Side Notes" with "by The Campus Herald" beneath. Centre (≥ `md`): Latest · Categories · Authors · About. Right: search field with `⌘K` hint and, in place of the template's Subscribe button, nothing on public pages. Logged-in users see a "Dashboard" button. Phone: logo, search icon, menu icon; menu opens a full-screen sheet.
 
 ### Button
 Pill shape, `border`, `shadow`, display font 15–16px weight 800, trailing arrow "→" for navigation.
@@ -341,7 +343,7 @@ Also remove the template leftover `font-family: Arial, Helvetica, sans-serif` fr
 ## 9. Open questions
 
 - ~~**UI copy language**~~ Decided 2026-10-15: **English** for all UI copy (menus, buttons, labels, section titles).
-- **Logo:** "SN" monogram placeholder until a real Side Notes mark is designed (also used as `app/icon.svg`).
+- ~~**Logo**~~ Decided 2026-10-16: page-and-sticky-note mark (section 0).
 - **Dark mode:** deferred.
 - **Home page LCP:** 3.1 s in Lighthouse's simulated slow 4G (other pages 2.8–2.9 s), just over the 3 s target. The largest element is the hero headline waiting for Archivo (90 KB variable font). Options: subset the font to width 125 and weights 800–900 (smaller file, same look), or `display: "optional"` (fast, but the first visit on a slow connection shows the fallback font).
 

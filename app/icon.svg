@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="#111111"/>
-  <text x="32" y="42" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="26" font-weight="900" fill="#F9DE43">SN</text>
+  <g stroke="#111111" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="7" y="10" width="38" height="44" rx="4" fill="#111111" stroke-width="5"/>
+    <rect x="4" y="7" width="38" height="44" rx="4" fill="#F5EFE6" stroke-width="5"/>
+    <path d="M11 19 H27 M11 28 H25 M11 37 H23" stroke-width="5" fill="none"/>
+    <g transform="rotate(-12 44 38)">
+      <rect x="32" y="27" width="27" height="26" rx="2" fill="#111111" stroke-width="4.5"/>
+      <rect x="29" y="24" width="27" height="26" rx="2" fill="#F9DE43" stroke-width="4.5"/>
+    </g>
+    <path d="M36 43 L40 33" stroke="#F477D4" stroke-width="5" fill="none"/>
+    <path d="M37 41 C40 36 43 32 44 35 C45 38 40 41 43 41 C46 41 47 37 50 37" stroke-width="3.2" fill="none"/>
+  </g>
 </svg>

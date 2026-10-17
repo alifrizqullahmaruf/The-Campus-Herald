@@ -3,6 +3,7 @@
 import { Files, Inbox, LogOut, SquarePen, Users, FileText, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoMark } from "@/components/layout/logo-mark";
 import { cx } from "@/lib/cx";
 import { initials } from "@/lib/format";
 import { isAdminPath } from "@/lib/mock/session";
@@ -67,9 +68,7 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
       {/* Large screens */}
       <aside className="hidden w-64 shrink-0 flex-col border-r-3 border-ink bg-paper p-4 lg:flex">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-9 -rotate-3 place-items-center rounded-lg border-2 border-ink bg-ink font-display text-sm font-black text-cat-events">
-            SN
-          </span>
+          <LogoMark className="w-11" />
           <span className="font-display text-sm font-black uppercase leading-none">
             Side Notes
             <br />
