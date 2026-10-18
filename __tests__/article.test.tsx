@@ -27,8 +27,13 @@ describe("ArticleCard", () => {
   test("is one link to the article with category, author and date", async () => {
     const article = (await getArticleBySlug(SLUG))!;
     const { container } = render(<ArticleCard article={article} />);
-    const links = screen.getAllByRole("link");
+    // Besides the photo credit (links to Unsplash), the whole card is a single article link.
+    const all = screen.getAllByRole("link");
+    const links = all.filter((a) => a.getAttribute("href")?.startsWith("/"));
+    const credit = all.filter((a) => !links.includes(a));
     expect(links).toHaveLength(1);
+    expect(credit.length).toBeLessThanOrEqual(2);
+    for (const a of credit) expect(a.getAttribute("href")).toMatch(/^https:\/\/unsplash\.com\//);
     expect(links[0].getAttribute("href")).toBe(`/articles/${SLUG}`);
     expect(screen.getByRole("heading", { level: 3, name: article.title })).toBeDefined();
     expect(screen.getByText("Opinion")).toBeDefined();
@@ -39,7 +44,7 @@ describe("ArticleCard", () => {
 
   test("uses generated art, hidden from screen readers, when there is no photo", async () => {
     const article = (await getArticleBySlug(SLUG))!;
-    const { container } = render(<ArticleCard article={article} />);
+    const { container } = render(<ArticleCard article={{ ...article, coverImage: null, coverCredit: null }} />);
     expect(container.querySelector("svg[aria-hidden='true']")).not.toBeNull();
     expect(container.querySelector("img")).toBeNull();
   });

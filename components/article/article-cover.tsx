@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { cx } from "@/lib/cx";
-import { isHttpsUrl, isUnsplash } from "@/lib/images";
+import { isHttpsUrl, isPicsum, isUnsplash } from "@/lib/images";
 import type { ArticleWithRelations } from "@/lib/types";
 import { CoverArt } from "./cover-art";
+import { PicsumImage } from "./picsum-image";
 import { UnsplashImage } from "./unsplash-image";
 
 /**
@@ -26,6 +27,8 @@ export function ArticleCover({
       {coverImage ? (
         isUnsplash(coverImage) ? (
           <UnsplashImage src={coverImage} alt="" sizes={sizes} priority={priority} />
+        ) : isPicsum(coverImage) ? (
+          <PicsumImage src={coverImage} alt="" sizes={sizes} priority={priority} />
         ) : (
           <Image src={coverImage} alt="" fill sizes={sizes} priority={priority} className="object-cover" />
         )

@@ -211,7 +211,7 @@ Large card in the category colour: mono "N articles in the archive" chip top-lef
 
 ### Images
 
-- **Article covers:** stock photos from Unsplash for sample articles, chosen per article by search terms in `scripts/fetch-covers.mjs` (`npm run covers`, needs `UNSPLASH_ACCESS_KEY`) and stored in `lib/mock/covers.json`. Photos are hotlinked from Unsplash with its own sizing parameters (custom `next/image` loader) and always show "Photo: Name on Unsplash" with UTM links, as Unsplash requires. Without a photo, the generated `CoverArt` pattern is used. Authors upload their own covers in Phase 4.
+- **Article covers:** sample articles currently use **Picsum** photos (Unsplash photos served by picsum.photos, no API key), one hand-picked photo id per article in `scripts/fetch-picsum-covers.mjs` (`npm run covers:picsum`), stored in `lib/mock/covers.json`. Picsum sizes them by URL (custom `next/image` loader, 4:3 WebP, max 1600px) and the cover shows "Photo: Name on Unsplash" (the name links to the photo page, "Unsplash" to unsplash.com). Once an Unsplash Access Key exists, `npm run covers -- --force` replaces them with photos chosen by search terms through the Unsplash API (hotlinked with Unsplash's sizing parameters and UTM credit links, as its API guidelines require). Without a photo, the generated `CoverArt` pattern is used. Authors upload their own covers in Phase 4.
 - **Writer avatars:** DiceBear "Notionists" (CC0, no attribution), generated from the writer's name on their main topic colour; served as static SVG files from `/avatars/[id]` so they stay out of the HTML. Initials remain the fallback (e.g. accounts added in the preview).
 
 ### Author card

@@ -47,7 +47,7 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`. Phase 1 (design with 
 - Tiptap must stay client-only (`next/dynamic` with `ssr: false`): it calls `Math.random()` while initialising, which prerendering rejects.
 - `/styleguide` is an internal, noindex page showing every token and component.
 - **Motion** (docs/design.md 2.5): `components/physics/physics-pile.tsx` runs Matter.js piles of real DOM links (hero cards, footer nav pills); Matter.js is `import()`ed after load / on view, items rest at CSS poses (`[data-physics]` rules in globals.css) for no-JS and reduced motion, and `[data-physics-obstacle]` elements inside a pile are collision bodies. `components/home/topic-rows.tsx` is the draggable drifting pill rows. Pure helpers (drag threshold, loop offset, seeded randomness) are in `lib/motion.ts`. Scroll-linked effects (`hero-tilt`, `pile-card`), the logo wobble (`.mark-note`) and page crossfades (`<ViewTransition>` in the public layout) are CSS.
-- **Images:** writer avatars are DiceBear Notionists served by `app/avatars/[id]/route.ts` (use `<Avatar userId>`; `lib/avatar.ts` must stay server-side, client code uses `lib/avatar-src.ts`). Sample-article cover photos come from Unsplash via `npm run covers` into `lib/mock/covers.json`, rendered by `ArticleCover` with the photographer credit Unsplash requires and a custom loader (hotlinking, no Next image optimiser).
+- **Images:** writer avatars are DiceBear Notionists served by `app/avatars/[id]/route.ts` (use `<Avatar userId>`; `lib/avatar.ts` must stay server-side, client code uses `lib/avatar-src.ts`). Sample-article cover photos live in `lib/mock/covers.json`: for now Picsum photos (`npm run covers:picsum`, no key), later optionally Unsplash API photos (`npm run covers`). `ArticleCover` renders them with the photographer credit and a per-source custom loader (`PicsumImage` / `UnsplashImage`, no Next image optimiser).
 
 ## Commands
 
@@ -56,7 +56,8 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`. Phase 1 (design with 
 - `npm run start`: serve the production build
 - `npm run lint`: ESLint 9 flat config (`eslint-config-next` core-web-vitals + typescript)
 - `npm test`: Vitest in watch mode; `npm test -- --run` runs once, `npx vitest run __tests__/search.test.tsx` runs a single file, `-t "<name>"` filters by test name
-- `npm run covers`: fetch Unsplash cover photos for the sample articles into `lib/mock/covers.json` (needs `UNSPLASH_ACCESS_KEY` in `.env.local`; run once, 2 requests per article)
+- `npm run covers:picsum`: write the hand-picked Picsum cover photos (no key) into `lib/mock/covers.json`
+- `npm run covers`: fetch Unsplash cover photos for the sample articles into `lib/mock/covers.json` (needs `UNSPLASH_ACCESS_KEY` in `.env.local`; add `-- --force` to replace existing covers; run once, 2 requests per article)
 - `npm run test:e2e`: Playwright against a production build (run `npm run build` first; it starts `next start` on port 3200). Uses the installed Microsoft Edge (`channel: "msedge"`), so no browser download. `npx playwright test e2e/flows.spec.ts --project=desktop` runs one file.
 
 Unit tests (Vitest + React Testing Library, jsdom) live in `__tests__/`. Vitest cannot render `async` Server Components, so pages are covered by `e2e/`: one h1 and no console errors on every route, axe WCAG 2.1 AA checks, key flows, and no horizontal scroll at 375px (`phone` project).

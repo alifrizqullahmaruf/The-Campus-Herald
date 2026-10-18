@@ -2,11 +2,12 @@ import { afterEach, describe, expect, test } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { GET as avatarRoute } from "../app/avatars/[id]/route";
 import { ArticleCover } from "../components/article/article-cover";
+import { picsumLoader } from "../components/article/picsum-image";
 import { PhysicsPile } from "../components/physics/physics-pile";
 import { avatarSvg } from "../lib/avatar";
 import { avatarSrc } from "../lib/avatar-src";
 import { getArticleBySlug } from "../lib/data/articles";
-import { isHttpsUrl, isUnsplash } from "../lib/images";
+import { isHttpsUrl, isPicsum, isUnsplash } from "../lib/images";
 import { isDrag, seeded, toLocal, wrapOffset } from "../lib/motion";
 
 afterEach(cleanup);
@@ -93,6 +94,38 @@ describe("cover photos", () => {
   test("Unsplash photos are recognised", () => {
     expect(isUnsplash("https://images.unsplash.com/photo-1?ixid=x")).toBe(true);
     expect(isUnsplash("/uploads/cover.jpg")).toBe(false);
+  });
+
+  test("Picsum photos are recognised and sized by URL at 4:3, capped at 1600px", () => {
+    expect(isPicsum("https://picsum.photos/id/20")).toBe(true);
+    expect(isPicsum("https://picsum.photos/id/20/800/600")).toBe(false);
+    expect(isPicsum("https://evil.example/https://picsum.photos/id/20")).toBe(false);
+    expect(picsumLoader({ src: "https://picsum.photos/id/20", width: 640 })).toBe("https://picsum.photos/id/20/640/480.webp");
+    expect(picsumLoader({ src: "https://picsum.photos/id/20", width: 3840 })).toBe("https://picsum.photos/id/20/1600/1200.webp");
+  });
+
+  test("a Picsum cover is sized by URL and credits the photographer", async () => {
+    const article = (await getArticleBySlug("the-canteen-queue-is-a-design-problem-not-a-patience-problem"))!;
+    const { container } = render(
+      <ArticleCover
+        article={{
+          ...article,
+          coverImage: "https://picsum.photos/id/20",
+          coverCredit: { name: "Aleks D", profileUrl: "https://unsplash.com/photos/abc", photoUrl: "https://unsplash.com/", source: "Unsplash" },
+        }}
+      />,
+    );
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/^https:\/\/picsum\.photos\/id\/\d+\/\d+\/\d+\.webp$/);
+    expect(screen.getByRole("link", { name: "Aleks D" }).getAttribute("href")).toBe("https://unsplash.com/photos/abc");
+    expect(screen.getByRole("link", { name: "Unsplash" }).getAttribute("href")).toBe("https://unsplash.com/");
+  });
+
+  test("every sample photo is credited with links to Unsplash", async () => {
+    const { default: covers } = await import("../lib/mock/covers.json");
+    for (const cover of Object.values(covers as Record<string, { credit: { name: string; profileUrl: string } }>)) {
+      expect(cover.credit.name).not.toBe("");
+      expect(cover.credit.profileUrl).toMatch(/^https:\/\/unsplash\.com\//);
+    }
   });
 
   test("only https credit links are linked", async () => {

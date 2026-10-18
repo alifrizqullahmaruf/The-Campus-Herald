@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "covers": "node scripts/fetch-covers.mjs"
+    "covers": "node scripts/fetch-covers.mjs",
+    "covers:picsum": "node scripts/fetch-picsum-covers.mjs"
   },
   "dependencies": {
     "@dicebear/core": "^9.4.3",
