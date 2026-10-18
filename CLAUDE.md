@@ -17,7 +17,7 @@ Sessions start in plan mode (`.claude/settings.json`), so no file can be edited 
 
 2. **Ask before proceeding.** During brainstorming and planning, ask the user for their opinion and get explicit confirmation. Do not edit code until the user approves the plan.
 3. **Execute fully.** Once the user approves, carry out every task in the plan through to completion.
-4. **Debug and verify.** Afterwards, check the whole change: run `npm test -- --run`, `npm run lint` and `npm run build`, and run the app if relevant. Then update the plan file with what was actually done, what changed from the plan, and the verification results.
+4. **Debug and verify.** Afterwards, check the whole change: run `npm test -- --run`, `npm run lint` and `npm run build`, and run the app if relevant. Before committing, run the `code-reviewer` subagent (`.claude/agents/code-reviewer.md`, read-only) on the change and fix what it finds. Then update the plan file with what was actually done, what changed from the plan, and the verification results.
 5. **Tidy the plan file.** Finally, restructure the plan file so it reads cleanly: goal, task table with final status, changed files, verification results, open follow-ups.
 
 ### Git
