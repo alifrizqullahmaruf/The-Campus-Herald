@@ -3,7 +3,7 @@
 import type * as MatterNS from "matter-js";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
-import { canAnimate, isDrag, prefersReducedMotion } from "@/lib/motion";
+import { canAnimate, isDrag, prefersReducedMotion, toLocal, type Point } from "@/lib/motion";
 
 /** Where an item rests before (or without) physics: percent of the container. */
 export interface RestPose {
@@ -67,10 +67,13 @@ export function PhysicsPile({
 
     let cancelled = false;
     let cleanup: (() => void) | undefined;
-    // If Matter.js cannot load in time, show the static pile instead of nothing.
-    const fallback = window.setTimeout(() => {
-      if (container.dataset.physics === "pending") container.dataset.physics = "static";
-    }, 6000);
+    // If Matter.js cannot start soon, show the static pile instead of hidden items.
+    let fallback = 0;
+    const armFallback = () => {
+      fallback ||= window.setTimeout(() => {
+        if (container.dataset.physics === "pending") container.dataset.physics = "static";
+      }, 2500);
+    };
 
     const boot = async () => {
       try {
@@ -78,7 +81,9 @@ export function PhysicsPile({
         const mod = (await import("matter-js")) as MatterModule & { default?: MatterModule };
         const Matter = mod.default ?? mod;
         if (cancelled) return;
-        cleanup = runPile(Matter, container);
+        // Late (the fallback already shows the static pile): start from the rest
+        // poses instead of hiding the items and dropping them in again.
+        cleanup = runPile(Matter, container, container.dataset.physics === "pending");
         window.clearTimeout(fallback);
       } catch {
         container.dataset.physics = "static";
@@ -91,6 +96,7 @@ export function PhysicsPile({
         ([entry]) => {
           if (entry.isIntersecting) {
             observer?.disconnect();
+            armFallback();
             void boot();
           }
         },
@@ -98,7 +104,9 @@ export function PhysicsPile({
       );
       observer.observe(container);
     } else {
-      const go = () => ("requestIdleCallback" in window ? requestIdleCallback(() => void boot()) : setTimeout(boot, 200));
+      armFallback();
+      const go = () =>
+        "requestIdleCallback" in window ? requestIdleCallback(() => void boot(), { timeout: 800 }) : setTimeout(boot, 200);
       if (document.readyState === "complete") go();
       else window.addEventListener("load", go, { once: true });
     }
@@ -117,7 +125,7 @@ export function PhysicsPile({
       key={item.key}
           data-body={item.shape ?? "box"}
           aria-hidden={item.decorative || undefined}
-          className={cx("absolute top-0 left-0 touch-none select-none", item.className)}
+          className={cx("absolute top-0 left-0 select-none", item.className)}
           style={
             {
               "--rest-left": `${item.rest.left}%`,
@@ -141,39 +149,69 @@ export function PhysicsPile({
       ) : (
         bodies
       )}
+      {/* Local (0, 0), (100, 0) and (0, 100): where these land on screen tells the
+          drag code how ancestors (the hero tilt) transform the pile. */}
+      {PROBES.map(([left, top]) => (
+        <span key={`${left},${top}`} data-physics-probe aria-hidden="true" className="pointer-events-none absolute size-0" style={{ left, top }} />
+      ))}
     </div>
   );
 }
 
+const PROBES = [
+  [0, 0],
+  [100, 0],
+  [0, 100],
+] as const;
+
 type MatterModule = typeof MatterNS;
 
 /** Builds the world, runs the loop and wires dragging. Returns a cleanup. */
-function runPile(Matter: MatterModule, container: HTMLElement): () => void {
+function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean): () => void {
   const { Engine, Bodies, Body, Composite, Constraint } = Matter;
   const engine = Engine.create({ enableSleeping: false });
   engine.gravity.y = 1.1;
 
   // Items hidden at this screen size (display: none) take no part in the simulation.
   const elements = Array.from(container.querySelectorAll<HTMLElement>("[data-body]")).filter((el) => el.offsetWidth > 0);
-  const box = container.getBoundingClientRect();
-  let width = box.width;
-  let height = box.height;
+  // Layout sizes, not bounding boxes: a tilted ancestor inflates the boxes.
+  let width = container.offsetWidth;
+  let height = container.offsetHeight;
+  const probes = Array.from(container.querySelectorAll<HTMLElement>("[data-physics-probe]"));
+  const corner = (el: HTMLElement): Point => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left, y: r.top };
+  };
+  /** Viewport point → container coordinates, correct while the hero is tilted. */
+  const toContainer = (x: number, y: number) => {
+    const [origin, xAxis, yAxis] = probes.map(corner);
+    return toLocal({ x, y }, origin, xAxis, yAxis);
+  };
+  const centre = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    return toContainer(r.left + r.width / 2, r.top + r.height / 2);
+  };
 
-  // Bodies start where the static pile put them, then get lifted above the
-  // container so they drop in one after another.
+  // Bodies start where the static pile put them. When dropping in, they are
+  // lifted above the container so they fall one after another.
   const bodies = elements.map((el, i) => {
     const w = el.offsetWidth;
     const h = el.offsetHeight;
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left - box.left + rect.width / 2;
+    const rest = centre(el);
+    const cx = rest.x;
     const options = { restitution: 0.25, friction: 0.5, frictionAir: 0.012, density: 0.002 };
     const body =
       el.dataset.body === "circle"
         ? Bodies.circle(cx, 0, w / 2, options)
         : Bodies.rectangle(cx, 0, w, h, { ...options, chamfer: { radius: Math.min(14, h / 4) } });
-    Body.setPosition(body, { x: cx, y: -h - i * 90 - 40 });
-    Body.setAngle(body, (((i * 37) % 50) - 25) * (Math.PI / 180));
-    Body.setAngularVelocity(body, (i % 2 ? 1 : -1) * 0.02);
+    if (dropIn) {
+      Body.setPosition(body, { x: cx, y: -h - i * 90 - 40 });
+      Body.setAngle(body, (((i * 37) % 50) - 25) * (Math.PI / 180));
+      Body.setAngularVelocity(body, (i % 2 ? 1 : -1) * 0.02);
+    } else {
+      Body.setPosition(body, rest);
+      Body.setAngle(body, (parseFloat(el.style.getPropertyValue("--rest-rotate")) || 0) * (Math.PI / 180));
+    }
     return { el, body, w, h };
   });
 
@@ -187,9 +225,8 @@ function runPile(Matter: MatterModule, container: HTMLElement): () => void {
       Bodies.rectangle(-t / 2, height / 2 - height, t, height * 3, { isStatic: true }),
       Bodies.rectangle(width + t / 2, height / 2 - height, t, height * 3, { isStatic: true }),
       ...Array.from(container.querySelectorAll<HTMLElement>("[data-physics-obstacle]")).map((ob) => {
-        const r = ob.getBoundingClientRect();
-        const c = container.getBoundingClientRect();
-        return Bodies.rectangle(r.left - c.left + r.width / 2, r.top - c.top + r.height / 2, r.width, r.height, {
+        const c = centre(ob);
+        return Bodies.rectangle(c.x, c.y, ob.offsetWidth, ob.offsetHeight, {
           isStatic: true,
           chamfer: { radius: 6 },
         });
@@ -251,10 +288,9 @@ function runPile(Matter: MatterModule, container: HTMLElement): () => void {
 
   // Rebuild walls and obstacles when the layout changes width.
   const ro = new ResizeObserver(() => {
-    const r = container.getBoundingClientRect();
-    if (Math.abs(r.width - width) < 1 && Math.abs(r.height - height) < 1) return;
-    width = r.width;
-    height = r.height;
+    if (Math.abs(container.offsetWidth - width) < 1 && Math.abs(container.offsetHeight - height) < 1) return;
+    width = container.offsetWidth;
+    height = container.offsetHeight;
     buildStatics();
     for (const { body } of bodies) {
       Body.setPosition(body, { x: Math.min(Math.max(body.position.x, 20), width - 20), y: Math.min(body.position.y, height - 20) });
@@ -272,10 +308,7 @@ function runPile(Matter: MatterModule, container: HTMLElement): () => void {
     constraint?: MatterNS.Constraint;
   } | null = null;
   let suppressClick = false;
-  const local = (e: PointerEvent) => {
-    const r = container.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
+  const local = (e: PointerEvent) => toContainer(e.clientX, e.clientY);
   const onDown = (e: PointerEvent) => {
     if (e.button !== 0) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-body]");
@@ -307,7 +340,12 @@ function runPile(Matter: MatterModule, container: HTMLElement): () => void {
     if (grab.constraint) Composite.remove(engine.world, grab.constraint);
     delete grab.el.dataset.grabbed;
     grab = null;
+    // The click ending this drag (if the browser sends one) fires before this
+    // timeout; touch throws send none, and a later Enter must still work.
+    if (suppressClick) window.setTimeout(() => (suppressClick = false), 0);
   };
+  // Links would otherwise start the browser's own drag and cancel ours.
+  const onDragStart = (e: DragEvent) => e.preventDefault();
   // Swallow the click that ends a drag, so throwing a card does not open it.
   const onClick = (e: MouseEvent) => {
     if (suppressClick) {
@@ -321,6 +359,7 @@ function runPile(Matter: MatterModule, container: HTMLElement): () => void {
   container.addEventListener("pointerup", onUp);
   container.addEventListener("pointercancel", onUp);
   container.addEventListener("click", onClick, true);
+  container.addEventListener("dragstart", onDragStart);
 
   return () => {
     stop();
@@ -332,6 +371,7 @@ function runPile(Matter: MatterModule, container: HTMLElement): () => void {
     container.removeEventListener("pointerup", onUp);
     container.removeEventListener("pointercancel", onUp);
     container.removeEventListener("click", onClick, true);
+    container.removeEventListener("dragstart", onDragStart);
     Engine.clear(engine);
     Composite.clear(engine.world, false);
   };

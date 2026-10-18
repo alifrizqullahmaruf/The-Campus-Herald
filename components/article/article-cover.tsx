@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { cx } from "@/lib/cx";
-import { isUnsplash } from "@/lib/images";
+import { isHttpsUrl, isUnsplash } from "@/lib/images";
 import type { ArticleWithRelations } from "@/lib/types";
 import { CoverArt } from "./cover-art";
 import { UnsplashImage } from "./unsplash-image";
@@ -35,16 +35,19 @@ export function ArticleCover({
       {coverImage && coverCredit && (
         // relative z-10 keeps the credit links clickable above a card's stretched link.
         <p className="absolute bottom-1.5 left-1.5 z-10 max-w-[calc(100%-12px)] truncate rounded-full border border-ink bg-surface/90 px-2 py-0.5 text-[10px] text-ink">
-          Photo:{" "}
-          <a href={coverCredit.profileUrl} className="underline underline-offset-2">
-            {coverCredit.name}
-          </a>{" "}
-          on{" "}
-          <a href={coverCredit.photoUrl} className="underline underline-offset-2">
-            {coverCredit.source}
-          </a>
+          Photo: <CreditLink href={coverCredit.profileUrl}>{coverCredit.name}</CreditLink> on{" "}
+          <CreditLink href={coverCredit.photoUrl}>{coverCredit.source}</CreditLink>
         </p>
       )}
     </div>
+  );
+}
+
+function CreditLink({ href, children }: { href: string; children: string }) {
+  if (!isHttpsUrl(href)) return children;
+  return (
+    <a href={href} className="underline underline-offset-2">
+      {children}
+    </a>
   );
 }

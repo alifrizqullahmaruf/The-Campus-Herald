@@ -292,14 +292,16 @@
   top: var(--rest-top);
   translate: -50% -50%;
   rotate: var(--rest-rotate);
-  cursor: grab;
 }
+/* Only a running pile is draggable; a static one lets touch scroll the page. */
 [data-physics="running"] [data-body] {
   left: 0;
   top: 0;
   translate: none;
   rotate: none;
   will-change: transform;
+  touch-action: none;
+  cursor: grab;
 }
 [data-physics] [data-body][data-grabbed] {
   cursor: grabbing;

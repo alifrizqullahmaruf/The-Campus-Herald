@@ -45,6 +45,15 @@ function readKey() {
   return line ? line.slice("UNSPLASH_ACCESS_KEY=".length).trim().replace(/^["']|["']$/g, "") : null;
 }
 
+function isHttpsOn(url, host) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname === host;
+  } catch {
+    return false;
+  }
+}
+
 async function api(url, key) {
   const response = await fetch(url, { headers: { Authorization: `Client-ID ${key}`, "Accept-Version": "v1" } });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText} for ${url}`);
@@ -70,8 +79,17 @@ for (const [id, query] of Object.entries(QUERIES)) {
     `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=5&orientation=landscape&content_filter=high`,
     key,
   );
-  // First result not already used by another article.
-  const photo = search.results.find((p) => !usedPhotos.has(`${p.links.html}?${UTM}`));
+  // First result not already used by another article whose links are all
+  // Unsplash's own https pages (they end up in the page, and the API key is
+  // sent to download_location).
+  const photo = search.results.find(
+    (p) =>
+      !usedPhotos.has(`${p.links.html}?${UTM}`) &&
+      isHttpsOn(p.urls.raw, "images.unsplash.com") &&
+      isHttpsOn(p.user.links.html, "unsplash.com") &&
+      isHttpsOn(p.links.html, "unsplash.com") &&
+      isHttpsOn(p.links.download_location, "api.unsplash.com"),
+  );
   if (!photo) {
     console.warn(`#${id} "${query}": no result`);
     continue;

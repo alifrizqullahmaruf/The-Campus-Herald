@@ -79,5 +79,6 @@ These rules shape the data model and access control:
 - Exactly five fixed categories: Academics, Organisations, Events, Opinion, Achievements (seeded, not user-editable).
 - The "most-read" sidebar widget is driven by `articles.view_count`, which goes up each time an article is viewed.
 - Author accounts are created by the admin only (no self-registration) and are deactivated with `is_active = false` rather than deleted, so old articles keep their author.
+- Article HTML is rendered with `dangerouslySetInnerHTML` (`components/article/article-body.tsx`). Today it is trusted sample data; from Phase 4, HTML written in the editor must be sanitised on the server before it is saved.
 - Out of scope: comments, tags (the schema has tables for them, marked as future features), notifications, social auto-posting, multi-language, password-reset email (the admin resets passwords).
 - NFRs: pages load in under 3 s on mobile, mobile-first responsive layout, dashboard only reachable when logged in, passwords stored hashed.

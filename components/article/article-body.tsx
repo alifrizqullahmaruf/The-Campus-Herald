@@ -4,7 +4,8 @@ import type { ArticleWithRelations } from "@/lib/types";
 
 /**
  * Renders the article HTML. Today the body comes from trusted sample data;
- * once authors write it in the editor (Phase 4) it must be sanitised on save.
+ * once authors write it in the editor (Phase 4) it must be sanitised on the
+ * server before it is saved (required: this renders it as raw HTML).
  */
 export function ArticleBody({ article }: { article: ArticleWithRelations }) {
   const category = getCategoryBySlug(article.category.slug);

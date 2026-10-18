@@ -114,7 +114,12 @@ function DriftRow({ children, direction }: { children: ReactNode[]; direction: 1
         delete row.dataset.dragging;
         velocity = Math.max(-2500, Math.min(2500, velocity));
       }
+      // The click ending this drag (if the browser sends one) fires before this
+      // timeout; touch drags send none, and a later Enter must still work.
+      if (suppressClick) window.setTimeout(() => (suppressClick = false), 0);
     };
+    // Links would otherwise start the browser's own drag and cancel ours.
+    const onDragStart = (e: DragEvent) => e.preventDefault();
     // A drag must not also open the pill's link.
     const onClickCapture = (e: MouseEvent) => {
       if (suppressClick) {
@@ -138,6 +143,7 @@ function DriftRow({ children, direction }: { children: ReactNode[]; direction: 1
     row.addEventListener("pointerup", onPointerUp);
     row.addEventListener("pointercancel", onPointerUp);
     row.addEventListener("click", onClickCapture, true);
+    row.addEventListener("dragstart", onDragStart);
     row.addEventListener("mouseenter", pause);
     row.addEventListener("mouseleave", resume);
     row.addEventListener("focusin", pause);
@@ -152,6 +158,7 @@ function DriftRow({ children, direction }: { children: ReactNode[]; direction: 1
       row.removeEventListener("pointerup", onPointerUp);
       row.removeEventListener("pointercancel", onPointerUp);
       row.removeEventListener("click", onClickCapture, true);
+      row.removeEventListener("dragstart", onDragStart);
       row.removeEventListener("mouseenter", pause);
       row.removeEventListener("mouseleave", resume);
       row.removeEventListener("focusin", pause);

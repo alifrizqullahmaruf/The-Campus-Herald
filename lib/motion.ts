@@ -18,6 +18,29 @@ export function wrapOffset(x: number, period: number): number {
   return r > 0 ? r - period : r;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Maps a viewport point into an element's own, untransformed coordinates, even
+ * when an ancestor is rotated or moved (e.g. the scroll-driven hero tilt).
+ * `origin`, `xAxis` and `yAxis` are where the element's local points (0, 0),
+ * (unit, 0) and (0, unit) currently appear on screen.
+ */
+export function toLocal(p: Point, origin: Point, xAxis: Point, yAxis: Point, unit = 100): Point {
+  const a = (xAxis.x - origin.x) / unit;
+  const b = (xAxis.y - origin.y) / unit;
+  const c = (yAxis.x - origin.x) / unit;
+  const d = (yAxis.y - origin.y) / unit;
+  const dx = p.x - origin.x;
+  const dy = p.y - origin.y;
+  const det = a * d - b * c;
+  if (Math.abs(det) < 1e-9) return { x: dx, y: dy };
+  return { x: (d * dx - c * dy) / det, y: (a * dy - b * dx) / det };
+}
+
 /** True when the user asked the OS for less motion (false on the server). */
 export function prefersReducedMotion(): boolean {
   return (

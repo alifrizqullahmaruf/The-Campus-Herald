@@ -6,8 +6,8 @@ import { PhysicsPile } from "../components/physics/physics-pile";
 import { avatarSvg } from "../lib/avatar";
 import { avatarSrc } from "../lib/avatar-src";
 import { getArticleBySlug } from "../lib/data/articles";
-import { isUnsplash } from "../lib/images";
-import { isDrag, seeded, wrapOffset } from "../lib/motion";
+import { isHttpsUrl, isUnsplash } from "../lib/images";
+import { isDrag, seeded, toLocal, wrapOffset } from "../lib/motion";
 
 afterEach(cleanup);
 
@@ -23,6 +23,17 @@ describe("motion helpers", () => {
     expect(wrapOffset(30, 100)).toBe(-70);
     expect(wrapOffset(-250, 100)).toBe(-50);
     expect(wrapOffset(5, 0)).toBe(0);
+  });
+
+  test("viewport points map back into a tilted element", () => {
+    // Untransformed element at (40, 60): a plain offset.
+    expect(toLocal({ x: 90, y: 70 }, { x: 40, y: 60 }, { x: 140, y: 60 }, { x: 40, y: 160 })).toEqual({ x: 50, y: 10 });
+    // Rotated 6deg about its origin at (40, 60), as the hero tilt does.
+    const r = (6 * Math.PI) / 180;
+    const at = (x: number, y: number) => ({ x: 40 + x * Math.cos(r) - y * Math.sin(r), y: 60 + x * Math.sin(r) + y * Math.cos(r) });
+    const p = toLocal(at(250, 120), at(0, 0), at(100, 0), at(0, 100));
+    expect(p.x).toBeCloseTo(250);
+    expect(p.y).toBeCloseTo(120);
   });
 
   test("seeded randomness is stable and within [0, 1)", () => {
@@ -53,6 +64,8 @@ describe("PhysicsPile", () => {
     expect(items[0].style.getPropertyValue("--rest-rotate")).toBe("-5deg");
     expect(items[1].getAttribute("aria-hidden")).toBe("true");
     expect(screen.getByRole("link", { name: "A" })).toBeDefined();
+    // Three hidden probes let the drag code undo an ancestor's tilt.
+    expect(container.querySelectorAll("[data-physics-probe]")).toHaveLength(3);
   });
 });
 
@@ -80,6 +93,26 @@ describe("cover photos", () => {
   test("Unsplash photos are recognised", () => {
     expect(isUnsplash("https://images.unsplash.com/photo-1?ixid=x")).toBe(true);
     expect(isUnsplash("/uploads/cover.jpg")).toBe(false);
+  });
+
+  test("only https credit links are linked", async () => {
+    expect(isHttpsUrl("https://unsplash.com/@ana")).toBe(true);
+    expect(isHttpsUrl("javascript:alert(1)")).toBe(false);
+    expect(isHttpsUrl("http://unsplash.com/@ana")).toBe(false);
+    expect(isHttpsUrl("not a url")).toBe(false);
+    const article = (await getArticleBySlug("the-canteen-queue-is-a-design-problem-not-a-patience-problem"))!;
+    render(
+      <ArticleCover
+        article={{
+          ...article,
+          coverImage: "https://images.unsplash.com/photo-123?ixid=abc",
+          coverCredit: { name: "Ana Lee", profileUrl: "javascript:alert(1)", photoUrl: "https://unsplash.com/photos/123", source: "Unsplash" },
+        }}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: "Ana Lee" })).toBeNull();
+    expect(screen.getByText(/Ana Lee/)).toBeDefined();
+    expect(screen.getByRole("link", { name: "Unsplash" })).toBeDefined();
   });
 
   test("a stock photo shows the photographer credit with links", async () => {
