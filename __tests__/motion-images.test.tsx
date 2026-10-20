@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { GET as avatarRoute } from "../app/avatars/[id]/route";
+import { BuriedNotesArt } from "../components/about/buried-notes-art";
 import { ArticleCover } from "../components/article/article-cover";
 import { picsumLoader } from "../components/article/picsum-image";
 import { PhysicsPile } from "../components/physics/physics-pile";
@@ -67,6 +68,16 @@ describe("PhysicsPile", () => {
     expect(screen.getByRole("link", { name: "A" })).toBeDefined();
     // Three hidden probes let the drag code undo an ancestor's tilt.
     expect(container.querySelectorAll("[data-physics-probe]")).toHaveLength(3);
+  });
+});
+
+describe("About illustration", () => {
+  test("is decorative SVG art with no text and no external images", () => {
+    const { container } = render(<BuriedNotesArt />);
+    const svg = container.querySelector("svg")!;
+    expect(svg.getAttribute("aria-hidden")).toBe("true");
+    expect(svg.textContent).toBe("");
+    expect(svg.querySelector("image, text")).toBeNull();
   });
 });
 

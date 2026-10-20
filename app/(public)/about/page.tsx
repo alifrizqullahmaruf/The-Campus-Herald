@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CoverArt } from "@/components/article/cover-art";
+import { BuriedNotesArt } from "@/components/about/buried-notes-art";
 import { AuthorCard } from "@/components/author/author-card";
 import { Container } from "@/components/layout/container";
 import { SectionBand } from "@/components/layout/section-band";
@@ -46,7 +46,7 @@ export default async function AboutPage() {
       <div className="border-t-3 border-ink">
         <Container className="grid items-center gap-10 py-14 md:grid-cols-2 md:py-20">
           <div className="aspect-4/3 -rotate-2 overflow-hidden rounded-card border-3 border-ink shadow-hard">
-            <CoverArt seed={3} category="events" />
+            <BuriedNotesArt />
           </div>
           <div>
             <Eyebrow>Why we built it</Eyebrow>
