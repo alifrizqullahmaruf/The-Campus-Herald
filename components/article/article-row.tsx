@@ -3,9 +3,9 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 import { cx } from "@/lib/cx";
 import { formatCount } from "@/lib/format";
 import type { ArticleWithRelations } from "@/lib/types";
-import { CoverArt } from "./cover-art";
+import { CoverImage } from "./article-cover";
 
-/** Compact row for Most read and search results. */
+/** Compact ranked row for Most read, with a small cover thumbnail. */
 export function ArticleRow({
   article,
   rank,
@@ -27,8 +27,8 @@ export function ArticleRow({
         className,
       )}
     >
-      <div className="size-12 shrink-0 overflow-hidden rounded-md border-2 border-ink">
-        <CoverArt seed={article.id} category={article.category.slug} />
+      <div className="relative size-12 shrink-0 overflow-hidden rounded-md border-2 border-ink">
+        <CoverImage src={article.coverImage} seed={article.id} category={article.category.slug} sizes="48px" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-display text-[15px] font-extrabold leading-tight">

@@ -181,6 +181,14 @@ test("footer pills fall onto the wordmark and still navigate", async ({ page }) 
   await expect(page).toHaveURL(/\/about$/);
 });
 
+test("Most read thumbnails show the cover photos", async ({ page }) => {
+  await page.goto("/");
+  const thumbs = page.getByRole("heading", { name: "Most read." }).locator("xpath=following::ol[1]//img");
+  await expect(thumbs).toHaveCount(5);
+  await thumbs.first().scrollIntoViewIfNeeded();
+  await expect.poll(() => thumbs.first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+});
+
 test("writer avatars are served as SVG", async ({ request }) => {
   const response = await request.get("/avatars/5");
   expect(response.status()).toBe(200);

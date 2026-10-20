@@ -77,4 +77,14 @@ describe("Most read", () => {
     expect(container.querySelector("span[aria-hidden='true']")?.textContent).toBe("01");
     expect(screen.getByText(/3,320 reads/)).toBeDefined();
   });
+
+  test("thumbnail shows the cover photo, or generated art without one", async () => {
+    const [article] = await getMostRead(1);
+    const { container } = render(<ArticleRow article={{ ...article, coverImage: "https://picsum.photos/id/20" }} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/^https:\/\/picsum\.photos\/id\/20\/\d+\/\d+\.webp$/);
+    cleanup();
+    const { container: plain } = render(<ArticleRow article={{ ...article, coverImage: null }} />);
+    expect(plain.querySelector("img")).toBeNull();
+    expect(plain.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+  });
 });

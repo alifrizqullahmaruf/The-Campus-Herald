@@ -20,4 +20,6 @@ export interface SearchResult {
   categorySlug: string;
   authorName: string;
   readingMinutes: number;
+  /** Cover photo URL for the thumbnail; null shows generated art. */
+  coverImage: string | null;
 }

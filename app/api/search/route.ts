@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     categorySlug: article.category.slug,
     authorName: article.author.name,
     readingMinutes: article.readingMinutes,
+    coverImage: article.coverImage,
   }));
 
   return Response.json({ results });

@@ -3,7 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { CoverArt } from "@/components/article/cover-art";
+import { CoverImage } from "@/components/article/article-cover";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import type { SearchResult } from "@/lib/search";
@@ -154,8 +154,8 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
                 selected ? cx("border-ink", style?.bgClass, style?.textClass) : "border-transparent",
               )}
             >
-              <span className="size-10 shrink-0 overflow-hidden rounded-md border-2 border-ink">
-                <CoverArt seed={result.id} category={result.categorySlug as CategorySlug} />
+              <span className="relative size-10 shrink-0 overflow-hidden rounded-md border-2 border-ink">
+                <CoverImage src={result.coverImage} seed={result.id} category={result.categorySlug as CategorySlug} sizes="40px" />
               </span>
               <span className="min-w-0">
                 <span className="block text-meta">

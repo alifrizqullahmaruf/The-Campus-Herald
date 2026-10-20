@@ -43,6 +43,8 @@ describe("GET /api/search", () => {
     expect(results).toHaveLength(1);
     expect(results[0].slug).toBe("the-canteen-queue-is-a-design-problem-not-a-patience-problem");
     expect(results[0]).not.toHaveProperty("body");
+    // The palette thumbnail uses the article's cover photo.
+    expect(results[0].coverImage).toMatch(/^https:/);
   });
 
   test("empty query returns the newest six; unknown category is ignored", async () => {
@@ -86,8 +88,8 @@ describe("SearchExplorer", () => {
 
 describe("CommandPalette", () => {
   const results: SearchResult[] = [
-    { id: 1, slug: "first", title: "First", categoryName: "Events", categorySlug: "events", authorName: "A", readingMinutes: 1 },
-    { id: 2, slug: "second", title: "Second", categoryName: "Opinion", categorySlug: "opinion", authorName: "B", readingMinutes: 2 },
+    { id: 1, slug: "first", title: "First", categoryName: "Events", categorySlug: "events", authorName: "A", readingMinutes: 1, coverImage: null },
+    { id: 2, slug: "second", title: "Second", categoryName: "Opinion", categorySlug: "opinion", authorName: "B", readingMinutes: 2, coverImage: "https://picsum.photos/id/20" },
   ];
 
   test("loads results, moves with arrow keys and opens with Enter", async () => {
