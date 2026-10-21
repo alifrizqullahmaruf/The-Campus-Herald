@@ -17,8 +17,16 @@ Sessions start in plan mode (`.claude/settings.json`), so no file can be edited 
 
 2. **Ask before proceeding.** During brainstorming and planning, ask the user for their opinion and get explicit confirmation. Do not edit code until the user approves the plan.
 3. **Execute fully.** Once the user approves, carry out every task in the plan through to completion.
-4. **Debug and verify.** Afterwards, check the whole change: run `npm test -- --run`, `npm run lint` and `npm run build`, and run the app if relevant. Before committing, run the `code-reviewer` subagent (`.claude/agents/code-reviewer.md`, read-only) on the change and fix what it finds. Then update the plan file with what was actually done, what changed from the plan, and the verification results.
+4. **Debug and verify.** Afterwards, check the whole change: run `npm test -- --run`, `npm run lint` and `npm run build`, and run the app if relevant. For page or feature changes, run `qa-tester` first (if the plan includes it), then the `code-reviewer` subagent (`.claude/agents/code-reviewer.md`, read-only) last, so the review also covers the new tests; fix what they find before committing. Then update the plan file with what was actually done, what changed from the plan, and the verification results.
 5. **Tidy the plan file.** Finally, restructure the plan file so it reads cleanly: goal, task table with final status, changed files, verification results, open follow-ups.
+
+### Subagents (`.claude/agents/`)
+
+| Subagent | Use it | May change |
+|----------|--------|------------|
+| `code-reviewer` | Before every commit, on the change (step 4) | Nothing (read-only report) |
+| `qa-tester` | After a feature or page change, before a release, or for flaky tests. Tests the front end as users do (phone and desktop), writes the tests and runs them | Only `e2e/` and `__tests__/`; app bugs are reported with a failing test, never patched |
+| `clean-code` | Before a new phase or after a large feature. First in **propose** mode (read-only; its list goes into a plan), then in **apply** mode for the items the user approved | App code, only for approved items, with no behaviour change; the full test suite must still pass |
 
 ### Git
 
@@ -56,6 +64,7 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file**
 - `npm run start`: serve the production build
 - `npm run lint`: ESLint 9 flat config (`eslint-config-next` core-web-vitals + typescript)
 - `npm test`: Vitest in watch mode; `npm test -- --run` runs once, `npx vitest run __tests__/search.test.tsx` runs a single file, `-t "<name>"` filters by test name
+- `npm run fonts`: rebuild the cut-down display font `app/fonts/archivo-display.woff2` (Archivo at width 125, weights 800–900) from the google/fonts repository; run only when the character set or weights change
 - `npm run covers:picsum`: write the hand-picked Picsum cover photos (no key) into `lib/mock/covers.json`
 - `npm run covers`: fetch Unsplash cover photos for the sample articles into `lib/mock/covers.json` (needs `UNSPLASH_ACCESS_KEY` in `.env.local`; add `-- --force` to replace existing covers; run once, 2 requests per article)
 - `npm run test:e2e`: Playwright against a production build (run `npm run build` first; it starts `next start` on port 3200). Uses the installed Microsoft Edge (`channel: "msedge"`), so no browser download. `npx playwright test e2e/flows.spec.ts --project=desktop` runs one file.
@@ -66,7 +75,7 @@ Unit tests (Vitest + React Testing Library, jsdom) live in `__tests__/`. Vitest 
 
 - Next.js 16.4 App Router with React 19.3. Per AGENTS.md, check `node_modules/next/dist/docs/` (`01-app/` for the App Router) instead of relying on memory.
 - `next.config.ts` enables `cacheComponents`, `partialPrefetching` and `experimental.agentFeedback`. With Cache Components on, data fetching and caching follow the `"use cache"` / Suspense model, so look it up in the bundled docs before writing data-loading code.
-- Tailwind CSS v4 is loaded through a Turbopack rule (`@tailwindcss/turbopack` loader on `*.css`), not PostCSS. There is no `tailwind.config`: design tokens live in `app/globals.css` under `@theme`, with custom utilities `font-display` (Archivo at width 125), `text-meta`, `marquee-track` and `prose-herald` (article HTML).
+- Tailwind CSS v4 is loaded through a Turbopack rule (`@tailwindcss/turbopack` loader on `*.css`), not PostCSS. There is no `tailwind.config`: design tokens live in `app/globals.css` under `@theme`, with custom utilities `font-display` (Archivo at width 125, self-hosted subset from `app/fonts/`), `text-meta`, `marquee-track` and `prose-herald` (article HTML).
 - Contrast rules from `docs/design.md`: white text only on Academics blue, ink on every other colour; faded decorative text no lighter than `text-ink/50`.
 - Layouts and pages use the global generated types `LayoutProps<"/route">` / `PageProps<"/route">` (no import needed).
 - Import alias: `@/*` maps to the repo root.

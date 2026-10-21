@@ -10,7 +10,8 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "covers": "node scripts/fetch-covers.mjs",
-    "covers:picsum": "node scripts/fetch-picsum-covers.mjs"
+    "covers:picsum": "node scripts/fetch-picsum-covers.mjs",
+    "fonts": "node scripts/subset-fonts.mjs"
   },
   "dependencies": {
     "@dicebear/core": "^9.4.3",
@@ -40,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "jsdom": "^30.1.2",
+    "subset-font": "^2.9.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.4"

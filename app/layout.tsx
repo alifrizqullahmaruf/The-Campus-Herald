@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SITE } from "@/lib/site";
-import { Archivo, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,11 +17,14 @@ const geistMono = Geist_Mono({
   preload: false,
 });
 
-// Display face; the width axis gives the wide, heavy headline look (docs/design.md 2.2).
-const archivo = Archivo({
+// Display face: Archivo cut down by `npm run fonts` (scripts/subset-fonts.mjs) to the
+// one width and the weights the headlines use (125%, 800–900; docs/design.md 2.2),
+// 28 KB instead of 88 KB. font-stretch matches the `font-display` utility.
+const archivo = localFont({
+  src: "./fonts/archivo-display.woff2",
   variable: "--font-archivo",
-  subsets: ["latin"],
-  axes: ["wdth"],
+  weight: "800 900",
+  declarations: [{ prop: "font-stretch", value: "125%" }],
 });
 
 // Absolute base for link previews (og:image). NEXT_PUBLIC_SITE_URL wins (custom

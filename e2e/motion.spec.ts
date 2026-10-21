@@ -189,6 +189,16 @@ test("Most read thumbnails show the cover photos", async ({ page }) => {
   await expect.poll(() => thumbs.first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
 });
 
+test("headlines use the subset display font at width 125%", async ({ page }) => {
+  await page.goto("/authors");
+  await page.evaluate(() => document.fonts.ready);
+  const h1 = page.getByRole("heading", { level: 1 });
+  await expect(h1).toHaveCSS("font-stretch", "125%");
+  // The cut-down Archivo (app/fonts/archivo-display.woff2) loaded, not just the fallback.
+  const loaded = await page.evaluate(() => [...document.fonts].some((f) => /archivo/i.test(f.family) && f.status === "loaded" && f.stretch === "125%"));
+  expect(loaded).toBe(true);
+});
+
 test("writer avatars are served as SVG", async ({ request }) => {
   const response = await request.get("/avatars/5");
   expect(response.status()).toBe(200);

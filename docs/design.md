@@ -88,7 +88,7 @@ Sampled from the reference recording and rounded.
 
 | Role | Family | Settings | Notes |
 |---|---|---|---|
-| Display (headings, card titles, pills, buttons) | **Archivo** (variable) | `wdth` 125, weight 800–900, tracking −0.02em, line-height 0.95–1.05 | Load via `next/font/google` with `axes: ['wdth']` |
+| Display (headings, card titles, pills, buttons) | **Archivo** (variable) | `wdth` 125, weight 800–900, tracking −0.02em, line-height 0.95–1.05 | Self-hosted subset `app/fonts/archivo-display.woff2` (width pinned at 125, weights 800–900, Latin incl. Extended-A, punctuation, € ™ −, arrows; 28 KB instead of 88 KB), built by `npm run fonts` and loaded with `next/font/local` |
 | Body | **Geist Sans** | weight 400/500, line-height 1.6 | Already loaded in `app/layout.tsx` |
 | Meta (labels, dates, read time, counts, keyboard hints) | **Geist Mono** | weight 500–700, UPPERCASE, tracking +0.06em, 11–12px | Already loaded |
 
@@ -305,7 +305,7 @@ These template features are out of scope in the SRS and must not be built. (Drag
 
 Target from the spec: pages load in under 3 s on a mobile connection.
 
-- Fonts: Archivo (one variable file, `latin` subset, `wdth` + `wght` axes) + Geist Sans + Geist Mono, all through `next/font` (self-hosted, `display: swap`).
+- Fonts: Archivo (one self-hosted subset, `app/fonts/archivo-display.woff2`: width pinned at 125, weights 800–900, 28 KB) + Geist Sans + Geist Mono, all through `next/font` (self-hosted, `display: swap`).
 - Images: `next/image`, responsive `sizes`, WebP/AVIF, cover images max 1600px wide. Lazy-load everything below the first screen.
 - No animation libraries for v1. Hover and marquee are CSS only.
 - The ⌘K palette is loaded on demand (dynamic import when first opened).
@@ -343,16 +343,17 @@ Tokens go into `app/globals.css` under Tailwind v4's `@theme`, so they become ut
 }
 ```
 
-Display headings also need `font-stretch: 125%` (or `font-variation-settings: "wdth" 125`) because the width axis is not set by the family alone.
+Display headings also set `font-stretch: 125%` so they match the font face, which is declared at width 125%.
 
 ```ts
-// app/layout.tsx
-import { Archivo } from "next/font/google";
+// app/layout.tsx: Archivo cut down by `npm run fonts` (scripts/subset-fonts.mjs)
+import localFont from "next/font/local";
 
-const archivo = Archivo({
+const archivo = localFont({
+  src: "./fonts/archivo-display.woff2",
   variable: "--font-archivo",
-  subsets: ["latin"],
-  axes: ["wdth"],
+  weight: "800 900",
+  declarations: [{ prop: "font-stretch", value: "125%" }],
 });
 ```
 
@@ -365,7 +366,7 @@ Also remove the template leftover `font-family: Arial, Helvetica, sans-serif` fr
 - ~~**UI copy language**~~ Decided 2026-10-15: **English** for all UI copy (menus, buttons, labels, section titles).
 - ~~**Logo**~~ Decided 2026-10-16: page-and-sticky-note mark (section 0).
 - **Dark mode:** deferred.
-- **Home page LCP:** 3.1 s in Lighthouse's simulated slow 4G (other pages 2.8–2.9 s), just over the 3 s target. The largest element is the hero headline waiting for Archivo (90 KB variable font). Options: subset the font to width 125 and weights 800–900 (smaller file, same look), or `display: "optional"` (fast, but the first visit on a slow connection shows the fallback font).
+- **LCP (2026-10-21: Archivo subset done; Geist step open).** Archivo is cut to width 125 and weights 800–900 (88 KB → 28 KB); headlines look the same, and → / ← now use Archivo (bolder) instead of the fallback font. Lighthouse mobile medians, simulated throttling before → after: home 3.31 → 3.10 s, article 3.70 → 3.41 s, authors 3.16 → 2.98 s. With real (DevTools) throttling all pages are under 3 s: home 2.65–2.72 s, article 2.55–2.59 s, authors 2.03–2.07 s. The remaining simulated gap comes mostly from the framework JavaScript and, on article pages, the Picsum cover photo (its LCP element, served through a redirect), not from fonts. Whether to also cut Geist (the plan's next step for the simulated numbers) is the user's call; `display: "optional"` was not used.
 
 ## 10. Implementation notes from Phase 1
 
