@@ -45,3 +45,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# roadmap and daily schedule: kept on the user's machine only
+docs/plans/2026-10-15-roadmap.md
