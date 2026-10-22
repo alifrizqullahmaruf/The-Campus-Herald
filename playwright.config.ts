@@ -16,13 +16,26 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
+    // Everything except the phone-only specs, at 1280×720 (responsive.spec.ts included).
     { name: "desktop", use: { ...devices["Desktop Edge"], channel: "msedge" }, testIgnore: /mobile\.spec\.ts/ },
+    // Layout checks at the widths docs/design.md targets (docs/plans/2026-10-22-responsif.md).
+    {
+      name: "phone-320",
+      use: { channel: "msedge", viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true },
+      testMatch: /(mobile|responsive)\.spec\.ts/,
+    },
     {
       name: "phone",
       use: { channel: "msedge", viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true },
-      // Phone checks cover layout-specific flows only.
-      testMatch: /mobile\.spec\.ts/,
+      testMatch: /(mobile|responsive)\.spec\.ts/,
     },
+    {
+      name: "tablet",
+      use: { channel: "msedge", viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true },
+      testMatch: /responsive\.spec\.ts/,
+    },
+    { name: "laptop", use: { channel: "msedge", viewport: { width: 1024, height: 768 } }, testMatch: /responsive\.spec\.ts/ },
+    { name: "wide", use: { channel: "msedge", viewport: { width: 1440, height: 900 } }, testMatch: /responsive\.spec\.ts/ },
   ],
   webServer: {
     command: `npx next start -p ${PORT}`,

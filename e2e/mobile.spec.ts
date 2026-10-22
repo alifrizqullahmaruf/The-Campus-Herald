@@ -1,15 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { DASHBOARD_PAGES, PUBLIC_PAGES } from "./pages";
 
-// Runs in the "phone" project (375px wide).
-for (const path of [...PUBLIC_PAGES, ...DASHBOARD_PAGES]) {
-  test(`${path} has no horizontal scroll at 375px`, async ({ page }) => {
-    await page.goto(path);
-    await page.waitForLoadState("networkidle");
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
-  });
-}
+// Runs in the "phone-320" and "phone" (375px) projects.
+//
+// The per-route "no horizontal scroll" check moved to responsive.spec.ts, which
+// runs in these projects too and uses e2e/layout.ts. The old check compared
+// scrollWidth with window.innerWidth, which grows when mobile emulation zooms
+// out a page that is too wide, so it could never fail; the new one compares
+// with documentElement.clientWidth, checks every element and text box, and
+// scrolls to the bottom in steps.
 
 test("phone menu opens, navigates and closes", async ({ page }) => {
   await page.goto("/");

@@ -1,5 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { axeViolations } from "./axe";
 import { DASHBOARD_PAGES, PUBLIC_PAGES } from "./pages";
 
 function collectErrors(page: Page) {
@@ -22,13 +22,7 @@ for (const path of [...PUBLIC_PAGES, ...DASHBOARD_PAGES]) {
   test(`${path} has no WCAG 2.1 AA violations`, async ({ page }) => {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
-    const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-      .analyze();
-    const summary = results.violations.map(
-      (v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`,
-    );
-    expect(summary).toEqual([]);
+    expect(await axeViolations(page)).toEqual([]);
   });
 }
 
