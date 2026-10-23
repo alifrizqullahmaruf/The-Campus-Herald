@@ -167,3 +167,27 @@ Temuan saat mengecek screenshot (tidak tertangkap test) dan perbaikannya:
 - Pill footer statis di 320 saling tumpuk sampai tak terbaca: dua baris berselang.
 
 Verifikasi: unit 93 ✅; lint, tsc, build ✅; E2E penuh **481 lulus, 0 gagal** (6 ukuran). Catatan: satu run sempat memakai build lama karena build gagal saat server lama memegang `.next`; diulang setelah port dikosongkan. Screenshot sesudah: `scratchpad/responsive-after/`. design.md diperbarui (layout 2.4, motion, header, kartu penulis, palet, footer, aksesibilitas).
+
+### Review Tahap 2 (`code-reviewer`, setelah commit `7f6341a`)
+
+Tidak ada temuan Kritis/Tinggi. Semua temuan diperbaiki di commit lanjutan:
+
+| Tingkat | Temuan | Perbaikan |
+|---------|--------|-----------|
+| Sedang | "All results →" dari palet saat sudah di `/search` bisa menampilkan query lama | `SearchExplorer` diberi `key` dari URL. Test E2E baru dari `/about` dan dari `/search?q=canteen` |
+| Rendah | Filter topic hilang saat "All results →" (terbukti: URL hanya `?q=music`) | Link membawa `q` dan `category` |
+| Rendah | Ctrl/⌘-klik "All results →" tetap di tab yang sama | Klik dengan modifier dibiarkan ke browser |
+| Rendah | Area sentuh chip palet dan link "Filed under" menimpa tetangganya | Chip `gap-y-3`; link `inline-block py-1` + `space-y-3` |
+| Rendah | Area sentuh "All results →" terpotong dialog | Footer palet `py-3` |
+| Rendah | Pill footer diam masih saling tumpuk di HP; test tidak memeriksanya | Test kini juga menuntut pill tidak saling tumpuk. Di bawah `sm`: tiga baris (`--rest-left-sm` / `--rest-top-sm`, aturan baru di `globals.css`) dan ruang atas `pt-48` |
+| Rendah | Ikon cari diumumkan sebagai link padahal membuka dialog | `aria-haspopup="dialog"` |
+
+Ditemukan saat memperbaiki: aturan `@media` bersarang di tengah aturan CSS keluar **sebelum** deklarasi berikutnya sehingga tertimpa; dipindah ke akhir aturan.
+
+Review ulang (`code-reviewer`): semua temuan beres; satu kasus tepi (Sedang): mengetik di `/search` lalu "All results →" dengan query kosong tetap menampilkan teks lama, karena URL yang ditulis `replaceState` sama dengan URL awal server sehingga `key` tidak berubah. **Terbukti** dengan test E2E baru, lalu diperbaiki: dari `/search`, "All results →" memuat halaman penuh dari URL.
+
+Verifikasi: unit 93; lint, tsc ✅; E2E penuh **483 lulus**, 1 gagal sekali di bawah beban (`laptop`, judul halaman artikel tidak terpotong) yang tidak bisa diulang: 220/220 lulus saat diulang 10×. Pesan error run itu tidak tersimpan; dicatat sebagai tindak lanjut. Screenshot footer 320 px rapi (tiga baris, terbaca).
+
+**Tindak lanjut:** `qa-tester` menyelidiki test yang kadang gagal saja di bawah beban (`flows.spec.ts` sebelumnya, dan heading artikel di `laptop`).
+
+**Next.js:** `next build` kini kadang gagal dengan `SecurityFatalError` (16.4.0 punya celah keamanan; 16.4.2 tersedia). Output build juga berisi instruksi untuk agen AI agar menjalankan `next upgrade --agent=security …`; **tidak dijalankan** (bukan permintaan user). Upgrade dikerjakan lewat plan terpisah.

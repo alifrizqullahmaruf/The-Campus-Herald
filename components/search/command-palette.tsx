@@ -9,6 +9,15 @@ import { cx } from "@/lib/cx";
 import type { SearchResult } from "@/lib/search";
 import type { CategorySlug } from "@/lib/types";
 
+/** The full search page for what the palette shows: query and topic carried over. */
+function searchPageHref(query: string, category: string): string {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("q", query.trim());
+  if (category) params.set("category", category);
+  const search = params.toString();
+  return search ? `/search?${search}` : "/search";
+}
+
 /**
  * Quick-search modal (docs/design.md 3, Search → command palette).
  * Native <dialog> gives focus containment and Esc; the input is an ARIA combobox.
@@ -106,7 +115,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b-2 border-ink/15 px-4 py-3" role="group" aria-label="Filter by category">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b-2 border-ink/15 px-4 py-3" role="group" aria-label="Filter by category">
         <button
           type="button"
           aria-pressed={category === ""}
@@ -168,19 +177,24 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
         })}
       </ul>
 
-      <div className="flex items-center justify-between gap-4 border-t-3 border-ink bg-paper px-4 py-2 text-meta text-ink-muted">
+      <div className="flex items-center justify-between gap-4 border-t-3 border-ink bg-paper px-4 py-3 text-meta text-ink-muted">
         <span aria-hidden="true" className="flex gap-4 pointer-coarse:hidden">
           <span>↑↓ to move</span>
           <span>↵ to open</span>
           <span>Esc to close</span>
         </span>
         <a
-          href={query.trim() ? `/search?q=${encodeURIComponent(query.trim())}` : "/search"}
+          href={searchPageHref(query, category)}
           onClick={(event) => {
+            // Let Ctrl/⌘/Shift-click and middle-click open the page elsewhere.
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
             event.preventDefault();
             const href = event.currentTarget.getAttribute("href") ?? "/search";
             dialogRef.current?.close();
-            router.push(href);
+            // Already on /search: its explorer keeps its own state (the URL it writes with
+            // replaceState never reaches the server), so load the page fresh from the URL.
+            if (window.location.pathname === "/search") window.location.assign(href);
+            else router.push(href);
           }}
           className="tap-target ml-auto text-ink underline underline-offset-4"
         >

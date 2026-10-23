@@ -13,15 +13,16 @@ const PILL_COLOURS = [
 ];
 
 // Rest poses before the pills drop (and with reduced motion): two staggered rows
-// along the top, so narrow screens can still read every pill. `pad` is half the
-// pill (tilted): the pose is kept that far from the edges (globals.css). Written
-// out in full so Tailwind generates the classes.
+// along the top; on phones three rows (`phone`, below sm, see globals.css) with
+// more room above the wordmark, so no two pills overlap. `pad` is half the pill
+// (tilted): the pose is kept that far from the edges. Classes are written out in
+// full so Tailwind generates them.
 const REST = [
-  { left: 10, top: 8, rotate: -6, pad: "[--rest-pad:60px]" },
-  { left: 30, top: 22, rotate: 5, pad: "[--rest-pad:82px]" },
-  { left: 50, top: 8, rotate: -3, pad: "[--rest-pad:67px]" },
-  { left: 70, top: 22, rotate: 6, pad: "[--rest-pad:58px]" },
-  { left: 90, top: 8, rotate: -5, pad: "[--rest-pad:64px]" },
+  { left: 10, top: 8, rotate: -6, pad: "[--rest-pad:60px]", phone: "[--rest-left-sm:20%] [--rest-top-sm:5%]" },
+  { left: 30, top: 22, rotate: 5, pad: "[--rest-pad:82px]", phone: "[--rest-left-sm:28%] [--rest-top-sm:24%]" },
+  { left: 50, top: 8, rotate: -3, pad: "[--rest-pad:67px]", phone: "[--rest-left-sm:50%] [--rest-top-sm:43%]" },
+  { left: 70, top: 22, rotate: 6, pad: "[--rest-pad:58px]", phone: "[--rest-left-sm:75%] [--rest-top-sm:5%]" },
+  { left: 90, top: 8, rotate: -5, pad: "[--rest-pad:64px]", phone: "[--rest-left-sm:85%] [--rest-top-sm:24%]" },
 ];
 
 /**
@@ -32,7 +33,7 @@ export function SiteFooter() {
   const pills: PileItem[] = FOOTER_LINKS.map((link, i) => ({
     key: link.href,
     rest: REST[i],
-    className: REST[i].pad,
+    className: `${REST[i].pad} ${REST[i].phone}`,
     node: (
       <Link
         href={link.href}
@@ -48,7 +49,7 @@ export function SiteFooter() {
     <footer className="mt-auto overflow-x-clip border-t-3 border-ink bg-ink text-paper">
       <div className="mx-auto w-full max-w-[1120px] px-4 pt-12 pb-6 sm:px-6 lg:px-8">
         <nav aria-label="Footer">
-          <PhysicsPile items={pills} list="Footer links" start="view" className="pt-32 md:pt-36">
+          <PhysicsPile items={pills} list="Footer links" start="view" className="pt-48 sm:pt-32 md:pt-36">
             <p
               aria-hidden="true"
               className="pointer-events-none font-display text-[clamp(56px,15vw,200px)] leading-[0.85] font-black uppercase"

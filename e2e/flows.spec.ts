@@ -14,6 +14,37 @@ test("Ctrl+K opens quick search; Enter opens the selected article", async ({ pag
   await expect(page.getByRole("heading", { level: 1 })).toContainText("canteen queue");
 });
 
+for (const start of ["/about", "/search?q=canteen"]) {
+  test(`"All results" in quick search opens the search page with the query and topic (from ${start})`, async ({ page }) => {
+    await page.goto(start);
+    await page.waitForLoadState("networkidle");
+    await page.keyboard.press("Control+K");
+    const palette = page.getByRole("dialog", { name: "Quick search" });
+    await palette.getByRole("combobox", { name: "Search articles" }).fill("music");
+    await palette.getByRole("group", { name: "Filter by category" }).getByRole("button", { name: "Events" }).click();
+    await palette.getByRole("link", { name: "All results →" }).click();
+    await expect(palette).toBeHidden();
+    await expect(page).toHaveURL(/\/search\?q=music&category=events$/);
+    // Also when the search page was already open (it must not keep the old query).
+    await expect(page.locator("#search-page-input")).toHaveValue("music");
+    await expect(page.getByRole("button", { name: "Events", pressed: true })).toBeVisible();
+  });
+}
+
+test(`"All results" resets the search page even when the URL matches how it was first opened`, async ({ page }) => {
+  await page.goto("/search");
+  await page.waitForLoadState("networkidle");
+  // Typing updates the URL in place (history.replaceState), not through the server.
+  await page.locator("#search-page-input").fill("music");
+  await expect(page).toHaveURL(/\/search\?q=music$/);
+  await page.keyboard.press("Control+K");
+  const palette = page.getByRole("dialog", { name: "Quick search" });
+  await palette.getByRole("link", { name: "All results →" }).click();
+  await expect(palette).toBeHidden();
+  await expect(page).toHaveURL(/\/search$/);
+  await expect(page.locator("#search-page-input")).toHaveValue("");
+});
+
 test("Esc closes quick search and returns focus", async ({ page }) => {
   await page.goto("/categories");
   await page.waitForLoadState("networkidle");

@@ -190,7 +190,11 @@ test.describe("public pages", () => {
       const result = await pills.evaluateAll((els, note) => {
         const cw = document.documentElement.clientWidth;
         const boxes = els.map((el) => ({ text: el.textContent ?? "", box: el.getBoundingClientRect() }));
+        // Bounding boxes of tilted pills: allow 2px where only their corners meet.
+        const overlap = (a: DOMRect, b: DOMRect) =>
+          Math.min(a.right, b.right) - Math.max(a.left, b.left) > 2 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 2;
         return {
+          overlapping: boxes.flatMap((a, i) => boxes.slice(i + 1).filter((b) => overlap(a.box, b.box)).map((b) => `${a.text}+${b.text}`)),
           offScreen: boxes.filter(({ box }) => box.left < -1 || box.right > cw + 1).map((p) => p.text),
           overNote: boxes
             .filter(({ box }) => Math.min(box.right, note.x + note.width) > Math.max(box.left, note.x) && Math.min(box.bottom, note.y + note.height) > Math.max(box.top, note.y))
@@ -200,7 +204,7 @@ test.describe("public pages", () => {
       if (open("R-FOOTER-PILLS")) {
         expect(result.offScreen.length + result.overNote.length, `${stillOpen("R-FOOTER-PILLS")}\n${JSON.stringify(result)}`).toBeGreaterThan(0);
       } else {
-        expect(result).toEqual({ offScreen: [], overNote: [] });
+        expect(result).toEqual({ overlapping: [], offScreen: [], overNote: [] });
       }
     });
   });

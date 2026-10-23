@@ -62,7 +62,7 @@ export function SearchIconLink({ className, children }: { className?: string; ch
     openSearchPalette();
   };
   return (
-    <Link href="/search" onClick={onClick} className={className}>
+    <Link href="/search" onClick={onClick} aria-haspopup="dialog" className={className}>
       {children}
     </Link>
   );

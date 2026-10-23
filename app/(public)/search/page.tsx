@@ -22,7 +22,10 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
   // The body is not needed in the browser.
   const light = articles.map((article) => ({ ...article, body: "" }));
   return (
+    // Keyed by the URL: arriving from the palette while already on /search must
+    // not keep the previous query in the explorer's state.
     <SearchExplorer
+      key={`${first(params.q)}|${first(params.category)}`}
       articles={light}
       initialQuery={first(params.q)}
       initialCategory={first(params.category)}

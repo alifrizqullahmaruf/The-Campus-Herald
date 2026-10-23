@@ -296,11 +296,17 @@
    Items rest at their CSS pose until the simulation takes over; with JS on and
    motion allowed they stay hidden while Matter.js loads, then drop in. */
 [data-physics] [data-body] {
-  /* --rest-pad (half the item's tilted width) keeps the rest pose on screen. */
+  /* --rest-pad (half the item's tilted width) keeps the rest pose on screen.
+     Below sm an item may set --rest-left-sm / --rest-top-sm for a phone pose. */
   left: clamp(var(--rest-pad, 0px), var(--rest-left), calc(100% - var(--rest-pad, 0px)));
   top: var(--rest-top);
   translate: -50% -50%;
   rotate: var(--rest-rotate);
+  /* Last, so it wins over the declarations above (nested rules are emitted in order). */
+  @media (width < 40rem) {
+    left: clamp(var(--rest-pad, 0px), var(--rest-left-sm, var(--rest-left)), calc(100% - var(--rest-pad, 0px)));
+    top: var(--rest-top-sm, var(--rest-top));
+  }
 }
 /* Only a running pile is draggable; a static one lets touch scroll the page. */
 [data-physics="running"] [data-body] {
