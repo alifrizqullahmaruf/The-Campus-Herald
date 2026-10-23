@@ -33,73 +33,7 @@ interface KnownBug {
   where: Where[];
 }
 
-const TOPICS = ["/categories/academics", "/categories/organisations", "/categories/achievements"];
-
 export const KNOWN_BUGS: Record<string, KnownBug> = {
-  "R-HOME-FRESH": {
-    symptom: "tilted 'Fresh off the notebook' cards (pile-card) stick out past both screen edges below 1024px",
-    where: [{ check: "overflow", projects: [...PHONES, "tablet"], routes: ["/"], selector: "li.pile-card" }],
-  },
-  "R-CAT-H1": {
-    symptom: "the topic title is one unbreakable word at 48px minimum: wider than the phone screen, and out of its column at 1280/1440",
-    where: [
-      { check: "overflow", projects: PHONES, routes: TOPICS, selector: "h1" },
-      { check: "heading", projects: PHONES, routes: TOPICS, selector: "h1" },
-      { check: "heading", projects: ["desktop", "wide"], routes: TOPICS.slice(1), selector: "h1" },
-    ],
-  },
-  "R-AUTHOR-H1": {
-    symptom: "'Yoga Firmansyah' h1 is 6px wider than the column at 320px",
-    where: [{ check: "heading", projects: ["phone-320"], routes: ["/authors/6"], selector: "h1" }],
-  },
-  "R-TEXT-10PX": {
-    symptom: "the text-[10px] class (logo byline, hero card badges and names, cover credits, ⌘K hint, Most read badges, dashboard tabs) is below the 11px minimum",
-    where: [{ check: "small-text", projects: "all", selector: '[class~="text-[10px]"], [class~="text-[10px]!"]' }],
-  },
-  "R-SEARCH-ICON": {
-    symptom: "the phone header search icon links to /search instead of opening the palette (docs/design.md 3, Header)",
-    where: [{ check: "test", projects: PHONES }],
-  },
-  "R-MENU-320": {
-    symptom: "'Categories' at text-5xl is 333px wide, so the phone menu scrolls sideways at 320px",
-    where: [{ check: "test", projects: ["phone-320"] }],
-  },
-  "R-MENU-RESIZE": {
-    symptom: "the open phone menu is hidden by CSS from md up but keeps body overflow hidden and aria-modal",
-    where: [{ check: "test", projects: PHONES }],
-  },
-  "R-HERO-REST": {
-    symptom: "hero rest poses are percent of the full width: cards are cut at the screen edge on phones/tablet and spread past the 1120px column on wide screens",
-    where: [{ check: "test", projects: [...PHONES, "tablet", "desktop", "wide"] }],
-  },
-  "R-FOOTER-PILLS": {
-    symptom: "footer rest poses cut a pill at the screen edge or cover the 'Drag the links' note on narrow screens",
-    where: [{ check: "test", projects: [...PHONES, "tablet", "laptop"] }],
-  },
-  "R-HERO-TILT": {
-    symptom: "rotating 6deg around the bottom-left corner pushes the hero's right side over the topics section",
-    where: [{ check: "test", projects: ["tablet", "laptop", "desktop", "wide"] }],
-  },
-  "R-WIDE-ALIGN": {
-    symptom: "header and footer are 1280px wide (max-w-7xl), the content column is 1120px",
-    where: [{ check: "test", projects: ["desktop", "wide"] }],
-  },
-  "R-AUTHOR-PILL": {
-    symptom: "'Yoga Firmansyah' spills out of its name pill at 320px",
-    where: [{ check: "test", projects: ["phone-320"], routes: ["/authors"] }],
-  },
-  "R-AUTHOR-BIO": {
-    symptom: "the bio and article count on the back of the author card run past the card on phones",
-    where: [{ check: "test", projects: PHONES, routes: ["/authors", "/about"] }],
-  },
-  "R-PROSE-URL": {
-    symptom: "prose-herald has overflow-wrap: normal, so an unbroken URL runs out of the column",
-    where: [{ check: "test", projects: "all" }],
-  },
-  "R-ABOUT-TEASER": {
-    symptom: "the About authors teaser stays at two columns from 768 to 1023px",
-    where: [{ check: "test", projects: ["tablet"] }],
-  },
   "R-DASH-BAR": {
     symptom: "the editor/review action bar sits at bottom-16 (64px) but the tab bar is 68px (83px when labels wrap)",
     where: [{ check: "test", projects: [...PHONES, "tablet"] }],

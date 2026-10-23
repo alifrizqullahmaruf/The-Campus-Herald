@@ -1,6 +1,7 @@
 "use client";
 
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
 // The palette UI is only downloaded the first time someone opens it.
 const CommandPalette = lazy(() => import("./command-palette"));
@@ -47,6 +48,23 @@ export function CommandPaletteTrigger() {
     <Suspense fallback={null}>
       <CommandPalette onClose={close} />
     </Suspense>
+  );
+}
+
+/**
+ * Phone header search icon: a link to /search (works without JavaScript) that
+ * opens the quick search palette instead on a plain click (docs/design.md 3, Header).
+ */
+export function SearchIconLink({ className, children }: { className?: string; children: ReactNode }) {
+  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    openSearchPalette();
+  };
+  return (
+    <Link href="/search" onClick={onClick} className={className}>
+      {children}
+    </Link>
   );
 }
 

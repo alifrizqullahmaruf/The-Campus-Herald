@@ -49,7 +49,7 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
           </h1>
           <p className="mt-5 text-xl leading-relaxed text-ink-muted">{article.excerpt}</p>
           <p className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-meta">
-            <Link href={`/authors/${article.author.id}`} className="underline underline-offset-4">
+            <Link href={`/authors/${article.author.id}`} className="tap-target underline underline-offset-4">
               {article.author.name}
             </Link>
             <span aria-hidden="true">·</span>

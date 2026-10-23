@@ -23,7 +23,7 @@ export default async function AuthorsPage() {
       </Container>
       <section aria-label="Authors" className="border-y-3 border-ink bg-ink py-14 md:py-20">
         <Container>
-          <ul className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+          <ul className="grid gap-4 min-[360px]:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {authors.map((author) => (
               <li key={author.id}>
                 <AuthorCard author={author} onDark />

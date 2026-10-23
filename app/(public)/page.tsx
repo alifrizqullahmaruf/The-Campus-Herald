@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryPill } from "@/components/ui/category-pill";
 import { CATEGORIES } from "@/lib/categories";
 import { getCategoryCounts, getPublishedArticles } from "@/lib/data/articles";
+import { cx } from "@/lib/cx";
 import { seeded } from "@/lib/motion";
 
 // Where hero items rest before (or without) physics: spread across the space
@@ -42,10 +43,16 @@ export default async function Home() {
     ...latest.slice(0, 6).map((article, i) => ({
       key: article.id,
       node: <HeroNoteCard article={article} />,
-      className: i >= 4 ? "max-sm:hidden" : undefined,
+      // --rest-pad: half the tilted card's width per breakpoint, keeps its rest pose on screen.
+      className: cx("[--rest-pad:92px] sm:[--rest-pad:110px] md:[--rest-pad:128px]", i >= 4 && "max-sm:hidden"),
     })),
-    { key: "editor", node: <EditorSticker />, shape: "circle" as const, decorative: true },
-    { key: "topics", node: <PillSticker className="bg-cat-organisations">5 TOPICS</PillSticker>, decorative: true },
+    { key: "editor", node: <EditorSticker />, shape: "circle" as const, decorative: true, className: "[--rest-pad:52px]" },
+    {
+      key: "topics",
+      node: <PillSticker className="bg-cat-organisations">5 TOPICS</PillSticker>,
+      decorative: true,
+      className: "[--rest-pad:60px]",
+    },
   ].map((item, i) => ({ ...item, rest: { ...HERO_REST[i], rotate: Math.round(seeded(i + 1) * 40 - 20) } }));
 
   const pills = CATEGORIES.map((category) => (
@@ -57,7 +64,7 @@ export default async function Home() {
       {/* Hero: articles drop onto the headline and can be thrown around. */}
       <section className="overflow-x-clip">
         <div className="hero-tilt">
-          <PhysicsPile items={heroItems} list="Latest notes" className="min-h-150 md:min-h-170">
+          <PhysicsPile items={heroItems} list="Latest notes" className="mx-auto min-h-150 w-full max-w-[1120px] md:min-h-170">
             <Container className="pointer-events-none flex min-h-150 flex-col justify-end pt-72 pb-14 md:min-h-170 md:pb-20">
               <h1 className="font-display text-[clamp(44px,6.5vw,84px)] leading-[0.95] font-black">
                 {HEADLINE.map((line, i) => (
@@ -129,7 +136,7 @@ export default async function Home() {
               // Toward the middle of the 3-column grid (used from lg up, see globals.css).
               "--px": `${(1 - col) * 100 + Math.round(seeded(i + 11) * 20 - 10)}%`,
               "--py": `${(row === 0 ? 1 : -1) * 45}%`,
-              "--pile-r": `${Math.round(seeded(i + 21) * 30 - 15)}deg`,
+              "--pr": `${Math.round(seeded(i + 21) * 30 - 15)}deg`,
             } as CSSProperties;
             return (
               <li key={article.id} className="pile-card flex" style={pile}>

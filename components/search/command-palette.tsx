@@ -100,7 +100,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
           type="button"
           aria-label="Close search"
           onClick={() => dialogRef.current?.close()}
-          className="rounded-md border-2 border-ink bg-surface px-1.5 py-0.5 text-meta"
+          className="tap-target rounded-md border-2 border-ink bg-surface px-1.5 py-0.5 text-meta"
         >
           Esc
         </button>
@@ -111,7 +111,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
           type="button"
           aria-pressed={category === ""}
           onClick={() => setCategory("")}
-          className={cx("rounded-full border-2 border-ink bg-surface px-2.5 py-0.5 font-display text-xs font-extrabold", category === "" && "outline-2 outline-offset-2 outline-dashed")}
+          className={cx("tap-target rounded-full border-2 border-ink bg-surface px-2.5 py-0.5 font-display text-xs font-extrabold", category === "" && "outline-2 outline-offset-2 outline-dashed")}
         >
           All
         </button>
@@ -122,7 +122,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
             aria-pressed={category === c.slug}
             onClick={() => setCategory(category === c.slug ? "" : c.slug)}
             className={cx(
-              "rounded-full border-2 border-ink px-2.5 py-0.5 font-display text-xs font-extrabold",
+              "tap-target rounded-full border-2 border-ink px-2.5 py-0.5 font-display text-xs font-extrabold",
               c.bgClass,
               c.textClass,
               category === c.slug && "outline-2 outline-offset-2 outline-dashed",
@@ -168,10 +168,24 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
         })}
       </ul>
 
-      <div aria-hidden="true" className="flex gap-4 border-t-3 border-ink bg-paper px-4 py-2 text-meta text-ink-muted">
-        <span>↑↓ to move</span>
-        <span>↵ to open</span>
-        <span>Esc to close</span>
+      <div className="flex items-center justify-between gap-4 border-t-3 border-ink bg-paper px-4 py-2 text-meta text-ink-muted">
+        <span aria-hidden="true" className="flex gap-4 pointer-coarse:hidden">
+          <span>↑↓ to move</span>
+          <span>↵ to open</span>
+          <span>Esc to close</span>
+        </span>
+        <a
+          href={query.trim() ? `/search?q=${encodeURIComponent(query.trim())}` : "/search"}
+          onClick={(event) => {
+            event.preventDefault();
+            const href = event.currentTarget.getAttribute("href") ?? "/search";
+            dialogRef.current?.close();
+            router.push(href);
+          }}
+          className="tap-target ml-auto text-ink underline underline-offset-4"
+        >
+          All results →
+        </a>
       </div>
     </dialog>
   );

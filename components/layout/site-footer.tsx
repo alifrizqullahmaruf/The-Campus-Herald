@@ -12,13 +12,16 @@ const PILL_COLOURS = [
   "bg-cat-organisations",
 ];
 
-// Rest poses before the pills drop (and with reduced motion): along the top.
+// Rest poses before the pills drop (and with reduced motion): two staggered rows
+// along the top, so narrow screens can still read every pill. `pad` is half the
+// pill (tilted): the pose is kept that far from the edges (globals.css). Written
+// out in full so Tailwind generates the classes.
 const REST = [
-  { left: 8, top: 10, rotate: -6 },
-  { left: 24, top: 8, rotate: 5 },
-  { left: 40, top: 11, rotate: -3 },
-  { left: 55, top: 8, rotate: 8 },
-  { left: 70, top: 10, rotate: -5 },
+  { left: 10, top: 8, rotate: -6, pad: "[--rest-pad:60px]" },
+  { left: 30, top: 22, rotate: 5, pad: "[--rest-pad:82px]" },
+  { left: 50, top: 8, rotate: -3, pad: "[--rest-pad:67px]" },
+  { left: 70, top: 22, rotate: 6, pad: "[--rest-pad:58px]" },
+  { left: 90, top: 8, rotate: -5, pad: "[--rest-pad:64px]" },
 ];
 
 /**
@@ -29,6 +32,7 @@ export function SiteFooter() {
   const pills: PileItem[] = FOOTER_LINKS.map((link, i) => ({
     key: link.href,
     rest: REST[i],
+    className: REST[i].pad,
     node: (
       <Link
         href={link.href}
@@ -42,12 +46,9 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-auto overflow-x-clip border-t-3 border-ink bg-ink text-paper">
-      <div className="mx-auto w-full max-w-7xl px-4 pt-12 pb-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1120px] px-4 pt-12 pb-6 sm:px-6 lg:px-8">
         <nav aria-label="Footer">
           <PhysicsPile items={pills} list="Footer links" start="view" className="pt-32 md:pt-36">
-            <p aria-hidden="true" className="absolute top-2 right-0 -rotate-3 rounded-full border-2 border-paper px-3 py-1 text-meta">
-              Drag the links, they&apos;re real.
-            </p>
             <p
               aria-hidden="true"
               className="pointer-events-none font-display text-[clamp(56px,15vw,200px)] leading-[0.85] font-black uppercase"
@@ -60,12 +61,16 @@ export function SiteFooter() {
                 Notes
               </span>
             </p>
+            {/* Under the wordmark, so the pills never cover it; also something to land on. */}
+            <p aria-hidden="true" data-physics-obstacle className="mt-4 ml-auto w-fit -rotate-3 rounded-full border-2 border-paper px-3 py-1 text-meta">
+              Drag the links, they&apos;re real.
+            </p>
           </PhysicsPile>
         </nav>
 
         <div className="mt-8 flex flex-col gap-2 border-t-2 border-paper/30 pt-4 text-meta sm:flex-row sm:justify-between">
           <p>© 2026 Side Notes · A community blog by The Campus Herald</p>
-          <Link href="/login" className="underline underline-offset-4">
+          <Link href="/login" className="tap-target self-start underline underline-offset-4">
             Author log in
           </Link>
         </div>

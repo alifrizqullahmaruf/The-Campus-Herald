@@ -50,7 +50,7 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
         aria-current={active ? "page" : undefined}
         className={cx(
           "flex items-center rounded-inner border-2 font-display font-extrabold",
-          compact ? "flex-col gap-0.5 px-1 py-1.5 text-[10px]" : "gap-3 px-3 py-2 text-sm",
+          compact ? "flex-col gap-0.5 px-1 py-1.5 text-[11px]" : "gap-3 px-3 py-2 text-sm",
           active ? "border-ink bg-cat-events shadow-hard" : "border-transparent hover:border-ink hover:bg-surface",
         )}
       >

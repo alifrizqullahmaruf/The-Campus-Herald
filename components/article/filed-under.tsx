@@ -16,12 +16,12 @@ export function FiledUnder({ slug }: { slug: CategorySlug }) {
       <p className="mt-3 text-sm text-ink-muted">{category.description}</p>
       <ul className="mt-4 space-y-2 font-display text-sm font-extrabold">
         <li>
-          <Link href={`/categories/${slug}`} className="underline-offset-4 hover:underline">
+          <Link href={`/categories/${slug}`} className="tap-target underline-offset-4 hover:underline">
             More in {category.name} →
           </Link>
         </li>
         <li>
-          <Link href="/search" className="underline-offset-4 hover:underline">
+          <Link href="/search" className="tap-target underline-offset-4 hover:underline">
             All articles →
           </Link>
         </li>

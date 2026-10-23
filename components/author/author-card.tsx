@@ -60,7 +60,8 @@ export function AuthorCard({
           )}
         >
           <span className="text-meta">{author.beat}</span>
-          <p className="mt-3 font-display text-lg font-extrabold leading-snug">{author.bio}</p>
+          {/* Phones don't flip on hover and the card is too small for the bio; it's on the author page. */}
+          <p className="mt-3 hidden font-display text-lg font-extrabold leading-snug sm:block">{author.bio}</p>
           <p className="mt-auto text-meta">
             {author.articleCount} {author.articleCount === 1 ? "article" : "articles"} · Read them →
           </p>

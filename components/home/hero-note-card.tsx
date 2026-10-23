@@ -15,14 +15,14 @@ export function HeroNoteCard({ article }: { article: ArticleWithRelations }) {
         category?.textClass,
       )}
     >
-      <CategoryBadge name={article.category.name} className="self-start text-[10px]!" />
+      <CategoryBadge name={article.category.name} className="self-start text-[11px]!" />
       <p className="mt-2 line-clamp-3 font-display text-sm leading-tight font-extrabold md:text-base">
         {/* Dragging is handled by the pile; a plain press opens the article. */}
         <Link href={`/articles/${article.slug}`} draggable={false} className="after:absolute after:inset-0">
           {article.title}
         </Link>
       </p>
-      <p className="mt-2 text-[10px] font-semibold tracking-wide uppercase">{article.author.name}</p>
+      <p className="mt-2 text-[11px] font-semibold tracking-wide uppercase">{article.author.name}</p>
     </div>
   );
 }

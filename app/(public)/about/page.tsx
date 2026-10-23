@@ -112,9 +112,10 @@ export default async function AboutPage() {
             </Button>
           }
         />
-        <ul className="mt-10 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-          {authors.slice(0, 4).map((author) => (
-            <li key={author.id}>
+        <ul className="mt-10 grid gap-4 min-[360px]:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+          {authors.slice(0, 4).map((author, i) => (
+            // Three columns on tablets: the fourth card joins from lg.
+            <li key={author.id} className={i === 3 ? "md:max-lg:hidden" : undefined}>
               <AuthorCard author={author} />
             </li>
           ))}

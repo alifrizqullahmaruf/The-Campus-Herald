@@ -62,6 +62,8 @@
    The parent sets --cat-bg / --cat-fg to the article's category colours. */
 @utility prose-herald {
   max-width: 68ch;
+  /* Long URLs and words break instead of widening the page. */
+  overflow-wrap: anywhere;
   font-size: 1.125rem;
   line-height: 1.7;
 
@@ -197,7 +199,9 @@
 @utility hero-tilt {
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
-      transform-origin: 0% 100%;
+      /* Pivot at the bottom-right: the hero lifts away to the upper left and never
+         drops over the section below. */
+      transform-origin: 100% 100%;
       animation: hero-tilt-out linear both;
       animation-timeline: view();
       animation-range: exit 0% exit 100%;
@@ -218,11 +222,15 @@
 @utility pile-card {
   /* Cards gather toward the middle only on the 3-column layout; on narrower
      screens they just start tilted, so nothing slides off the side. */
+  /* Below lg only a fifth of the tilt (at most 3deg), so a full-width card stays
+     inside the page gutter. */
   --pile-x: 0px;
   --pile-y: 0px;
+  --pile-r: calc(var(--pr, 0deg) / 5);
   @media (min-width: 64rem) {
     --pile-x: var(--px, 0px);
     --pile-y: var(--py, 0px);
+    --pile-r: var(--pr, 0deg);
   }
   @supports (animation-timeline: view()) {
     @media (prefers-reduced-motion: no-preference) {
@@ -288,7 +296,8 @@
    Items rest at their CSS pose until the simulation takes over; with JS on and
    motion allowed they stay hidden while Matter.js loads, then drop in. */
 [data-physics] [data-body] {
-  left: var(--rest-left);
+  /* --rest-pad (half the item's tilted width) keeps the rest pose on screen. */
+  left: clamp(var(--rest-pad, 0px), var(--rest-left), calc(100% - var(--rest-pad, 0px)));
   top: var(--rest-top);
   translate: -50% -50%;
   rotate: var(--rest-rotate);
@@ -310,5 +319,20 @@
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   [data-physics="pending"] [data-body]:not(:focus-within) {
     opacity: 0;
+  }
+}
+
+/* At least 44x44px to tap (docs/design.md, accessibility) without changing how
+   a small link or chip looks: an invisible, centred hit area. */
+@utility tap-target {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
   }
 }

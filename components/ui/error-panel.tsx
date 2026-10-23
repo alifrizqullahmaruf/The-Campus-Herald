@@ -10,7 +10,7 @@ export function ErrorPanel({ error, retry, home }: { error: Error & { digest?: s
   }, [error]);
 
   return (
-    <div role="alert" className="mx-auto my-16 w-full max-w-lg rounded-card border-3 border-ink bg-surface p-8 text-center shadow-hard">
+    <div role="alert" className="mx-4 my-16 max-w-lg rounded-card sm:mx-auto border-3 border-ink bg-surface p-8 text-center shadow-hard">
       <p className="font-display text-5xl font-black">Oops.</p>
       <h1 className="mt-3 font-display text-2xl font-black">Something went wrong on our side.</h1>
       <p className="mt-2 text-ink-muted">Try again in a moment. If it keeps happening, tell The Campus Herald.</p>

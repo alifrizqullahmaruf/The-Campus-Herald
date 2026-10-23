@@ -145,7 +145,7 @@ function FilterButton({
       aria-pressed={active}
       onClick={onClick}
       className={cx(
-        "rounded-full border-2 border-ink px-3 py-1 font-display text-sm font-extrabold",
+        "tap-target rounded-full border-2 border-ink px-3 py-1 font-display text-sm font-extrabold",
         className ?? "bg-surface",
         active && "shadow-hard outline-2 outline-offset-2 outline-ink outline-dashed",
       )}

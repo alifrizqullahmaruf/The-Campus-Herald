@@ -37,7 +37,7 @@ export function ArticleRow({
           </Link>
         </p>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-meta text-ink-muted">
-          <CategoryBadge name={article.category.name} className="text-[10px]!" />
+          <CategoryBadge name={article.category.name} className="text-[11px]!" />
           {showViews ? `${formatCount(article.viewCount)} reads` : `${article.readingMinutes} min`}
         </p>
       </div>

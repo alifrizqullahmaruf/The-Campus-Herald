@@ -21,9 +21,17 @@ export function MobileMenu() {
       if (event.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
+    // The sheet is hidden from md up (rotating a tablet, widening a window): close it
+    // there too, or the page would stay scroll-locked behind an invisible dialog.
+    const wide = typeof window.matchMedia === "function" ? window.matchMedia("(min-width: 48rem)") : null;
+    const onWide = () => {
+      if (wide?.matches) setOpen(false);
+    };
+    wide?.addEventListener("change", onWide);
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
+      wide?.removeEventListener("change", onWide);
     };
   }, [open]);
 
@@ -69,13 +77,13 @@ export function MobileMenu() {
             <ul className="space-y-2">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} onClick={close} className="font-display text-5xl font-black leading-tight">
+                  <Link href={link.href} onClick={close} className="font-display text-[clamp(2.25rem,12vw,3rem)] font-black leading-tight">
                     {link.label}
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href="/search" onClick={close} className="font-display text-5xl font-black leading-tight">
+                <Link href="/search" onClick={close} className="font-display text-[clamp(2.25rem,12vw,3rem)] font-black leading-tight">
                   Search
                 </Link>
               </li>

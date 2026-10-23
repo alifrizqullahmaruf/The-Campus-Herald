@@ -42,7 +42,7 @@ export default async function AuthorPage({ params }: PageProps<"/authors/[id]">)
                 </span>
               )}
             </div>
-            <h1 className="mt-3 font-display text-[clamp(40px,7vw,80px)] font-black leading-[0.95]">{author.name}</h1>
+            <h1 className="mt-3 font-display text-[clamp(36px,7vw,80px)] font-black leading-[0.95]">{author.name}</h1>
             <p className="mt-4 max-w-xl text-lg text-ink-muted">{author.bio}</p>
             <p className="mt-4 text-meta">
               {author.articleCount} published {author.articleCount === 1 ? "article" : "articles"}

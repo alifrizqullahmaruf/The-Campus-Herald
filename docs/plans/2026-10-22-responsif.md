@@ -1,7 +1,7 @@
 # Plan: Tampilan responsif (publik + dashboard)
 
 **Tanggal:** 2026-10-22
-**Status:** Tahap 1 selesai dan di-commit. Tahap 2 sedang dikerjakan
+**Status:** Tahap 1 selesai (`a2ac2f0`). Tahap 2 selesai dan di-commit atas permintaan user sebelum review `code-reviewer` selesai; temuan review ditindaklanjuti di commit berikutnya. Berikutnya: upgrade Next.js 16.4.0 → 16.4.2 (keamanan, plan terpisah), lalu Tahap 3
 
 ## Context
 
@@ -101,7 +101,7 @@ Hanya temuan yang **terbukti** di Tahap 1 yang dikerjakan. Daftar ini adalah dug
 | 1 | Setujui plan dan keputusan di atas | User | – | ✅ |
 | 2 | Tahap 1: alat ukur, test, dan screenshot bukti | Claude + `qa-tester` | `playwright.config.ts`, `e2e/layout.ts`, `e2e/known-bugs.ts`, `e2e/axe.ts`, `e2e/responsive.spec.ts` (baru), `e2e/mobile.spec.ts`, `e2e/pages.ts`, `e2e/smoke.spec.ts` | ✅ |
 | 3 | Laporan bukti: daftar masalah yang benar terjadi, dengan gambar | Claude → User | – | ✅ 2026-10-22 |
-| 4 | Tahap 2: perbaikan halaman publik + design.md | Claude | lihat tabel Tahap 2 | Belum |
+| 4 | Tahap 2: perbaikan halaman publik + design.md | Claude | lihat bagian "Hasil Tahap 2" | ✅ |
 | 5 | Tahap 3: perbaikan dashboard dan login + design.md | Claude | lihat tabel Tahap 3 | Belum |
 | 6 | Verifikasi lengkap, `qa-tester`, `code-reviewer` | Claude | – | Belum |
 | 7 | Commit + push per tahap setelah konfirmasi | Claude | – | Belum |
@@ -138,3 +138,32 @@ Catatan alat ukur: laporan target sentuh hanya berupa anotasi (tidak pernah memb
 |---------|-------|----------|
 | 1 | Tidak ada Kritis/Tinggi. Sedang: `test.fail()` per halaman menyembunyikan regresi baru; test bug lulus pada error apa pun; scan overflow berhenti setelah 40 langkah. Rendah: logika ancestor pemotong, `facingAway`, race resize menu, rect judul ikut stiker, keterbacaan | `qa-tester` memperbaiki semuanya: registry `KNOWN_BUGS` per gejala (tanpa `test.fail`), gejala spesifik wajib terbukti, scan sampai bawah (`reachedBottom`), helper axe bersama. Eksperimen: elemen 500 px yang disisipkan membuat test beranda **gagal**; bug yang "diperbaiki" membuat test gagal dengan "delete the entry"; kontrol lulus |
 | 2 | Perbaikan terverifikasi, tidak ada jalur lulus palsu yang berdampak. Sedang: plan tidak sesuai kode. Rendah: kelonggaran 3 px `docOverflow`, judul yang diputar bisa terlewat, `known` teks kecil hanya dari rute terakhir | Plan diperbarui (file ini). Judul yang diputar tetap dicek; `known` digabung dari ketiga rute; batasan kelonggaran dicatat sebagai komentar. Test yang terkena lulus di 6 ukuran |
+
+## Hasil Tahap 2 (2026-10-23)
+
+15 bug halaman publik diperbaiki dan dihapus dari `e2e/known-bugs.ts`; test-nya kini menuntut perilaku yang benar di 6 ukuran.
+
+| Bug | Perbaikan | File |
+|-----|-----------|------|
+| R-CAT-H1 | Judul topic `clamp(28px, 8.4vw, 104px)`, ikon di atas nama di bawah `sm`. Halaman HP tidak lagi diperkecil (screenshot 320: 507 px → 320 px) | `app/(public)/categories/[slug]/page.tsx` |
+| R-HOME-FRESH | Di bawah `lg` kemiringan kartu "Fresh" hanya seperlima (≤ 3°) | `app/globals.css`, `app/(public)/page.tsx` |
+| R-HERO-REST | Tumpukan hero dibatasi kolom 1120 px; posisi diam di-clamp dengan `--rest-pad` per item | `app/(public)/page.tsx`, `app/globals.css` |
+| R-HERO-TILT | Poros kemiringan di pojok kanan bawah, hero tidak turun menimpa section berikut | `app/globals.css` |
+| R-FOOTER-PILLS | Pill diam dalam dua baris berselang, di-clamp per lebar pill; catatan "Drag the links" dipindah ke bawah wordmark dan jadi obstacle | `components/layout/site-footer.tsx` |
+| R-WIDE-ALIGN | Header dan footer memakai kolom 1120 px | `site-header.tsx`, `site-footer.tsx` |
+| R-SEARCH-ICON | Ikon cari di HP membuka palet (tetap link `/search` tanpa JS); palet punya link "All results →"; petunjuk keyboard disembunyikan di layar sentuh | `command-palette-trigger.tsx`, `command-palette.tsx`, `site-header.tsx` |
+| R-MENU-320, R-MENU-RESIZE | Teks menu `clamp(2.25rem, 12vw, 3rem)`; menu menutup sendiri saat layar melewati `md` | `components/layout/mobile-menu.tsx` |
+| R-AUTHOR-PILL, R-AUTHOR-BIO | Kartu penulis 1 kolom di bawah 360 px; bio di sisi belakang mulai `sm` | `author-card.tsx`, `authors/page.tsx`, `about/page.tsx` |
+| R-AUTHOR-H1 | `clamp(36px, 7vw, 80px)` | `app/(public)/authors/[id]/page.tsx` |
+| R-TEXT-10PX | Semua `text-[10px]` → `text-[11px]` | logo, hero card, kredit foto, Most read, header, tab dashboard |
+| R-PROSE-URL | `overflow-wrap: anywhere` di `prose-herald` | `app/globals.css` |
+| R-ABOUT-TEASER | Teaser 3 kolom di tablet, kartu ke-4 mulai `lg` | `app/(public)/about/page.tsx` |
+| Kartu error | Margin samping di HP | `components/ui/error-panel.tsx` |
+| Target sentuh | Utility `tap-target` (area sentuh 44×44 tak terlihat) di pill kecil, filter cari dan palet, "Filed under", byline, "Author log in" | `app/globals.css` + komponen terkait |
+
+Temuan saat mengecek screenshot (tidak tertangkap test) dan perbaikannya:
+- Logo di 320 px turun dua baris dan teks kecilnya terpotong (efek 10 → 11 px): logo `whitespace-nowrap`, mark 36 px di bawah 360 px.
+- Perbaikan logo itu membuat header **meluber 39 px di 768 px** (tertangkap test overflow tablet): jarak nav dan kolom cari dirapatkan di `md`–`lg`.
+- Pill footer statis di 320 saling tumpuk sampai tak terbaca: dua baris berselang.
+
+Verifikasi: unit 93 ✅; lint, tsc, build ✅; E2E penuh **481 lulus, 0 gagal** (6 ukuran). Catatan: satu run sempat memakai build lama karena build gagal saat server lama memegang `.next`; diulang setelah port dikosongkan. Screenshot sesudah: `scratchpad/responsive-after/`. design.md diperbarui (layout 2.4, motion, header, kartu penulis, palet, footer, aksesibilitas).

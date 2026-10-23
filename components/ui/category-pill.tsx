@@ -20,7 +20,7 @@ const SIZES = {
     count: "min-w-8 border-2 px-1.5 py-0.5",
   },
   sm: {
-    pill: "gap-1.5 border-2 px-3 py-1 text-sm shadow-[2px_2px_0_0_var(--color-ink)]",
+    pill: "tap-target gap-1.5 border-2 px-3 py-1 text-sm shadow-[2px_2px_0_0_var(--color-ink)]",
     icon: "size-3.5",
     count: "min-w-5 border px-1",
   },

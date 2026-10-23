@@ -27,7 +27,7 @@ export function ArticleCover({
       <CoverImage src={coverImage} seed={article.id} category={article.category.slug} sizes={sizes} priority={priority} />
       {coverImage && coverCredit && (
         // relative z-10 keeps the credit links clickable above a card's stretched link.
-        <p className="absolute bottom-1.5 left-1.5 z-10 max-w-[calc(100%-12px)] truncate rounded-full border border-ink bg-surface/90 px-2 py-0.5 text-[10px] text-ink">
+        <p className="absolute bottom-1.5 left-1.5 z-10 max-w-[calc(100%-12px)] truncate rounded-full border border-ink bg-surface/90 px-2 py-0.5 text-[11px] text-ink">
           Photo: <CreditLink href={coverCredit.profileUrl}>{coverCredit.name}</CreditLink> on{" "}
           <CreditLink href={coverCredit.photoUrl}>{coverCredit.source}</CreditLink>
         </p>

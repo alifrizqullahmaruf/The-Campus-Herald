@@ -37,7 +37,7 @@ export default function NotFound() {
           ))}
         </div>
         <p className="mt-10 text-sm">
-          <Link href="/login" className="underline underline-offset-4">
+          <Link href="/login" className="tap-target underline underline-offset-4">
             Author log in
           </Link>
         </p>

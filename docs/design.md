@@ -127,7 +127,9 @@ Images inside cards are framed: `border-thin`, `radius-inner`, inset 12px from t
 - Content container: max 1120px, side gutter 16px (phone) / 24px (tablet) / 32px (desktop).
 - Section rhythm: 64px vertical padding on phone, 96px on desktop. Full-bleed colour bands separated by a 3px ink rule.
 - Breakpoints (Tailwind defaults): `sm` 640, `md` 768, `lg` 1024, `xl` 1280.
-- Grids: article cards 1 col → 2 (`md`) → 3 (`lg`). Category tiles 1 → 2.
+- Grids: article cards 1 col → 2 (`md`) → 3 (`lg`). Category tiles 1 → 2. Author cards 1 col below 360px → 2 → 3 (`md`) → 4 (`lg`); the About teaser shows 3 cards on tablets and 4 from `lg`.
+- Header and footer use the same 1120px column as the content, so they line up on wide screens. The home hero pile is limited to that column too.
+- Checked at 320, 375, 768, 1024, 1280 and 1440px by `e2e/responsive.spec.ts` (no sideways scroll, no clipped headings). Long unbreakable words (topic names) are sized so they fit a 320px screen: the topic page title is `clamp(28px, 8.4vw, 104px)` with the icon above the name below `sm`.
 
 ### 2.5 Motion
 
@@ -144,8 +146,8 @@ Measured from the template recording (2026-10-17): micro-interactions are quick 
 | Marquee | horizontal scroll of latest headlines | ~40s per loop, linear | Under the hero |
 | Drifting rows | topic pill rows drift in opposite directions (36 px/s); drag with momentum | continuous | Home "Pick a topic." (`TopicRows`) |
 | Physics pile | items drop in, tumble and collide (Matter.js), can be thrown | ~2s to settle | Home hero cards, footer nav pills (`PhysicsPile`) |
-| Hero tilt | hero rotates 6deg and lifts as it scrolls out | scroll-linked | Home hero (`hero-tilt`) |
-| Pile → grid | latest cards start as a tilted pile and settle into the grid | scroll-linked | Home "Fresh off the notebook." (`pile-card`) |
+| Hero tilt | hero rotates 6deg around its bottom-right corner and lifts as it scrolls out, so it never drops over the next section | scroll-linked | Home hero (`hero-tilt`) |
+| Pile → grid | latest cards start as a tilted pile and settle into the grid; below `lg` only a fifth of the tilt (≤ 3deg) so full-width cards stay inside the gutter | scroll-linked | Home "Fresh off the notebook." (`pile-card`) |
 | Page crossfade | old and new page crossfade; header stays put | 200ms | Public layout (`<ViewTransition>`) |
 | Modal | fade + scale 0.98 → 1 | 150ms | Search palette |
 
@@ -161,7 +163,7 @@ Rules:
 ## 3. Components
 
 ### Header
-Sticky, `paper` background, 3px ink rule at the bottom. Left: logo mark (page + sticky note, 44px wide) + wordmark "Side Notes" with "by The Campus Herald" beneath. Centre (≥ `md`): Latest · Categories · Authors · About. Right: search field with `⌘K` hint and, in place of the template's Subscribe button, nothing on public pages. Logged-in users see a "Dashboard" button. Phone: logo, search icon, menu icon; menu opens a full-screen sheet.
+Sticky, `paper` background, 3px ink rule at the bottom. Left: logo mark (page + sticky note, 44px wide) + wordmark "Side Notes" with "by The Campus Herald" beneath. Centre (≥ `md`): Latest · Categories · Authors · About. Right: search field with `⌘K` hint and, in place of the template's Subscribe button, nothing on public pages. Logged-in users see a "Dashboard" button. Phone: logo, search icon, menu icon. The search icon opens the quick search palette (it is still a link to `/search` without JavaScript); the menu opens a full-screen sheet, which closes itself if the screen widens past `md`. From `md` to `lg` the nav gaps and the search field are a little narrower so the row fits at 768px. Below 360px the logo mark is 36px wide so the wordmark stays on one line.
 
 ### Button
 Pill shape, `border`, `shadow`, display font 15–16px weight 800, trailing arrow "→" for navigation.
@@ -201,7 +203,7 @@ Client request. Eyebrow "THIS WEEK", title "Most read.", five compact rows ranke
 
 ### Search
 - **Inline box:** yellow card with `border` + `shadow`, title "Lost something? Search the archive.", input, and popular category pills.
-- **Command palette (⌘K / Ctrl+K, or the header search icon):** modal with yellow header holding the input and an Esc key chip, a row of category filter pills ("All" + five), result count in mono, compact result rows, and a footer of keyboard hints (↑↓ to move, ↵ to open, Esc to close). Selected row is filled with its category colour. Backdrop: paper at 80% with a faint dot grid.
+- **Command palette (⌘K / Ctrl+K, or the header search icon):** modal with yellow header holding the input and an Esc key chip, a row of category filter pills ("All" + five), result count in mono, compact result rows, and a footer with keyboard hints (↑↓ to move, ↵ to open, Esc to close; hidden on touch screens) and an "All results →" link to the search page. Selected row is filled with its category colour. Backdrop: paper at 80% with a faint dot grid.
 
 ### Marquee ticker
 Ink band under the home hero, scrolling the latest headlines, each prefixed with a small category badge. Pauses on hover and focus. Hidden from screen readers (`aria-hidden`), because the same headlines appear in the "Latest" section.
@@ -215,7 +217,7 @@ Large card in the category colour: mono "N articles in the archive" chip top-lef
 - **Writer avatars:** DiceBear "Notionists" (CC0, no attribution), generated from the writer's name on their main topic colour; served as static SVG files from `/avatars/[id]` so they stay out of the HTML. Initials remain the fallback (e.g. accounts added in the preview).
 
 ### Author card
-Coloured square (author's most-used category colour), the writer's avatar filling the middle, name in a surface pill at the bottom, role in mono at the top ("OPINION WRITER"). Hover or focus flips to a short bio; tap on phone goes straight to the author page. Flip is disabled under reduced motion (show the bio on the author page instead).
+Coloured square (author's most-used category colour), the writer's avatar filling the middle, name in a surface pill at the bottom, role in mono at the top ("OPINION WRITER"). Hover or focus flips to a short bio (from `sm`; on phones the back shows only the role and article count, the card is too small for the bio); tap on phone goes straight to the author page. Flip is disabled under reduced motion (show the bio on the author page instead).
 
 ### Article page parts
 - **Header:** category badge, display-lg title, lead paragraph, author + date + read time in mono, framed cover image.
@@ -230,7 +232,7 @@ Coloured square (author's most-used category colour), the writer's avatar fillin
 Full-bleed background in a category or accent colour with ink rules top and bottom. Use at most one band between two paper sections.
 
 ### Footer
-Ink background, oversized "SIDE NOTES" wordmark in display font (paper and red), a row of link pills (Latest, Categories, Search, Authors, About), and a mono line: "© 2026 Side Notes · A community blog by The Campus Herald". No draggable links.
+Ink background, oversized "SIDE NOTES" wordmark in display font (paper and red), a row of link pills (Latest, Categories, Search, Authors, About), and a mono line: "© 2026 Side Notes · A community blog by The Campus Herald". The pills are a physics pile that falls onto the wordmark (section 2.5); their rest poses are two staggered rows kept on screen, and the "Drag the links, they’re real." note sits under the wordmark so the pills never cover it.
 
 ### Form controls (dashboard and login)
 Inputs: surface, `border`, `radius-inner`, 48px height, mono placeholder. Focus: yellow 3px outline outside the border. Errors: red border + message in ink below with a warning icon. Labels above the field, body font, weight 600.
@@ -299,7 +301,7 @@ These template features are out of scope in the SRS and must not be built. (Drag
 - Respect `prefers-reduced-motion` (section 2.5).
 - Cover images need `alt` text; the editor asks for it on upload.
 - Modal search traps focus, closes on Esc, and returns focus to the trigger.
-- Minimum body size 15px on phone; tap targets at least 44px.
+- Minimum body size 15px on phone; no text below 11px (meta size). Tap targets at least 44px: small links and chips keep their look and get an invisible 44×44px hit area (`tap-target` utility in `app/globals.css`).
 
 ## 7. Performance budget
 

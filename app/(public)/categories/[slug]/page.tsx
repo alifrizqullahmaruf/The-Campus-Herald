@@ -31,7 +31,8 @@ export default async function CategoryPage({ params }: PageProps<"/categories/[s
       <header className={cx("border-b-3 border-ink py-14 md:py-20", category.bgClass, category.textClass)}>
         <Container>
           <Eyebrow>Topic</Eyebrow>
-          <h1 className="mt-3 flex items-center gap-4 font-display text-[clamp(48px,9vw,112px)] font-black leading-[0.95]">
+          {/* The topic name is one long word: sized to fit a 320px screen and the 1120px column. */}
+          <h1 className="mt-3 flex flex-col items-start gap-3 font-display text-[clamp(28px,8.4vw,104px)] font-black leading-[0.95] sm:flex-row sm:items-center sm:gap-4">
             <Icon aria-hidden="true" className="size-[0.8em] shrink-0" strokeWidth={2.5} />
             {category.name}
           </h1>
