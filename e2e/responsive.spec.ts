@@ -1,6 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { axeViolations } from "./axe";
-import { isOpen, knownSelectors, stillOpen } from "./known-bugs";
 import {
   findClippedHeadings,
   findHorizontalOverflow,
@@ -9,7 +8,6 @@ import {
   listSmallTapTargets,
   measureAuthorCards,
   measureHeaderRow,
-  type BugSelectors,
 } from "./layout";
 import { DASHBOARD_PAGES, NOT_FOUND_PAGES, PUBLIC_PAGES } from "./pages";
 
@@ -17,17 +15,13 @@ import { DASHBOARD_PAGES, NOT_FOUND_PAGES, PUBLIC_PAGES } from "./pages";
 // laptop (1024), desktop (1280) and wide (1440). See playwright.config.ts and
 // docs/plans/2026-10-22-responsif.md.
 //
-// No test here is marked test.fail(). Open bugs live in e2e/known-bugs.ts:
-// per-route scans filter out the elements a known bug accounts for, require
-// that bug to still show, and fail on anything else; interaction tests assert
-// the bug's specific symptom where it is open and the correct value elsewhere.
-// When a bug is fixed its test fails with "… If it was fixed, delete the entry";
-// deleting that one entry switches the test to the correct expectation.
+// Every test checks the correct layout. A bug that can't be fixed right away:
+// skip it only where it shows, e.g. test.fixme(project() === "phone-320", "R-…: bug"),
+// and note it in the plan.
 
 const ROUTES = [...PUBLIC_PAGES, ...NOT_FOUND_PAGES, ...DASHBOARD_PAGES];
 
 const project = () => test.info().project.name;
-const open = (id: string, route?: string) => isOpen(id, project(), route);
 const width = (page: Page) => page.viewportSize()?.width ?? 0;
 
 /** The element's box, after asserting it is visible (a changed page fails here, loudly). */
@@ -38,47 +32,22 @@ async function boxOf(locator: Locator) {
   return box as NonNullable<typeof box>;
 }
 
-/**
- * Known-offender check for the per-route scans: every known bug that applies
- * here must still account for at least one item, and no item may be left
- * that no known bug accounts for.
- */
-function expectOnlyKnown<T extends { bugs: string[] }>(items: T[], known: BugSelectors, where: string, format: (items: T[]) => string) {
-  for (const [id] of known) {
-    expect(items.some((item) => item.bugs.includes(id)), `${stillOpen(id)} (${where})`).toBe(true);
-  }
-  const unknown = items.filter((item) => item.bugs.length === 0);
-  expect(unknown.length, `new problem(s) ${where}, not covered by KNOWN_BUGS:\n${format(unknown)}`).toBe(0);
-}
-
 for (const path of ROUTES) {
   test(`${path} has no horizontal overflow`, async ({ page }) => {
-    const known = knownSelectors("overflow", project(), path);
     await page.goto(path);
     await page.waitForLoadState("networkidle");
-    const report = await findHorizontalOverflow(page, known);
+    const report = await findHorizontalOverflow(page);
     expect(report.reachedBottom, `the scan stopped after ${report.steps} step(s) before the bottom of the page`).toBe(true);
-    expectOnlyKnown(report.offenders, known, `on ${path}`, (o) => formatOffenders(o, report.clientWidth));
-    // The document may only be as much wider than the screen as the known offenders reach.
-    // Chromium rounds the scrollable overflow of a rotated box out to whole pixels
-    // (measured: a card reaching 32.49px past the edge gives scrollWidth +34), hence
-    // 3px of slack when a known (rotated) offender is present, 1px otherwise.
-    const knownOffenders = report.offenders.filter((o) => o.bugs.length > 0);
-    // Limit: an element the scan skips (visibility:hidden, ≤1px, facing away) that widens
-    // the page by less than this allowance would go unnoticed on pages with a known bug.
-    const allowed = Math.max(0, ...knownOffenders.map((o) => o.right - report.clientWidth));
-    expect(report.docOverflow, `the page scrolls ${report.docOverflow}px sideways; known bugs account for ${allowed}px`).toBeLessThanOrEqual(
-      allowed + (knownOffenders.length > 0 ? 3 : 1),
-    );
+    expect(report.offenders.length, `elements past the screen edge on ${path}:\n${formatOffenders(report.offenders, report.clientWidth)}`).toBe(0);
+    expect(report.docOverflow, `the page scrolls ${report.docOverflow}px sideways`).toBeLessThanOrEqual(1);
   });
 
   test(`${path} headings are not clipped`, async ({ page }) => {
-    const known = knownSelectors("heading", project(), path);
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     await page.evaluate(() => document.fonts.ready);
-    const found = await findClippedHeadings(page, known);
-    expectOnlyKnown(found, known, `on ${path}`, (h) => h.map((x) => `  ${x.level} "${x.text}": ${x.problem}`).join("\n"));
+    const found = await findClippedHeadings(page);
+    expect(found.map((x) => `${x.level} "${x.text}": ${x.problem}`)).toEqual([]);
   });
 
   test(`${path} has no WCAG 2.1 AA violations at 320px`, async ({ page }) => {
@@ -109,12 +78,7 @@ test.describe("public pages", () => {
     await expect(icon).toBeVisible();
     await icon.click();
     const palette = page.getByRole("dialog", { name: "Quick search" });
-    if (open("R-SEARCH-ICON")) {
-      await expect(page, stillOpen("R-SEARCH-ICON")).toHaveURL(/\/search$/);
-      await expect(palette).toBeHidden();
-    } else {
-      await expect(palette).toBeVisible();
-    }
+    await expect(palette).toBeVisible();
   });
 
   test("the phone menu fits the screen", async ({ page }) => {
@@ -125,8 +89,7 @@ test.describe("public pages", () => {
     const menu = page.getByRole("dialog", { name: "Menu" });
     await expect(menu).toBeVisible();
     const sizes = await menu.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
-    if (open("R-MENU-320")) expect(sizes.scrollWidth, stillOpen("R-MENU-320")).toBeGreaterThan(sizes.clientWidth);
-    else expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.clientWidth);
+    expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.clientWidth);
   });
 
   for (const target of [800, 1100]) {
@@ -143,11 +106,6 @@ test.describe("public pages", () => {
           bodyOverflow: getComputedStyle(document.body).overflow,
           invisibleModals: [...document.querySelectorAll('[aria-modal="true"]')].filter((d) => d.getBoundingClientRect().width === 0).length,
         }));
-      if (open("R-MENU-RESIZE")) {
-        // The page stays locked behind a menu that is no longer shown.
-        await expect.poll(state, { message: stillOpen("R-MENU-RESIZE") }).toEqual({ bodyOverflow: "hidden", invisibleModals: 1 });
-        return;
-      }
       await expect.poll(state).toEqual({ bodyOverflow: "visible", invisibleModals: 0 });
       // A real wheel scroll moves the page (programmatic scrolling would ignore overflow: hidden).
       await page.mouse.move(target / 2, 450);
@@ -175,8 +133,7 @@ test.describe("public pages", () => {
         column,
       );
       const message = `cards outside the column ${Math.round(column.x)}..${Math.round(column.x + column.width)}: ${outside.join(", ")}`;
-      if (open("R-HERO-REST")) expect(outside.length, `${stillOpen("R-HERO-REST")}\n${message}`).toBeGreaterThan(0);
-      else expect(outside, message).toEqual([]);
+      expect(outside, message).toEqual([]);
     });
 
     test("footer pills rest on screen and clear of the 'Drag the links' note", async ({ page }) => {
@@ -201,11 +158,7 @@ test.describe("public pages", () => {
             .map((p) => p.text),
         };
       }, note);
-      if (open("R-FOOTER-PILLS")) {
-        expect(result.offScreen.length + result.overNote.length, `${stillOpen("R-FOOTER-PILLS")}\n${JSON.stringify(result)}`).toBeGreaterThan(0);
-      } else {
-        expect(result).toEqual({ overlapping: [], offScreen: [], overNote: [] });
-      }
+      expect(result).toEqual({ overlapping: [], offScreen: [], overNote: [] });
     });
   });
 
@@ -228,8 +181,7 @@ test.describe("public pages", () => {
     }
     expect(worst.every(Number.isFinite), "found .hero-tilt inside the hero section").toBe(true);
     const message = `px past the hero's bottom at 30/60/90% scrolled: ${worst.join(", ")}`;
-    if (open("R-HERO-TILT")) expect(Math.max(...worst), `${stillOpen("R-HERO-TILT")}\n${message}`).toBeGreaterThan(1);
-    else expect(Math.max(...worst), message).toBeLessThanOrEqual(1);
+    expect(Math.max(...worst), message).toBeLessThanOrEqual(1);
   });
 
   test("header and footer line up with the page column", async ({ page }) => {
@@ -241,12 +193,7 @@ test.describe("public pages", () => {
     const footer = page.locator("footer > div").first();
     for (const part of [content, header, footer]) await expect(part).toBeVisible();
     const lefts = { content: await inner(content), header: await inner(header), footer: await inner(footer) };
-    if (open("R-WIDE-ALIGN")) {
-      expect(lefts.header, `${stillOpen("R-WIDE-ALIGN")} ${JSON.stringify(lefts)}`).not.toBe(lefts.content);
-      expect(lefts.footer, `${stillOpen("R-WIDE-ALIGN")} ${JSON.stringify(lefts)}`).not.toBe(lefts.content);
-    } else {
-      expect(lefts).toEqual({ content: lefts.content, header: lefts.content, footer: lefts.content });
-    }
+    expect(lefts).toEqual({ content: lefts.content, header: lefts.content, footer: lefts.content });
   });
 
   // AuthorCard is used on /authors and in the About teaser.
@@ -258,29 +205,19 @@ test.describe("public pages", () => {
       const cards = await measureAuthorCards(page);
       expect(cards.error).toBeUndefined();
       expect(cards.cards, "author cards on the page").toBeGreaterThan(0);
-      if (open("R-AUTHOR-PILL", route)) expect(cards.pills.join("\n"), stillOpen("R-AUTHOR-PILL")).toContain("Yoga Firmansyah");
-      else expect(cards.pills).toEqual([]);
-      if (open("R-AUTHOR-BIO", route)) expect(cards.backs.length, stillOpen("R-AUTHOR-BIO")).toBeGreaterThan(0);
-      else expect(cards.backs).toEqual([]);
+      expect(cards.pills).toEqual([]);
+      expect(cards.backs).toEqual([]);
     });
   }
 
   test("text is never smaller than 11px", async ({ page }) => {
-    const found: { size: string; text: string; bugs: string[]; path: string }[] = [];
-    // Union of the known bugs on all three routes, so a route-specific entry is still required to show up.
-    const known: BugSelectors = [];
+    const found: string[] = [];
     for (const path of ["/", "/articles/the-new-grading-policy-explained-in-five-minutes", "/dashboard"]) {
-      const here = knownSelectors("small-text", project(), path);
-      for (const entry of here) if (!known.some(([id]) => id === entry[0])) known.push(entry);
       await page.goto(path);
       await page.waitForLoadState("networkidle");
-      for (const s of await findSmallText(page, 11, here)) found.push({ ...s, path });
+      for (const s of await findSmallText(page, 11)) found.push(`${path}: ${s.size} "${s.text}"`);
     }
-    const format = (items: typeof found) => items.slice(0, 15).map((s) => `  ${s.path}: ${s.size} "${s.text}"`).join("\n");
-    expectOnlyKnown(found, known, "on /, an article and /dashboard", format);
-    // The known symptom is exactly 10px; anything smaller is a new problem.
-    const notTen = found.filter((s) => s.bugs.length > 0 && s.size !== "10px");
-    expect(notTen.length, `known small text that is not 10px:\n${format(notTen)}`).toBe(0);
+    expect(found).toEqual([]);
   });
 
   test("a long URL in an article body wraps instead of widening the page", async ({ page }) => {
@@ -300,8 +237,7 @@ test.describe("public pages", () => {
       range.selectNodeContents(a);
       return { textRight: Math.round(range.getBoundingClientRect().right), columnRight: Math.round(el.getBoundingClientRect().right) };
     });
-    if (open("R-PROSE-URL")) expect(result.textRight, stillOpen("R-PROSE-URL")).toBeGreaterThan(result.columnRight + 1);
-    else expect(result.textRight).toBeLessThanOrEqual(result.columnRight + 1);
+    expect(result.textRight).toBeLessThanOrEqual(result.columnRight + 1);
   });
 
   test("the About authors teaser uses three columns on tablets", async ({ page }) => {
@@ -310,8 +246,7 @@ test.describe("public pages", () => {
     const list = page.getByRole("heading", { name: "Meet the authors." }).locator("xpath=following::ul[1]");
     await expect(list).toBeVisible();
     const columns = await list.evaluate((ul) => getComputedStyle(ul).gridTemplateColumns.split(" ").length);
-    if (open("R-ABOUT-TEASER")) expect(columns, stillOpen("R-ABOUT-TEASER")).toBe(2);
-    else expect(columns).toBeGreaterThanOrEqual(3);
+    expect(columns).toBeGreaterThanOrEqual(3);
   });
 
   test("the header never crowds or overflows between 768 and 1016px", async ({ page }) => {
@@ -342,10 +277,6 @@ test.describe("dashboard", () => {
       const bar = button.locator("xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' fixed ')][1]");
       const barBox = await boxOf(bar);
       const overlap = Math.max(0, Math.round(barBox.y + barBox.height - tabBox.y));
-      if (open("R-DASH-BAR")) {
-        expect(overlap, stillOpen("R-DASH-BAR")).toBeGreaterThan(0);
-        return;
-      }
       // Every button on the bar must be the topmost element at its centre and just above its bottom edge.
       const covered = await bar.evaluate((el) =>
         [...el.querySelectorAll("button")].flatMap((b) => {
@@ -375,21 +306,14 @@ test.describe("dashboard", () => {
     );
     expect(lines.every((l) => l.lines >= 1), `every tab has a label span: ${JSON.stringify(lines)}`).toBe(true);
     const wrapped = lines.filter((l) => l.lines > 1).map((l) => `${l.text}: ${l.lines} lines`);
-    if (open("R-TAB-LABELS")) expect(wrapped.length, stillOpen("R-TAB-LABELS")).toBeGreaterThan(0);
-    else expect(wrapped).toEqual([]);
+    expect(wrapped).toEqual([]);
   });
 
   test("Log out is reachable on phones and tablets", async ({ page }) => {
     test.skip(width(page) >= 1024, "the sidebar shows Log out from lg up");
     await page.goto("/dashboard");
     await expect(page.getByRole("main")).toBeVisible();
-    if (open("R-DASH-LOGOUT")) {
-      // Only the sidebar copy exists, and the sidebar is hidden below lg.
-      await expect(page.locator("aside").getByText("Log out")).toBeAttached();
-      await expect(page.getByText("Log out").filter({ visible: true }), stillOpen("R-DASH-LOGOUT")).toHaveCount(0);
-    } else {
-      await expect(page.getByRole("link", { name: "Log out" }).or(page.getByRole("button", { name: "Log out" })).first()).toBeVisible();
-    }
+    await expect(page.getByRole("link", { name: "Log out" }).or(page.getByRole("button", { name: "Log out" })).first()).toBeVisible();
   });
 
   test("the sidebar stays in view while scrolling", async ({ page }) => {
@@ -401,8 +325,7 @@ test.describe("dashboard", () => {
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
     await expect.poll(() => page.evaluate(() => scrollY), { message: "the editor page scrolls" }).toBeGreaterThan(0);
     const top = await aside.evaluate((el) => Math.round(el.getBoundingClientRect().top));
-    if (open("R-SIDEBAR-STICKY")) expect(top, stillOpen("R-SIDEBAR-STICKY")).toBeLessThan(0);
-    else expect(top).toBeGreaterThanOrEqual(0);
+    expect(top).toBeGreaterThanOrEqual(0);
   });
 
   test("All articles fits without scrolling sideways", async ({ page }) => {
@@ -410,8 +333,7 @@ test.describe("dashboard", () => {
     const table = page.locator("table");
     await expect(table).toBeVisible();
     const sizes = await table.evaluate((t) => ({ scrollWidth: t.parentElement?.scrollWidth ?? NaN, clientWidth: t.parentElement?.clientWidth ?? NaN }));
-    if (open("R-TABLE")) expect(sizes.scrollWidth, stillOpen("R-TABLE")).toBeGreaterThan(sizes.clientWidth);
-    else expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.clientWidth);
+    expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.clientWidth);
   });
 
   test("review queue titles get most of the row", async ({ page }) => {
@@ -428,8 +350,7 @@ test.describe("dashboard", () => {
     );
     expect(shares.every(Number.isFinite), "every queue row has a title link").toBe(true);
     const message = `title width as % of the row: ${shares.join(", ")}`;
-    if (open("R-QUEUE-TITLE")) expect(Math.min(...shares), `${stillOpen("R-QUEUE-TITLE")}\n${message}`).toBeLessThan(60);
-    else expect(Math.min(...shares), message).toBeGreaterThanOrEqual(60);
+    expect(Math.min(...shares), message).toBeGreaterThanOrEqual(60);
   });
 
   test("the Add author dialog fits the screen", async ({ page }) => {
@@ -451,11 +372,7 @@ test.describe("dashboard", () => {
           .map(({ text, r }) => `${text} ${Math.round(r.left)}..${Math.round(r.right)} (dialog ${Math.round(box.left)}..${Math.round(box.right)})`),
       };
     });
-    if (open("R-DIALOG-320")) {
-      expect(fit.buttons.length, `${stillOpen("R-DIALOG-320")} ${JSON.stringify(fit)}`).toBeGreaterThan(0);
-    } else {
-      expect(fit).toEqual({ dialog: null, buttons: [] });
-    }
+    expect(fit).toEqual({ dialog: null, buttons: [] });
   });
 
   test("the editor toolbar stays in view while writing", async ({ page }) => {
@@ -476,8 +393,7 @@ test.describe("dashboard", () => {
     });
     expect(state.error).toBeUndefined();
     expect(state.editorTop, "the editor scrolled past the top of the screen").toBeLessThan(0);
-    if (open("R-EDITOR-TOOLBAR")) expect(state.toolbarTop, stillOpen("R-EDITOR-TOOLBAR")).toBeLessThan(0);
-    else expect(state.toolbarTop).toBeGreaterThanOrEqual(0);
+    expect(state.toolbarTop).toBeGreaterThanOrEqual(0);
   });
 
   test("editor toolbar buttons are 44px on touch screens", async ({ page }) => {
@@ -490,12 +406,7 @@ test.describe("dashboard", () => {
     const small = await buttons.evaluateAll((all) =>
       all.map((b) => b.getBoundingClientRect()).filter((r) => r.width < 44 || r.height < 44).map((r) => `${Math.round(r.width)}x${Math.round(r.height)}`),
     );
-    if (open("R-EDITOR-TOOLBAR-44")) {
-      expect(small.length, stillOpen("R-EDITOR-TOOLBAR-44")).toBeGreaterThan(0);
-      expect([...new Set(small)], "the known symptom is 36px buttons").toEqual(["36x36"]);
-    } else {
-      expect(small).toEqual([]);
-    }
+    expect(small).toEqual([]);
   });
 
   test("below xl the editor reads title, category, cover, then the article", async ({ page }) => {
@@ -510,13 +421,8 @@ test.describe("dashboard", () => {
     expect(Object.values(tops).every((t) => t !== null), `found every field label: ${JSON.stringify(tops)}`).toBe(true);
     const { title, category, cover, article } = tops as Record<keyof typeof tops, number>;
     expect(title).toBeLessThan(category);
-    if (open("R-EDITOR-ORDER")) {
-      expect(category, stillOpen("R-EDITOR-ORDER")).toBeGreaterThan(article);
-      expect(cover, stillOpen("R-EDITOR-ORDER")).toBeGreaterThan(article);
-    } else {
-      expect(category).toBeLessThan(cover);
-      expect(cover).toBeLessThan(article);
-    }
+    expect(category).toBeLessThan(cover);
+    expect(cover).toBeLessThan(article);
   });
 
   test("the review cover is sharp on large screens", async ({ page }) => {
@@ -529,7 +435,6 @@ test.describe("dashboard", () => {
     await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: "the cover loads" }).toBe(true);
     const size = await img.evaluate((i: HTMLImageElement) => ({ natural: i.naturalWidth, shown: Math.round(i.getBoundingClientRect().width * devicePixelRatio) }));
     const message = `natural ${size.natural}px, shown at ${size.shown} device px`;
-    if (open("R-REVIEW-COVER")) expect(size.natural, `${stillOpen("R-REVIEW-COVER")}\n${message}`).toBeLessThan(size.shown);
-    else expect(size.natural, message).toBeGreaterThanOrEqual(size.shown);
+    expect(size.natural, message).toBeGreaterThanOrEqual(size.shown);
   });
 });

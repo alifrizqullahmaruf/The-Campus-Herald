@@ -11,9 +11,6 @@ import type { Page } from "@playwright/test";
 // on DOM lookups: a missing element becomes an `error` string that the caller
 // asserts on, so a changed page fails loudly instead of throwing a TypeError.
 
-/** [known bug id, CSS selector]: elements matching (or inside) the selector are tagged with the id. */
-export type BugSelectors = [id: string, selector: string][];
-
 export interface Offender {
   /** Short CSS-like path, e.g. `h1.font-display > #text`. */
   what: string;
@@ -22,8 +19,6 @@ export interface Offender {
   right: number;
   /** Page scroll position when it was seen. */
   scrollY: number;
-  /** Ids of the known bugs whose selector matches this element. Empty: a new problem. */
-  bugs: string[];
 }
 
 export interface OverflowReport {
@@ -43,7 +38,7 @@ export interface OverflowReport {
  * do not count as clipping ancestors: being cut off at the screen edge is exactly
  * the bug we are looking for.
  */
-function scanOverflow(known: BugSelectors) {
+function scanOverflow() {
   const root = document.documentElement;
   const cw = root.clientWidth;
   const styles = new Map<Element, CSSStyleDeclaration>();
@@ -100,8 +95,6 @@ function scanOverflow(known: BugSelectors) {
     return parts.join(" > ");
   };
 
-  const bugsOf = (el: Element) => known.filter(([, selector]) => el.closest(selector)).map(([id]) => id);
-
   const offenders: Offender[] = [];
   const report = (el: Element, what: string, text: string, left: number, right: number) => {
     const span = visibleSpan(el, left, right);
@@ -113,7 +106,6 @@ function scanOverflow(known: BugSelectors) {
         left: Math.round(span.left),
         right: Math.round(span.right),
         scrollY: Math.round(scrollY),
-        bugs: bugsOf(el),
       });
     }
   };
@@ -166,9 +158,9 @@ function scanOverflow(known: BugSelectors) {
  * Checks for horizontal overflow at the top of the page and then at every
  * three-quarter screen while scrolling down, until the bottom is reached
  * (scroll-driven effects such as the hero tilt and the "Fresh" pile only move
- * once scrolled). `known` tags offenders that belong to an open known bug.
+ * once scrolled).
  */
-export async function findHorizontalOverflow(page: Page, known: BugSelectors = [], maxSteps = 400): Promise<OverflowReport> {
+export async function findHorizontalOverflow(page: Page, maxSteps = 400): Promise<OverflowReport> {
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   const seen = new Map<string, Offender>();
   let docOverflow = 0;
@@ -179,7 +171,7 @@ export async function findHorizontalOverflow(page: Page, known: BugSelectors = [
   for (; steps < maxSteps; steps++) {
     // Let scroll-driven animations and sticky elements catch up with the new position.
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-    const pass = await page.evaluate(scanOverflow, known);
+    const pass = await page.evaluate(scanOverflow);
     clientWidth = pass.clientWidth;
     docOverflow = Math.max(docOverflow, pass.docOverflow);
     for (const o of pass.offenders) {
@@ -211,7 +203,7 @@ export function formatOffenders(offenders: Offender[], clientWidth: number, limi
   const sorted = [...offenders].sort((a, b) => past(b) - past(a));
   const lines = sorted
     .slice(0, limit)
-    .map((o) => `  ${o.what} "${o.text}" spans ${o.left}..${o.right} (viewport ${clientWidth}) at scrollY ${o.scrollY}${o.bugs.length ? ` [${o.bugs.join(", ")}]` : ""}`);
+    .map((o) => `  ${o.what} "${o.text}" spans ${o.left}..${o.right} (viewport ${clientWidth}) at scrollY ${o.scrollY}`);
   const more = sorted.length > limit ? `\n  …and ${sorted.length - limit} more` : "";
   return `${offenders.length} element(s) past the edge:\n${lines.join("\n")}${more}`;
 }
@@ -220,7 +212,6 @@ export interface ClippedHeading {
   level: string;
   text: string;
   problem: string;
-  bugs: string[];
 }
 
 /**
@@ -232,8 +223,8 @@ export interface ClippedHeading {
  * its rect is the rotated bounding box, which sticks out by design. Icons and
  * other element boxes are ignored too.
  */
-export async function findClippedHeadings(page: Page, known: BugSelectors = []): Promise<ClippedHeading[]> {
-  return page.evaluate((known) => {
+export async function findClippedHeadings(page: Page): Promise<ClippedHeading[]> {
+  return page.evaluate(() => {
     const found: ClippedHeading[] = [];
     const range = document.createRange();
     for (const h of document.querySelectorAll("h1, h2, h3")) {
@@ -260,44 +251,41 @@ export async function findClippedHeadings(page: Page, known: BugSelectors = []):
       const right = Math.max(...rects.map((r) => r.right));
       const text = (h.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 50);
       const level = h.tagName.toLowerCase();
-      const bugs = known.filter(([, selector]) => h.closest(selector)).map(([id]) => id);
       const span = `text spans ${Math.round(left)}..${Math.round(right)}`;
       if (right > box.right + 1 || left < box.left - 1) {
-        found.push({ level, text, bugs, problem: `${span}, heading box ${Math.round(box.left)}..${Math.round(box.right)}` });
+        found.push({ level, text, problem: `${span}, heading box ${Math.round(box.left)}..${Math.round(box.right)}` });
         continue;
       }
       for (let el: Element | null = h; el && el !== document.body; el = el.parentElement) {
         if (getComputedStyle(el).overflowX === "visible") continue;
         const clip = el.getBoundingClientRect();
         if (right > clip.right + 1 || left < clip.left - 1) {
-          found.push({ level, text, bugs, problem: `${span}, cut by ${el.tagName.toLowerCase()} ${Math.round(clip.left)}..${Math.round(clip.right)}` });
+          found.push({ level, text, problem: `${span}, cut by ${el.tagName.toLowerCase()} ${Math.round(clip.left)}..${Math.round(clip.right)}` });
           break;
         }
       }
     }
     return found;
-  }, known);
+  });
 }
 
 export interface SmallText {
   size: string;
   text: string;
-  bugs: string[];
 }
 
 /** Rendered elements with their own text whose font size is below `min` px. */
-export async function findSmallText(page: Page, min: number, known: BugSelectors = []): Promise<SmallText[]> {
+export async function findSmallText(page: Page, min: number): Promise<SmallText[]> {
   return page.evaluate(
-    ([min, known]) =>
+    (min) =>
       [...document.querySelectorAll("body *")]
         .filter((el) => [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim()))
         .filter((el) => el.getBoundingClientRect().width > 1 && parseFloat(getComputedStyle(el).fontSize) < min)
         .map((el) => ({
           size: getComputedStyle(el).fontSize,
           text: (el.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 24),
-          bugs: known.filter(([, selector]) => el.closest(selector)).map(([id]) => id),
         })),
-    [min, known] as const,
+    min,
   );
 }
 

@@ -17,16 +17,18 @@ Sessions start in plan mode (`.claude/settings.json`), so no file can be edited 
 
 2. **Ask before proceeding.** During brainstorming and planning, ask the user for their opinion and get explicit confirmation. Do not edit code until the user approves the plan.
 3. **Execute fully.** Once the user approves, carry out every task in the plan through to completion.
-4. **Debug and verify.** Afterwards, check the whole change: run `npm test -- --run`, `npm run lint` and `npm run build`, and run the app if relevant. For page or feature changes, run `qa-tester` first (if the plan includes it), then the `code-reviewer` subagent (`.claude/agents/code-reviewer.md`, read-only) last, so the review also covers the new tests; fix what they find before committing. Then update the plan file with what was actually done, what changed from the plan, and the verification results.
+4. **Debug and verify.** Afterwards, check the whole change: run `npm test -- --run`, `npm run lint` and `npm run build`, and run the app if relevant. Then run the `code-reviewer` subagent **once** on the change before committing. Fix Kritis/Tinggi/Sedang findings; Rendah ones may become follow-ups. Review again only if the fixes were large. Then update the plan file with what was actually done, what changed from the plan, and the verification results.
 5. **Tidy the plan file.** Finally, restructure the plan file so it reads cleanly: goal, task table with final status, changed files, verification results, open follow-ups.
 
 ### Subagents (`.claude/agents/`)
 
 | Subagent | Use it | May change |
 |----------|--------|------------|
-| `code-reviewer` | Before every commit, on the change (step 4) | Nothing (read-only report) |
-| `qa-tester` | After a feature or page change, before a release, or for flaky tests. Tests the front end as users do (phone and desktop), writes the tests and runs them | Only `e2e/` and `__tests__/`; app bugs are reported with a failing test, never patched |
-| `clean-code` | Before a new phase or after a large feature. First in **propose** mode (read-only; its list goes into a plan), then in **apply** mode for the items the user approved | App code, only for approved items, with no behaviour change; the full test suite must still pass |
+| `code-reviewer` | Once per change, before committing (step 4) | Nothing (read-only report) |
+| `qa-tester` | Only when the user asks (or before a release): tests the front end like a user, writes and runs tests | Only `e2e/` and `__tests__/`; app bugs are reported (`test.fixme()`), never patched |
+| `clean-code` | Only when the user asks: **propose** (read-only list for a plan), then **apply** for approved items | App code, approved items only, no behaviour change |
+
+Keep agent runs few and their reports short.
 
 ### Git
 
