@@ -342,3 +342,9 @@
     translate: -50% -50%;
   }
 }
+
+/* Dashboard bottom tab bar (below lg): one height for the bar, the page padding
+   under it and the fixed Save/Submit and Approve bars that sit right above it. */
+:root {
+  --tabbar-h: 4.25rem;
+}

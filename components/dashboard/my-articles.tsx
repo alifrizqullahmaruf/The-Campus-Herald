@@ -27,7 +27,7 @@ export function MyArticles({ articles }: { articles: ArticleWithRelations[] }) {
             aria-pressed={filter === f}
             onClick={() => setFilter(f)}
             className={cx(
-              "inline-flex items-center gap-2 rounded-full border-2 border-ink px-3 py-1 font-display text-sm font-extrabold",
+              "tap-target inline-flex items-center gap-2 rounded-full border-2 border-ink px-3 py-1 font-display text-sm font-extrabold",
               filter === f ? "bg-ink text-paper" : "bg-surface hover:bg-cat-events",
             )}
           >

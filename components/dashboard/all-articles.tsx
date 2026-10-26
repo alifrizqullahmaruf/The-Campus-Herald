@@ -60,33 +60,40 @@ export function AllArticles({ articles }: { articles: ArticleWithRelations[] }) 
         </p>
       </div>
 
+      {/* Below xl each row stacks (title first, then author, topic, status, date), so
+          nothing scrolls sideways; from xl it is a normal table. */}
       <div className="mt-6 overflow-x-auto rounded-card border-3 border-ink bg-surface">
-        <table className="w-full min-w-[720px] text-left">
-          <thead className="border-b-3 border-ink bg-paper text-meta">
-            <tr>
-              <th scope="col" className="px-4 py-3">Title</th>
-              <th scope="col" className="px-4 py-3">Author</th>
-              <th scope="col" className="px-4 py-3">Category</th>
-              <th scope="col" className="px-4 py-3">Status</th>
-              <th scope="col" className="px-4 py-3">Date</th>
+        {/* Explicit roles: some screen readers drop table semantics once display changes. */}
+        <table role="table" className="w-full text-left max-xl:block">
+          <thead role="rowgroup" className="border-b-3 border-ink bg-paper text-meta max-xl:sr-only">
+            <tr role="row">
+              <th role="columnheader" scope="col" className="px-4 py-3">Title</th>
+              <th role="columnheader" scope="col" className="px-4 py-3">Author</th>
+              <th role="columnheader" scope="col" className="px-4 py-3">Category</th>
+              <th role="columnheader" scope="col" className="px-4 py-3">Status</th>
+              <th role="columnheader" scope="col" className="px-4 py-3">Date</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup" className="max-xl:block">
             {shown.map((a) => (
-              <tr key={a.id} className="border-b-2 border-ink/10 last:border-0 hover:bg-paper">
-                <td className="px-4 py-3 font-display font-extrabold">
+              <tr
+                key={a.id}
+                role="row"
+                className="border-b-2 border-ink/10 last:border-0 hover:bg-paper max-xl:flex max-xl:flex-wrap max-xl:items-center max-xl:gap-x-3 max-xl:gap-y-2 max-xl:px-4 max-xl:py-3"
+              >
+                <td role="cell" className="px-4 py-3 font-display font-extrabold max-xl:basis-full max-xl:p-0">
                   <Link href={`/dashboard/review/${a.id}`} className="hover:underline">
                     {a.title}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-sm">{a.author.name}</td>
-                <td className="px-4 py-3">
+                <td role="cell" className="px-4 py-3 text-sm max-xl:p-0">{a.author.name}</td>
+                <td role="cell" className="px-4 py-3 max-xl:p-0">
                   <CategoryBadge name={a.category.name} />
                 </td>
-                <td className="px-4 py-3">
+                <td role="cell" className="px-4 py-3 max-xl:p-0">
                   <StatusBadge status={a.status} />
                 </td>
-                <td className="px-4 py-3 text-meta">{formatDate(a.publishedAt ?? a.submittedAt ?? a.createdAt)}</td>
+                <td role="cell" className="px-4 py-3 text-meta max-xl:p-0">{formatDate(a.publishedAt ?? a.submittedAt ?? a.createdAt)}</td>
               </tr>
             ))}
           </tbody>

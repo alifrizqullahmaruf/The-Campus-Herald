@@ -34,50 +34,6 @@ interface KnownBug {
 }
 
 export const KNOWN_BUGS: Record<string, KnownBug> = {
-  "R-DASH-BAR": {
-    symptom: "the editor/review action bar sits at bottom-16 (64px) but the tab bar is 68px (83px when labels wrap)",
-    where: [{ check: "test", projects: [...PHONES, "tablet"] }],
-  },
-  "R-TAB-LABELS": {
-    symptom: "two-word tab labels wrap to two lines on phones, so the tab bar grows to 83px",
-    where: [{ check: "test", projects: PHONES }],
-  },
-  "R-DASH-LOGOUT": {
-    symptom: "below lg the dashboard has no visible Log out (only in the hidden sidebar)",
-    where: [{ check: "test", projects: [...PHONES, "tablet"] }],
-  },
-  "R-SIDEBAR-STICKY": {
-    symptom: "the dashboard sidebar scrolls away with the page",
-    where: [{ check: "test", projects: ["laptop", "desktop", "wide"] }],
-  },
-  "R-TABLE": {
-    symptom: "the All articles table has min-w-[720px], so it scrolls sideways below about 1060px",
-    where: [{ check: "test", projects: [...PHONES, "tablet", "laptop"] }],
-  },
-  "R-QUEUE-TITLE": {
-    symptom: "the number and 'Review →' squeeze review queue titles to about 80px at 320px and 136px at 375px",
-    where: [{ check: "test", projects: PHONES }],
-  },
-  "R-DIALOG-320": {
-    symptom: "the Add author dialog's button row is wider than the dialog at 320px",
-    where: [{ check: "test", projects: ["phone-320"] }],
-  },
-  "R-EDITOR-TOOLBAR": {
-    symptom: "the formatting toolbar is not sticky and scrolls away while writing",
-    where: [{ check: "test", projects: "all" }],
-  },
-  "R-EDITOR-TOOLBAR-44": {
-    symptom: "formatting toolbar buttons are 36px on touch screens",
-    where: [{ check: "test", projects: PHONES }],
-  },
-  "R-EDITOR-ORDER": {
-    symptom: "category and cover come after the article body below 1280px",
-    where: [{ check: "test", projects: [...PHONES, "tablet", "laptop"] }],
-  },
-  "R-REVIEW-COVER": {
-    symptom: "ArticleCover's default sizes asks for 360px, the review cover is shown up to 768px wide (blurry)",
-    where: [{ check: "test", projects: ["laptop", "desktop", "wide"] }],
-  },
 };
 
 const applies = (w: Where, check: Check, project: string, route?: string) =>

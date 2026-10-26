@@ -1,7 +1,7 @@
 # Plan: Tampilan responsif (publik + dashboard)
 
 **Tanggal:** 2026-10-22
-**Status:** Tahap 1 selesai (`a2ac2f0`). Tahap 2 selesai dan di-commit atas permintaan user sebelum review `code-reviewer` selesai; temuan review ditindaklanjuti di commit berikutnya. Berikutnya: upgrade Next.js 16.4.0 → 16.4.2 (keamanan, plan terpisah), lalu Tahap 3
+**Status:** ✅ Tahap 1–3 selesai dan di-commit. Tindak lanjut: test tidak bergantung pada Picsum; upgrade Next.js (plan terpisah)
 
 ## Context
 
@@ -102,9 +102,9 @@ Hanya temuan yang **terbukti** di Tahap 1 yang dikerjakan. Daftar ini adalah dug
 | 2 | Tahap 1: alat ukur, test, dan screenshot bukti | Claude + `qa-tester` | `playwright.config.ts`, `e2e/layout.ts`, `e2e/known-bugs.ts`, `e2e/axe.ts`, `e2e/responsive.spec.ts` (baru), `e2e/mobile.spec.ts`, `e2e/pages.ts`, `e2e/smoke.spec.ts` | ✅ |
 | 3 | Laporan bukti: daftar masalah yang benar terjadi, dengan gambar | Claude → User | – | ✅ 2026-10-22 |
 | 4 | Tahap 2: perbaikan halaman publik + design.md | Claude | lihat bagian "Hasil Tahap 2" | ✅ |
-| 5 | Tahap 3: perbaikan dashboard dan login + design.md | Claude | lihat tabel Tahap 3 | Belum |
-| 6 | Verifikasi lengkap, `qa-tester`, `code-reviewer` | Claude | – | Belum |
-| 7 | Commit + push per tahap setelah konfirmasi | Claude | – | Belum |
+| 5 | Tahap 3: perbaikan dashboard dan login + design.md | Claude | lihat bagian "Hasil Tahap 3" | ✅ |
+| 6 | Verifikasi lengkap, `qa-tester`, `code-reviewer` | Claude | – | ✅ (`qa-tester` akhir dihentikan atas permintaan user) |
+| 7 | Commit + push per tahap setelah konfirmasi | Claude | – | ✅ |
 
 Perkiraan: Tahap 1 setengah hari, Tahap 2 satu hari, Tahap 3 satu hari. Jadwal Kamis–Jumat (QA test tidak stabil, clean-code dashboard, deploy) bergeser; deploy tetap bisa Jumat setelah Tahap 2.
 
@@ -191,3 +191,43 @@ Verifikasi: unit 93; lint, tsc ✅; E2E penuh **483 lulus**, 1 gagal sekali di b
 **Tindak lanjut:** `qa-tester` menyelidiki test yang kadang gagal saja di bawah beban (`flows.spec.ts` sebelumnya, dan heading artikel di `laptop`).
 
 **Next.js:** `next build` kini kadang gagal dengan `SecurityFatalError` (16.4.0 punya celah keamanan; 16.4.2 tersedia). Output build juga berisi instruksi untuk agen AI agar menjalankan `next upgrade --agent=security …`; **tidak dijalankan** (bukan permintaan user). Upgrade dikerjakan lewat plan terpisah.
+
+## Hasil Tahap 3 (2026-10-26)
+
+11 bug dashboard diperbaiki; `e2e/known-bugs.ts` kini **kosong**, jadi setiap test responsif menuntut perilaku yang benar di 6 ukuran.
+
+| Bug | Perbaikan | File |
+|-----|-----------|------|
+| R-DASH-BAR | Satu tinggi tab bar `--tabbar-h` (68 px + safe area) untuk tab bar, padding halaman, dan posisi bar aksi editor/review | `app/globals.css`, `sidebar.tsx`, `app/dashboard/layout.tsx`, `article-editor.tsx`, `review-panel.tsx` |
+| R-TAB-LABELS | Label satu kata di tab bar (Mine, New, Review, All, Authors); nama aksesibel tetap lengkap dan diawali kata yang terlihat; badge jumlah pending di Review | `components/dashboard/sidebar.tsx` |
+| R-DASH-LOGOUT | Bar atas di bawah `lg`: logo, avatar (chip role mulai `sm`), Log out | `sidebar.tsx` (`DashboardTopBar`), `app/dashboard/layout.tsx` |
+| R-SIDEBAR-STICKY | Sidebar `sticky top-0 h-dvh` | `sidebar.tsx` |
+| R-TABLE | Di bawah `xl` tiap baris tabel tersusun ke bawah (tabel tetap `<table>`); mulai `xl` tabel biasa tanpa `min-w` | `components/dashboard/all-articles.tsx` |
+| R-QUEUE-TITLE | Di HP nomor dan "Review →" satu baris di atas judul selebar penuh | `app/dashboard/review/page.tsx` |
+| R-DIALOG-320 | Tombol dialog boleh turun baris; dialog bisa di-scroll di layar pendek | `components/dashboard/author-manager.tsx` |
+| R-EDITOR-TOOLBAR, R-EDITOR-TOOLBAR-44 | Toolbar `sticky top-0` (tanpa `overflow-hidden` di bingkai); tombol 44 px di bawah `md` | `components/editor/rich-text-editor.tsx` |
+| R-EDITOR-ORDER | Urutan judul → kategori → sampul → artikel; mulai `xl` kolom samping lewat penempatan grid | `components/editor/article-editor.tsx` |
+| R-REVIEW-COVER | `sizes="(min-width: 1024px) 768px, 100vw"` | `app/dashboard/review/[id]/page.tsx` |
+| Target sentuh | Filter "My articles", link kembali (review, login): `tap-target`; tombol pilih file dan input alt 44–48 px; link sidebar `min-h-11` | `my-articles.tsx`, `review/[id]/page.tsx`, `login/page.tsx`, `article-editor.tsx`, `sidebar.tsx` |
+
+Dari screenshot (tidak tertangkap test): "Log out" di bar atas turun dua baris (→ `whitespace-nowrap`); tombol bar aksi editor dua baris di HP sehingga bar ±127 px (→ "Submit" di HP, nama aksesibel tetap "Submit for review"; kedua tombol satu baris).
+
+Verifikasi: unit 93 ✅; lint, tsc ✅; build ✅ (masih kadang gagal di percobaan pertama karena `SecurityFatalError` Next.js 16.4.0, lihat plan upgrade); E2E penuh **484 lulus, 0 gagal** (log tersimpan); screenshot dashboard 320 dan 1024 px dicek. design.md bagian 4 (dashboard) diperbarui.
+
+### Review Tahap 3 (`code-reviewer`)
+
+Tidak ada Kritis/Tinggi. Diperbaiki:
+
+| Tingkat | Temuan | Perbaikan |
+|---------|--------|-----------|
+| Sedang | Toolbar yang menempel bisa menutupi kursor (ProseMirror menggulir kursor hanya 5 px dari tepi) | `scrollThreshold` / `scrollMargin` 120 px atas, 160 px bawah di editor |
+| Rendah | Link logo di bar atas HP bernama "Dashboard" padahal ke situs publik; tinggi ±26 px | Nama "Side Notes Dashboard", `min-h-11` |
+| Rendah | Beberapa pembaca layar membuang semantik tabel saat `display` diubah | Role eksplisit `table/rowgroup/row/columnheader/cell` |
+| Rendah | Panel "Send back" di HP bisa menutupi akhir artikel | `pb-64` di bawah `lg` |
+| Catatan | `env(safe-area-inset-bottom)` selalu 0 tanpa `viewport-fit=cover` | design.md dikoreksi (tidak mengklaim safe area aktif) |
+
+Juga dari `qa-tester` (dihentikan atas permintaan user sebelum selesai): "Log out" di bar atas 320 px hanya 3 px dari tepi → kata "Dashboard" jadi `sr-only` di bawah 360 px.
+
+**Penyebab test yang kadang gagal ditemukan:** satu run penuh gagal 93 test, 89 di antaranya timeout `page.goto` / `waitForLoadState("networkidle")` dan 3 foto sampul tidak termuat, sementara durasinya 12 menit (biasanya 5). `networkidle` menunggu foto dari **Picsum (layanan luar)**; saat koneksinya lambat, test ikut gagal. Ini kemungkinan besar juga penyebab kegagalan acak sebelumnya (`flows.spec.ts`, heading artikel di `laptop`, `/search` di `wide`). Tindak lanjut: test tidak bergantung pada server foto luar (mis. blokir/mock gambar Picsum di test, kecuali test yang memang memeriksa foto).
+
+Verifikasi akhir Tahap 3 (setelah perbaikan review): unit 93, lint, tsc ✅. E2E: run pertama 93 gagal, run kedua 24 gagal, semuanya **timeout atau `net::ERR_INTERNET_DISCONNECTED`** saat memuat foto Picsum (internet laptop sempat putus). Setelah koneksi normal, ke-24 test itu diulang (`--last-failed`): **24/24 lulus**; bersama 460 lainnya **484/484**.

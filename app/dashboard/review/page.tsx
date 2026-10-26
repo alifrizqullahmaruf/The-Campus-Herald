@@ -25,12 +25,13 @@ export default async function ReviewQueuePage() {
           {queue.map((article, i) => (
             <li
               key={article.id}
-              className="relative flex items-center gap-4 rounded-card border-3 border-ink bg-surface p-4 transition-shadow hover:shadow-hard focus-within:shadow-hard"
+              className="relative flex flex-wrap items-center gap-x-4 gap-y-2 rounded-card border-3 border-ink bg-surface p-4 transition-shadow hover:shadow-hard focus-within:shadow-hard"
             >
               <span aria-hidden="true" className="font-display text-3xl font-black text-ink/50">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <div className="min-w-0 flex-1">
+              {/* Full width on phones (below the number and "Review →"), beside them from sm. */}
+              <div className="min-w-0 flex-1 max-sm:order-last max-sm:basis-full">
                 <p className="font-display text-lg font-extrabold leading-tight">
                   <Link href={`/dashboard/review/${article.id}`} className="after:absolute after:inset-0">
                     {article.title}
@@ -43,7 +44,7 @@ export default async function ReviewQueuePage() {
                   <span>Submitted {formatDate(article.submittedAt)}</span>
                 </p>
               </div>
-              <span aria-hidden="true" className="font-display font-extrabold">
+              <span aria-hidden="true" className="font-display font-extrabold max-sm:ml-auto">
                 Review →
               </span>
             </li>

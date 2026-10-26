@@ -187,7 +187,7 @@ function AddAuthorDialog({
       ref={dialogRef}
       aria-labelledby={ids.title}
       onClose={() => setErrors({})}
-      className="m-auto w-[min(440px,calc(100vw-32px))] rounded-card border-3 border-ink bg-surface p-0 text-ink shadow-hard-lift backdrop:bg-ink/40"
+      className="m-auto max-h-[calc(100dvh-32px)] w-[min(440px,calc(100vw-32px))] overflow-y-auto rounded-card border-3 border-ink bg-surface p-0 text-ink shadow-hard-lift backdrop:bg-ink/40"
     >
       <form onSubmit={submit} noValidate className="p-6">
         <h2 id={ids.title} className="font-display text-2xl font-black">
@@ -222,7 +222,7 @@ function AddAuthorDialog({
             )}
           </div>
         ))}
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
           <Button variant="secondary" onClick={() => dialogRef.current?.close()}>
             Cancel
           </Button>

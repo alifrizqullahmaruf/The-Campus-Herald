@@ -263,17 +263,20 @@ Centred surface card with a tilted eyebrow and one sentence, plus one button ("W
 
 Same tokens, calmer: `paper` background, surface cards, `shadow` only on primary actions, no tilt, no marquee, category colour only on badges.
 
-Shell: left sidebar (≥ `lg`; bottom tab bar on phone) with the logo, nav items, and the signed-in user with a role chip ("AUTHOR" / "ADMIN") and Log out.
+Shell: left sidebar (≥ `lg`, sticky so the nav and Log out stay in view) with the logo, nav items, and the signed-in user with a role chip ("AUTHOR" / "ADMIN") and Log out. Below `lg`:
+- a small bar above the page with the logo, the user's avatar (role chip from `sm`) and Log out;
+- a fixed bottom tab bar of one height (`--tabbar-h`, 68px; the CSS also adds `env(safe-area-inset-bottom)`, which only takes effect if the viewport is ever set to `viewport-fit=cover`) with one-word labels (Mine, New, Review, All, Authors; the accessible name stays the full label) and the pending count on Review;
+- fixed action bars (editor, review) sit exactly on top of the tab bar, using the same `--tabbar-h`.
 
 | Page | Role | Content |
 |---|---|---|
 | **Login** `/login` | All | Centred surface card, logo, email + password, primary button. Note: "Forgot your password? Ask the administrator." |
 | **My articles** `/dashboard` | Author | Filter tabs by status with counts · table/list of articles: title, category badge, status badge, last updated · "New article" primary button. Rejected rows show the review note preview. |
-| **Editor** `/dashboard/articles/[id]` | Author | Title field, category select (5), cover image upload, rich-text editor (headings, bold, italic, bullet and numbered lists, images; nothing more) · sticky action bar: Save draft (secondary), Submit for review (primary). Read-only with a banner while `pending`. Rejected articles show the admin's note in a red-outlined callout above the editor. |
-| **Review queue** `/dashboard/review` | Admin | List of `pending` articles, oldest first: title, author, category, submitted time. |
+| **Editor** `/dashboard/articles/[id]` | Author | Title field, category select (5), cover image upload, rich-text editor (headings, bold, italic, bullet and numbered lists, images; nothing more) · sticky action bar: Save draft (secondary), Submit for review (primary; "Submit" on phones so both fit one row). Field order: title, category, cover, article; from `xl` the category and cover sit in a 300px side column. The formatting toolbar sticks to the top while writing; its buttons are 44px on phones. Read-only with a banner while `pending`. Rejected articles show the admin's note in a red-outlined callout above the editor. |
+| **Review queue** `/dashboard/review` | Admin | List of `pending` articles, oldest first: title, author, category, submitted time. On phones the number and "Review →" share a line above the full-width title. |
 | **Review** `/dashboard/review/[id]` | Admin | Article rendered exactly as it will look publicly · sticky bar: Approve (primary, green-filled confirm) and Reject (danger) which requires a note in a textarea. |
-| **All articles** `/dashboard/articles` | Admin | Full table with status and author filters. |
-| **Authors** `/dashboard/authors` | Admin | Author list with active/inactive status · Add author (name, email, temporary password) · Deactivate / Reactivate · Reset password. No delete. |
+| **All articles** `/dashboard/articles` | Admin | Full table with status and author filters (from `xl`; below it each row stacks: title, then author, topic, status and date, so nothing scrolls sideways). |
+| **Authors** `/dashboard/authors` | Admin | Author list with active/inactive status · Add author (name, email, temporary password; the dialog scrolls inside short screens and its buttons wrap) · Deactivate / Reactivate · Reset password. No delete. |
 
 ---
 

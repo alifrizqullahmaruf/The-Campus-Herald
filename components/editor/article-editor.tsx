@@ -70,7 +70,7 @@ export function ArticleEditor({ article }: { article: ArticleWithRelations | nul
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mt-6 pb-28">
+    <form onSubmit={submit} noValidate className="mt-6 pb-36 lg:pb-28">
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <StatusBadge status={status} />
         {!editable && (
@@ -93,8 +93,10 @@ export function ArticleEditor({ article }: { article: ArticleWithRelations | nul
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
-        <div className="space-y-6">
+      {/* Below xl the order is title, category, cover, article (docs/design.md 4);
+          from xl the category and cover move to a side column next to the article. */}
+      <div className="grid gap-6 xl:grid-cols-[1fr_300px] xl:items-start">
+        <div className="xl:col-start-1">
           <Field id={ids.title} label="Title" error={errors.title}>
             <input
               id={ids.title}
@@ -107,23 +109,9 @@ export function ArticleEditor({ article }: { article: ArticleWithRelations | nul
               className={inputClass(Boolean(errors.title), "h-14 font-display text-xl font-extrabold")}
             />
           </Field>
-
-          <div>
-            <p id={ids.body} className="mb-2 font-semibold">
-              Article
-            </p>
-            <RichTextEditor
-              initialHtml={article?.body ?? ""}
-              editable={editable}
-              labelledBy={ids.body}
-              invalid={Boolean(errors.body)}
-              onChange={(_, empty) => setBodyEmpty(empty)}
-            />
-            {errors.body && <FieldError id={`${ids.body}-error`}>{errors.body}</FieldError>}
-          </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 xl:col-start-2 xl:row-span-2 xl:row-start-1">
           <Field id={ids.category} label="Category" error={errors.category}>
             <select
               id={ids.category}
@@ -160,7 +148,7 @@ export function ArticleEditor({ article }: { article: ArticleWithRelations | nul
                 const file = e.target.files?.[0];
                 setCover(file ? URL.createObjectURL(file) : null);
               }}
-              className="mt-3 block w-full text-sm file:mr-3 file:rounded-full file:border-2 file:border-ink file:bg-cat-events file:px-3 file:py-1 file:font-semibold"
+              className="mt-3 block w-full text-sm file:mr-3 file:rounded-full file:border-2 file:border-ink file:bg-cat-events file:px-3 file:py-2.5 file:font-semibold"
             />
             <label htmlFor={ids.alt} className="mt-4 block text-sm font-semibold">
               Describe the image
@@ -171,10 +159,24 @@ export function ArticleEditor({ article }: { article: ArticleWithRelations | nul
               onChange={(e) => setAlt(e.target.value)}
               disabled={!editable}
               placeholder="e.g. Students queueing at the canteen"
-              className={inputClass(false, "mt-1 h-10 text-sm")}
+              className={inputClass(false, "mt-1 h-12 text-sm")}
             />
             <p className="mt-1 text-xs text-ink-muted">Read aloud to people who cannot see the image.</p>
           </div>
+        </div>
+
+        <div className="xl:col-start-1">
+          <p id={ids.body} className="mb-2 font-semibold">
+            Article
+          </p>
+          <RichTextEditor
+            initialHtml={article?.body ?? ""}
+            editable={editable}
+            labelledBy={ids.body}
+            invalid={Boolean(errors.body)}
+            onChange={(_, empty) => setBodyEmpty(empty)}
+          />
+          {errors.body && <FieldError id={`${ids.body}-error`}>{errors.body}</FieldError>}
         </div>
       </div>
 
@@ -183,12 +185,15 @@ export function ArticleEditor({ article }: { article: ArticleWithRelations | nul
       </p>
 
       {editable && (
-        <div className="fixed inset-x-0 bottom-16 z-30 border-t-3 border-ink bg-paper/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:left-64">
+        <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] z-30 border-t-3 border-ink bg-paper/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:left-64">
           <div className="flex flex-wrap justify-end gap-3">
             <Button type="button" variant="secondary" onClick={saveDraft}>
               Save draft
             </Button>
-            <Button type="submit">Submit for review</Button>
+            {/* "Submit" on phones keeps both buttons on one row; the name stays complete. */}
+            <Button type="submit" aria-label="Submit for review">
+              Submit<span className="max-sm:hidden">&nbsp;for review</span>
+            </Button>
           </div>
         </div>
       )}

@@ -54,6 +54,10 @@ export function RichTextEditor({
     ],
     content: initialHtml,
     editorProps: {
+      // Keep the caret clear of the sticky toolbar (up to 2 rows on phones) and of
+      // the fixed action and tab bars when the editor scrolls it into view.
+      scrollThreshold: { top: 120, bottom: 160, left: 0, right: 0 },
+      scrollMargin: { top: 120, bottom: 160, left: 0, right: 0 },
       attributes: {
         class: "prose-herald min-h-80 max-w-none px-5 py-4 outline-none",
         role: "textbox",
@@ -71,7 +75,8 @@ export function RichTextEditor({
   return (
     <div
       className={cx(
-        "overflow-hidden rounded-card border-3 bg-surface",
+        // No overflow-hidden: it would stop the toolbar from sticking.
+        "rounded-card border-3 bg-surface",
         invalid ? "border-cat-opinion" : "border-ink",
         !editable && "bg-paper",
       )}
@@ -113,7 +118,12 @@ function Toolbar({ editor }: { editor: Editor }) {
   ];
 
   return (
-    <div role="toolbar" aria-label="Formatting" className="flex flex-wrap gap-1 border-b-3 border-ink bg-paper p-2">
+    <div
+      role="toolbar"
+      aria-label="Formatting"
+      // Sticks to the top of the screen while the article scrolls; rounded to fit the frame.
+      className="sticky top-0 z-10 flex flex-wrap gap-1 rounded-t-[calc(var(--radius-card)-3px)] border-b-3 border-ink bg-paper p-2"
+    >
       {buttons.map(({ label, icon, active, disabled, run }) => (
         <ToolButton key={label} label={label} icon={icon} active={active} disabled={disabled} onClick={run} />
       ))}
@@ -158,7 +168,7 @@ function ToolButton({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        "grid size-9 place-items-center rounded-md border-2 disabled:opacity-40",
+        "grid size-11 place-items-center rounded-md border-2 disabled:opacity-40 md:size-9",
         active ? "border-ink bg-cat-events" : "border-transparent hover:border-ink hover:bg-surface",
       )}
     >

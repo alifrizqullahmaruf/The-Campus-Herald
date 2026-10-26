@@ -28,9 +28,10 @@ export default async function ReviewPage({ params }: PageProps<"/dashboard/revie
   const article = await load(params);
   if (!article) notFound();
 
+  // Bottom padding: room for the review bar, which grows with the "Send back" note on phones.
   return (
-    <div className="pb-40">
-      <Link href="/dashboard/review" className="font-display text-sm font-extrabold underline underline-offset-4">
+    <div className="pb-64 lg:pb-40">
+      <Link href="/dashboard/review" className="tap-target font-display text-sm font-extrabold underline underline-offset-4">
         ← Review queue
       </Link>
       <p className="mt-4 text-meta text-ink-muted">
@@ -44,7 +45,7 @@ export default async function ReviewPage({ params }: PageProps<"/dashboard/revie
           {article.title}
         </h1>
         <p className="mt-4 max-w-3xl text-xl leading-relaxed text-ink-muted">{article.excerpt}</p>
-        <ArticleCover article={article} className="mt-6 aspect-16/9 max-w-3xl" />
+        <ArticleCover article={article} className="mt-6 aspect-16/9 max-w-3xl" sizes="(min-width: 1024px) 768px, 100vw" />
         <div className="mt-8">
           <ArticleBody article={article} />
         </div>

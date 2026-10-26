@@ -27,7 +27,7 @@ export default function LoginPage() {
           <strong>Preview:</strong> any email and password opens the dashboard. Real accounts arrive with the database.
         </p>
         <p className="mt-6 text-center">
-          <Link href="/" className="font-display text-sm font-extrabold underline underline-offset-4">
+          <Link href="/" className="tap-target font-display text-sm font-extrabold underline underline-offset-4">
             ← Back to Side Notes
           </Link>
         </p>
