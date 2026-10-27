@@ -44,7 +44,7 @@ export const MOCK_USERS: User[] = [
     email: "sekar@herald.test",
     role: "author",
     isActive: true,
-    bio: "Strong opinions about canteens, parking and group projects.",
+    bio: "Strong opinions about coffee queues, timetables and group projects.",
     beat: "Opinion columnist",
   },
   {

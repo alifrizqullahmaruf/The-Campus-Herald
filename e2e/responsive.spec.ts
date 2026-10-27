@@ -212,7 +212,7 @@ test.describe("public pages", () => {
 
   test("text is never smaller than 11px", async ({ page }) => {
     const found: string[] = [];
-    for (const path of ["/", "/articles/the-new-grading-policy-explained-in-five-minutes", "/dashboard"]) {
+    for (const path of ["/", "/articles/whats-on-the-desk-of-the-students-who-top-their-year", "/dashboard"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       for (const s of await findSmallText(page, 11)) found.push(`${path}: ${s.size} "${s.text}"`);
@@ -221,7 +221,7 @@ test.describe("public pages", () => {
   });
 
   test("a long URL in an article body wraps instead of widening the page", async ({ page }) => {
-    await page.goto("/articles/the-new-grading-policy-explained-in-five-minutes");
+    await page.goto("/articles/whats-on-the-desk-of-the-students-who-top-their-year");
     const prose = page.locator(".prose-herald").first();
     await expect(prose).toBeVisible();
     // Sample articles hold no long links yet; editor HTML from Phase 4 will. Add one the way the editor would.

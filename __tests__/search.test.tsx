@@ -38,10 +38,10 @@ describe("matchesQuery", () => {
 
 describe("GET /api/search", () => {
   test("returns compact results without the body", async () => {
-    const response = await GET(new Request("http://test/api/search?q=canteen"));
+    const response = await GET(new Request("http://test/api/search?q=coffee"));
     const { results } = (await response.json()) as { results: SearchResult[] };
     expect(results).toHaveLength(1);
-    expect(results[0].slug).toBe("the-canteen-queue-is-a-design-problem-not-a-patience-problem");
+    expect(results[0].slug).toBe("the-coffee-queue-is-a-design-problem-not-a-patience-problem");
     expect(results[0]).not.toHaveProperty("body");
     // The palette thumbnail uses the article's cover photo.
     expect(results[0].coverImage).toMatch(/^https:/);
@@ -67,11 +67,11 @@ describe("SearchExplorer", () => {
     render(<SearchExplorer articles={articles} initialQuery="" initialCategory="" />);
     expect(screen.getByText(`${articles.length} of ${articles.length} articles`)).toBeDefined();
 
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "canteen" } });
-    expect(screen.getByText(/1 of \d+ articles match “canteen”/)).toBeDefined();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "coffee" } });
+    expect(screen.getByText(/1 of \d+ articles match “coffee”/)).toBeDefined();
     // Only the matching card is exposed.
     expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
-    expect(window.location.search).toBe("?q=canteen");
+    expect(window.location.search).toBe("?q=coffee");
   });
 
   test("category filter is a toggle button", async () => {

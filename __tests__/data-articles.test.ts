@@ -47,11 +47,11 @@ describe("public article queries", () => {
   });
 
   test("search is case-insensitive and can be limited to a category", async () => {
-    const results = await searchArticles("CANTEEN");
+    const results = await searchArticles("COFFEE");
     expect(results.map((a) => a.slug)).toContain(
-      "the-canteen-queue-is-a-design-problem-not-a-patience-problem",
+      "the-coffee-queue-is-a-design-problem-not-a-patience-problem",
     );
-    expect(await searchArticles("canteen", "academics")).toHaveLength(0);
+    expect(await searchArticles("coffee", "academics")).toHaveLength(0);
     expect(await searchArticles("pending-only-text-that-does-not-exist")).toHaveLength(0);
   });
 

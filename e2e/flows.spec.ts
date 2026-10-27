@@ -7,14 +7,14 @@ test("Ctrl+K opens quick search; Enter opens the selected article", async ({ pag
   await page.keyboard.press("Control+K");
   const input = page.getByRole("combobox", { name: "Search articles" });
   await expect(input).toBeFocused();
-  await input.fill("canteen");
+  await input.fill("coffee");
   await expect(page.getByRole("option")).toHaveCount(1);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/articles\/the-canteen-queue/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("canteen queue");
+  await expect(page).toHaveURL(/\/articles\/the-coffee-queue/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("coffee queue");
 });
 
-for (const start of ["/about", "/search?q=canteen"]) {
+for (const start of ["/about", "/search?q=coffee"]) {
   test(`"All results" in quick search opens the search page with the query and topic (from ${start})`, async ({ page }) => {
     await page.goto(start);
     await page.waitForLoadState("networkidle");
@@ -58,10 +58,10 @@ test("Esc closes quick search and returns focus", async ({ page }) => {
 
 test("header search form works without the palette", async ({ page }) => {
   await page.goto("/about");
-  await page.getByRole("searchbox", { name: "Search articles" }).first().fill("robot");
+  await page.getByRole("searchbox", { name: "Search articles" }).first().fill("piano");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/search\?q=robot/);
-  await expect(page.getByText(/1 of \d+ articles match “robot”/)).toBeVisible();
+  await expect(page).toHaveURL(/\/search\?q=piano/);
+  await expect(page.getByText(/1 of \d+ articles match “piano”/)).toBeVisible();
 });
 
 test("search page filters by topic and keeps the URL in sync", async ({ page }) => {

@@ -116,7 +116,7 @@ describe("cover photos", () => {
   });
 
   test("a Picsum cover is sized by URL and credits the photographer", async () => {
-    const article = (await getArticleBySlug("the-canteen-queue-is-a-design-problem-not-a-patience-problem"))!;
+    const article = (await getArticleBySlug("the-coffee-queue-is-a-design-problem-not-a-patience-problem"))!;
     const { container } = render(
       <ArticleCover
         article={{
@@ -144,7 +144,7 @@ describe("cover photos", () => {
     expect(isHttpsUrl("javascript:alert(1)")).toBe(false);
     expect(isHttpsUrl("http://unsplash.com/@ana")).toBe(false);
     expect(isHttpsUrl("not a url")).toBe(false);
-    const article = (await getArticleBySlug("the-canteen-queue-is-a-design-problem-not-a-patience-problem"))!;
+    const article = (await getArticleBySlug("the-coffee-queue-is-a-design-problem-not-a-patience-problem"))!;
     render(
       <ArticleCover
         article={{
@@ -160,7 +160,7 @@ describe("cover photos", () => {
   });
 
   test("a stock photo shows the photographer credit with links", async () => {
-    const article = (await getArticleBySlug("the-canteen-queue-is-a-design-problem-not-a-patience-problem"))!;
+    const article = (await getArticleBySlug("the-coffee-queue-is-a-design-problem-not-a-patience-problem"))!;
     const { container } = render(
       <ArticleCover
         article={{
@@ -182,7 +182,7 @@ describe("cover photos", () => {
   });
 
   test("without a photo the generated art is used and there is no credit", async () => {
-    const article = (await getArticleBySlug("the-canteen-queue-is-a-design-problem-not-a-patience-problem"))!;
+    const article = (await getArticleBySlug("the-coffee-queue-is-a-design-problem-not-a-patience-problem"))!;
     const { container } = render(<ArticleCover article={{ ...article, coverImage: null, coverCredit: null }} />);
     expect(container.querySelector("svg")).not.toBeNull();
     expect(screen.queryByText(/Photo:/)).toBeNull();

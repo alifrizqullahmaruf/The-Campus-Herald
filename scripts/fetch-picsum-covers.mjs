@@ -11,24 +11,24 @@ const OUT_FILE = "lib/mock/covers.json";
 
 // Sample article id (lib/mock/articles.ts) → Picsum photo id.
 const PICKS = {
-  1: 20, // grading policy: notebook and papers on a desk
-  2: 1078, // the lab that never switches off: lit windows at night
-  3: 24, // library hours: an open book
-  4: 180, // course registration: laptop and notes
-  5: 625, // council budget: an empty meeting table
-  6: 885, // debate motions: typewriter and papers
-  7: 348, // activity fair: a busy hall
+  1: 20, // study desks of top students: notebook and stationery
+  2: 1078, // science building at night: lit windows
+  3: 24, // library reading room: an open book
+  4: 180, // online course registration: laptop and notes
+  5: 625, // council's new room: a meeting table
+  6: 885, // typewriter writing club: typewriter and papers
+  7: 348, // open day: a busy hall with escalators
   8: 452, // music night: concert crowd
-  9: 692, // career fair queues: a crowded concourse
-  10: 355, // film screening: old film cameras
-  11: 828, // cultural week: fireworks
-  12: 1060, // canteen queue: a coffee counter
-  13: 7, // group projects: a shared table
+  9: 692, // career fair in the great hall: a crowded hall
+  10: 355, // photography club's vintage cameras
+  11: 828, // cultural week closing: fireworks
+  12: 1060, // coffee queue: a pour-over coffee bar
+  13: 7, // group project contracts: planning at a table
   14: 175, // Saturday exams: an alarm clock
-  15: 60, // robotics: a desk of gear
-  16: 466, // river clean-up: a forest stream
-  17: 453, // debate final: a speaker on stage
-  18: 1082, // campus choir: hands on a piano
+  15: 60, // campus app built at a dorm desk: keyboard and monitor
+  16: 466, // river clean-up study: a forest stream
+  17: 453, // battle of the bands: singer and guitarist on stage
+  18: 1082, // piano recital scholarship: hands on a piano
 };
 
 function isHttpsOn(url, host) {

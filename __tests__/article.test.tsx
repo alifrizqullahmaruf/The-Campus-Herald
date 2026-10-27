@@ -9,7 +9,7 @@ import { formatDate, initials } from "../lib/format";
 
 afterEach(cleanup);
 
-const SLUG = "the-canteen-queue-is-a-design-problem-not-a-patience-problem";
+const SLUG = "the-coffee-queue-is-a-design-problem-not-a-patience-problem";
 
 describe("format helpers", () => {
   test("formatDate is stable regardless of the machine time zone", () => {

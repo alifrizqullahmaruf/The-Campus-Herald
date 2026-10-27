@@ -17,7 +17,7 @@ describe("author data", () => {
     const laras = await getAuthorProfile(7);
     expect(laras?.isActive).toBe(false);
     expect(await getAllAuthorIds()).toContain(7);
-    expect((await getPublishedArticlesByAuthor(7)).map((a) => a.title)).toEqual(["Ten years of the campus choir"]);
+    expect((await getPublishedArticlesByAuthor(7)).map((a) => a.title)).toEqual(["Music student's piano recital earns a national scholarship"]);
   });
 
   test("the admin has no author page", async () => {

@@ -6,7 +6,7 @@ export const PUBLIC_PAGES = [
   // The longest topic names: the widest titles on a phone.
   "/categories/organisations",
   "/categories/achievements",
-  "/articles/the-new-grading-policy-explained-in-five-minutes",
+  "/articles/whats-on-the-desk-of-the-students-who-top-their-year",
   "/search",
   "/search?q=music",
   "/authors",

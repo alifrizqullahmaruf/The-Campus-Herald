@@ -9,7 +9,7 @@ afterEach(cleanup);
 
 describe("ArticleBody", () => {
   test("renders the HTML body with the category colour for pull quotes", async () => {
-    const article = (await getArticleBySlug("the-new-grading-policy-explained-in-five-minutes"))!;
+    const article = (await getArticleBySlug("whats-on-the-desk-of-the-students-who-top-their-year"))!;
     const { container } = render(<ArticleBody article={article} />);
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).toContain("prose-herald");
