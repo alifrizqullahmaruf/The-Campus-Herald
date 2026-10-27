@@ -15,7 +15,7 @@ async function renderAvatar(id: Promise<string>): Promise<string | null> {
   const user = (await getAllUsers()).find((u) => u.id === userId);
   if (!user) return null;
   const profile = user.role === "author" ? await getAuthorProfile(user.id) : null;
-  return avatarSvg(user.name, profile?.primaryCategory);
+  return avatarSvg(user.name, profile?.primaryCategory, user.id);
 }
 
 export async function GET(_request: Request, { params }: RouteContext<"/avatars/[id]">) {

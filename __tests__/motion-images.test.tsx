@@ -90,6 +90,16 @@ describe("avatars", () => {
     expect(avatarSvg("Rafi Pratama", "academics")).not.toBe(a);
   });
 
+  test("sample writers with a hand-picked look get it; others keep their random one", async () => {
+    // Sekar Ayu (id 5) has hand-picked hair, so her avatar differs from the random pick.
+    expect(avatarSvg("Sekar Ayu", "opinion", 5)).not.toBe(avatarSvg("Sekar Ayu", "opinion"));
+    // Rafi Pratama (id 2) has no override: the user id changes nothing.
+    expect(avatarSvg("Rafi Pratama", "academics", 2)).toBe(avatarSvg("Rafi Pratama", "academics"));
+    // The route serves the hand-picked look.
+    const res = await avatarRoute(new Request("http://test/avatars/5"), { params: Promise.resolve({ id: "5" }) });
+    expect(await res.text()).toBe(avatarSvg("Sekar Ayu", "opinion", 5));
+  });
+
   test("route serves SVG for known users and 404 otherwise", async () => {
     expect(avatarSrc(5)).toBe("/avatars/5");
     const ok = await avatarRoute(new Request("http://test/avatars/5"), { params: Promise.resolve({ id: "5" }) });
