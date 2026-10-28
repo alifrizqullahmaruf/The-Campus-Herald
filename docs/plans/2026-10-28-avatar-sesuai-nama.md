@@ -1,7 +1,7 @@
 # Plan: Avatar penulis sesuai nama (perempuan / laki-laki)
 
 **Tanggal:** 2026-10-28
-**Status:** ✅ Selesai (menunggu konfirmasi commit)
+**Status:** ✅ Selesai
 
 ## Tujuan
 
@@ -32,7 +32,7 @@ Keputusan user: avatar **dipilih per orang** (bukan acak per kelompok), dan **se
 | 2 | Tampilan per penulis + dipakai route avatar | Claude | `lib/avatar.ts`, `app/avatars/[id]/route.ts` | ✅ |
 | 3 | Unit test: penulis yang dikunci memakai rambutnya, penulis lain tetap konsisten | Claude | `__tests__/motion-images.test.tsx` | ✅ |
 | 4 | Verifikasi: unit, lint, build, E2E, cek tampilan halaman Authors; `code-reviewer` sekali | Claude | – | ✅ |
-| 5 | Commit + push setelah konfirmasi | Claude | – | Menunggu konfirmasi |
+| 5 | Commit + push setelah konfirmasi | Claude | – | ✅ `526057f` |
 
 ## File yang berubah
 

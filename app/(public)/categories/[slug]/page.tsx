@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ArticleCard } from "@/components/article/article-card";
 import { MostRead } from "@/components/article/most-read";
 import { Container } from "@/components/layout/container";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { LoadMore } from "@/components/ui/load-more";
+import { TopicSkeleton } from "@/components/ui/skeleton";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import { getPublishedArticles } from "@/lib/data/articles";
@@ -20,7 +22,17 @@ export async function generateMetadata({ params }: PageProps<"/categories/[slug]
   return { title: category.name, description: category.description };
 }
 
-export default async function CategoryPage({ params }: PageProps<"/categories/[slug]">) {
+// params is URL data: read inside Suspense so a click on a topic link shows the
+// skeleton at once (instant navigation).
+export default function CategoryPage({ params }: PageProps<"/categories/[slug]">) {
+  return (
+    <Suspense fallback={<TopicSkeleton />}>
+      <Topic params={params} />
+    </Suspense>
+  );
+}
+
+async function Topic({ params }: { params: PageProps<"/categories/[slug]">["params"] }) {
   const category = getCategoryBySlug((await params).slug);
   if (!category) notFound();
   const articles = await getPublishedArticles({ category: category.slug });

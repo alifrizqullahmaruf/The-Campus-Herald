@@ -8,6 +8,10 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 import { getAllArticles, getArticleById } from "@/lib/data/articles";
 import { formatDate } from "@/lib/format";
 
+// Allowed to wait for the server on a click: the page reads `params` at the top.
+// Revisit when Phase 3 rebuilds the dashboard behind login.
+export const instant = false;
+
 export async function generateStaticParams() {
   const articles = await getAllArticles();
   return articles.map((article) => ({ id: String(article.id) }));

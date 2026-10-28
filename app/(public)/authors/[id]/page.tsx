@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ArticleCard } from "@/components/article/article-card";
 import { Container } from "@/components/layout/container";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { AuthorSkeleton } from "@/components/ui/skeleton";
 import { getPublishedArticlesByAuthor } from "@/lib/data/articles";
 import { getAllAuthorIds, getAuthorProfile } from "@/lib/data/users";
 import { Avatar } from "@/components/author/avatar";
@@ -23,7 +25,17 @@ export async function generateMetadata({ params }: PageProps<"/authors/[id]">): 
   return { title: author.name, description: author.bio };
 }
 
-export default async function AuthorPage({ params }: PageProps<"/authors/[id]">) {
+// params is URL data: read inside Suspense so a click on a writer link shows the
+// skeleton at once (instant navigation).
+export default function AuthorPage({ params }: PageProps<"/authors/[id]">) {
+  return (
+    <Suspense fallback={<AuthorSkeleton />}>
+      <Author params={params} />
+    </Suspense>
+  );
+}
+
+async function Author({ params }: { params: PageProps<"/authors/[id]">["params"] }) {
   const author = await load(params);
   if (!author) notFound();
   const articles = await getPublishedArticlesByAuthor(author.id);

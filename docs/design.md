@@ -243,6 +243,9 @@ Pill with `border-thin`, status fill, icon + label (see 2.1). Shown on every art
 ### Empty state
 Centred surface card with a tilted eyebrow and one sentence, plus one button ("Write your first article →").
 
+### Loading skeleton
+Shown while the article, topic and writer pages stream in after a click (they read the URL inside `<Suspense>`; direct visits get the full prerendered page). Faded `ink/10` blocks in the card radius, laid out like the page they stand in for so nothing jumps when the content arrives. They pulse only when motion is allowed, are hidden from screen readers, and sit in a `role="status"` wrapper with a visually hidden "Loading …" label. Component: `components/ui/skeleton.tsx`.
+
 ---
 
 ## 4. Page layouts

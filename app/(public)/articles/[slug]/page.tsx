@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ArticleBody } from "@/components/article/article-body";
 import { ArticleCard } from "@/components/article/article-card";
 import { ArticleCover } from "@/components/article/article-cover";
@@ -8,6 +9,7 @@ import { AuthorBox } from "@/components/article/author-box";
 import { FiledUnder } from "@/components/article/filed-under";
 import { Container } from "@/components/layout/container";
 import { CategoryBadge } from "@/components/ui/category-badge";
+import { ArticleSkeleton } from "@/components/ui/skeleton";
 import { getAdjacentArticles, getArticleBySlug, getPublishedArticles } from "@/lib/data/articles";
 import { formatDate } from "@/lib/format";
 
@@ -27,7 +29,17 @@ export async function generateMetadata({ params }: PageProps<"/articles/[slug]">
   };
 }
 
-export default async function ArticlePage({ params }: PageProps<"/articles/[slug]">) {
+// params is URL data: reading it inside Suspense lets a click on an article link
+// show the skeleton at once instead of waiting for the server (instant navigation).
+export default function ArticlePage({ params }: PageProps<"/articles/[slug]">) {
+  return (
+    <Suspense fallback={<ArticleSkeleton />}>
+      <Article params={params} />
+    </Suspense>
+  );
+}
+
+async function Article({ params }: { params: PageProps<"/articles/[slug]">["params"] }) {
   const article = await getArticleBySlug((await params).slug);
   if (!article) notFound();
 
