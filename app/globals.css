@@ -181,15 +181,21 @@
   animation-delay: 0s;
 }
 
-/* Hero headline: each line rises out of a mask, staggered. */
+/* Headlines: each line (home hero) or word (page titles, RiseText) rises out of
+   a mask, staggered. It starts a little more than its own height down, so
+   accents on capitals stay below the mask's padding while it waits its turn. */
 @keyframes line-rise {
-  from { translate: 0 105%; }
+  from { translate: 0 calc(100% + 0.25em); }
   to { translate: 0 0; }
 }
 @utility reveal-line {
   display: inline-block;
-  animation: line-rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: calc(var(--line, 0) * 90ms);
+  /* Only with motion allowed: the global reduced-motion rule shortens
+     durations but would keep the stagger delay, hiding words for a moment. */
+  @media (prefers-reduced-motion: no-preference) {
+    animation: line-rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--line, 0) * 90ms);
+  }
 }
 
 /* Hero tilts and lifts away as it scrolls out (scroll-driven, no JS). */
@@ -209,9 +215,10 @@
   }
 }
 
-/* "Fresh off the notebook": cards start as a tilted pile and settle into the
-   grid as the section scrolls in. Each card sets --pile-x/--pile-y/--pile-r.
-   Browsers without scroll-driven animations simply show the grid. */
+/* Card grids (home "Fresh off the notebook.", About steps, topic and writer
+   articles, Categories tiles): cards start as a tilted pile and settle into the
+   grid as they scroll in. Each card sets --px/--py/--pr (pileStyle in
+   lib/motion.ts). Browsers without scroll-driven animations simply show the grid. */
 @keyframes pile-to-grid {
   from {
     translate: var(--pile-x, 0px) var(--pile-y, 0px);
@@ -220,8 +227,9 @@
   to { translate: 0 0; rotate: 0deg; }
 }
 @utility pile-card {
-  /* Cards gather toward the middle only on the 3-column layout; on narrower
-     screens they just start tilted, so nothing slides off the side. */
+  /* Cards gather toward the middle only from lg, where the grids have their
+     full 2 or 3 columns; on narrower screens they just start tilted, so nothing
+     slides off the side. */
   /* Below lg only a fifth of the tilt (at most 3deg), so a full-width card stays
      inside the page gutter. */
   --pile-x: 0px;
@@ -237,6 +245,79 @@
       animation: pile-to-grid linear both;
       animation-timeline: view();
       animation-range: entry 10% cover 40%;
+    }
+  }
+}
+/* Cards already on screen when the page opens (the first row of the topic and
+   writer grids, the Categories tiles) settle from the same pile once on load,
+   staggered by --pile-i, instead of waiting half-piled for a scroll. */
+@media (prefers-reduced-motion: no-preference) {
+  .pile-card[data-pile="load"] {
+    animation: pile-to-grid 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--pile-i, 0) * 80ms + 150ms);
+  }
+}
+
+/* About illustration (components/about/buried-notes-art.tsx): as it scrolls in,
+   the sticky note climbs out from behind the front chat bubbles, which part to
+   let it through; on hover the note wobbles like the logo. The resting pose is
+   the drawing itself, so browsers without scroll-driven animations show that. */
+@keyframes note-climb {
+  from { translate: 0 72px; rotate: 10deg; }
+}
+@keyframes bubble-part {
+  from { translate: var(--part, 0px) 10px; }
+}
+.buried-art {
+  view-timeline-name: --buried-art;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .buried-note {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: note-climb linear both;
+      animation-timeline: --buried-art;
+      animation-range: entry 30% cover 55%;
+    }
+    .buried-bubble {
+      animation: bubble-part linear both;
+      animation-timeline: --buried-art;
+      animation-range: entry 30% cover 55%;
+    }
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .buried-wobble {
+    transform-box: fill-box;
+    transform-origin: 50% 0%;
+  }
+  .buried-art:hover .buried-wobble {
+    animation: note-wobble-again 1s cubic-bezier(0.3, 0.7, 0.4, 1);
+  }
+}
+
+/* Article reading progress: a bar along the top edge of the screen, in the
+   topic colour, that fills as the article body (which names the view timeline)
+   scrolls past. Hidden without scroll-driven animations and under reduced motion. */
+@keyframes read-progress {
+  from { scale: 0 1; }
+}
+@utility read-progress {
+  display: none;
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 50;
+      display: block;
+      height: 6px;
+      border-bottom: 2px solid var(--color-ink);
+      transform-origin: 0 50%;
+      pointer-events: none;
+      animation: read-progress linear both;
+      animation-timeline: --article-body;
+      animation-range: contain 0% contain 100%;
     }
   }
 }

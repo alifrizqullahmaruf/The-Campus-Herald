@@ -5,9 +5,11 @@ import { MostRead } from "@/components/article/most-read";
 import { Container } from "@/components/layout/container";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { LoadMore } from "@/components/ui/load-more";
+import { RiseText } from "@/components/ui/rise-text";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import { getPublishedArticles } from "@/lib/data/articles";
+import { pileStyle } from "@/lib/motion";
 
 // Reads `params` at the top so a shared link gets the whole page as HTML, even
 // without JavaScript (see app/(public)/articles/[slug]/page.tsx).
@@ -38,7 +40,10 @@ export default async function CategoryPage({ params }: PageProps<"/categories/[s
           {/* The topic name is one long word: sized to fit a 320px screen and the 1120px column. */}
           <h1 className="mt-3 flex flex-col items-start gap-3 font-display text-[clamp(28px,8.4vw,104px)] font-black leading-[0.95] sm:flex-row sm:items-center sm:gap-4">
             <Icon aria-hidden="true" className="size-[0.8em] shrink-0" strokeWidth={2.5} />
-            {category.name}
+            {/* One flex item, however many words rise. */}
+            <span>
+              <RiseText text={category.name} />
+            </span>
           </h1>
           <p className="mt-4 max-w-xl text-lg">{category.description}</p>
           <p className="mt-4 text-meta">
@@ -55,8 +60,9 @@ export default async function CategoryPage({ params }: PageProps<"/categories/[s
             </p>
           ) : (
             <LoadMore className="grid gap-6 sm:grid-cols-2">
-              {articles.map((article) => (
-                <li key={article.id} className="flex">
+              {articles.map((article, i) => (
+                // The first row is on screen when the page opens, so it settles on load.
+                <li key={article.id} className="pile-card flex" data-pile={i < 2 ? "load" : undefined} style={pileStyle(i, 2)}>
                   <ArticleCard article={article} className="w-full" headingLevel="h2" />
                 </li>
               ))}

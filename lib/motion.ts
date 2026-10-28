@@ -1,5 +1,7 @@
 // Small pure helpers shared by the draggable / physics components.
 
+import type { CSSProperties } from "react";
+
 /** Pointer travel (px) before a press counts as a drag instead of a click. */
 export const DRAG_THRESHOLD = 5;
 
@@ -57,6 +59,23 @@ export function prefersReducedMotion(): boolean {
 export function seeded(seed: number): number {
   const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
   return x - Math.floor(x);
+}
+
+/**
+ * Start pose of the i-th `pile-card` (globals.css) in a grid of `columns`:
+ * pulled toward the middle column and toward the next row, with a seeded tilt.
+ * The pull is used from lg up; narrower screens get a fifth of the tilt only.
+ * `--pile-i` staggers cards that settle on load (`data-pile="load"`).
+ */
+export function pileStyle(i: number, columns: number): CSSProperties {
+  const col = i % columns;
+  const row = Math.floor(i / columns);
+  return {
+    "--px": `${((columns - 1) / 2 - col) * 100 + Math.round(seeded(i + 11) * 20 - 10)}%`,
+    "--py": `${(row === 0 ? 1 : -1) * 45}%`,
+    "--pr": `${Math.round(seeded(i + 21) * 30 - 15)}deg`,
+    "--pile-i": i,
+  } as CSSProperties;
 }
 
 /** Browsers (and test environments) without the APIs the animated pieces rely on. */

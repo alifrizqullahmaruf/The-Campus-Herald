@@ -142,12 +142,16 @@ Measured from the template recording (2026-10-17): micro-interactions are quick 
 | Rank pop | rank number scales 1.25, rotates −6deg, turns ink | 150ms ease-out | Most read rows |
 | Filter pop | matches rise 4px, tilt −1deg, shadow-lift; others fade to 30% + grayscale | 200ms ease-out | Search page |
 | Line rise | each headline line rises out of a mask, 90ms stagger | 320ms | Home hero |
+| Word rise | each word of a page title rises out of its own mask, 30ms stagger (at most 360ms); words because titles wrap differently per screen | 320ms | h1 of About, Categories, Authors, Search, topic, writer and article pages (`RiseText`, via `SectionHeader` for h1); masks clip only top and bottom |
 | Logo wobble | sticky note wobbles from its stuck edge, corner lifts | 1s, once on load and on hover | Logo (`.mark-note`) |
 | Marquee | horizontal scroll of latest headlines | ~40s per loop, linear | Under the hero |
 | Drifting rows | topic pill rows drift in opposite directions (36 px/s); drag with momentum | continuous | Home "Pick a topic." (`TopicRows`) |
 | Physics pile | items drop in, tumble and collide (Matter.js), can be thrown | ~2s to settle | Home hero cards, footer nav pills (`PhysicsPile`) |
 | Hero tilt | hero rotates 6deg around its bottom-right corner and lifts as it scrolls out, so it never drops over the next section | scroll-linked | Home hero (`hero-tilt`) |
-| Pile → grid | latest cards start as a tilted pile and settle into the grid; below `lg` only a fifth of the tilt (≤ 3deg) so full-width cards stay inside the gutter | scroll-linked | Home "Fresh off the notebook." (`pile-card`) |
+| Pile → grid | latest cards start as a tilted pile and settle into the grid; below `lg` only a fifth of the tilt (≤ 3deg) so full-width cards stay inside the gutter | scroll-linked; 600ms on load, 80ms stagger, for cards already on screen | Scroll-linked: home "Fresh off the notebook.", About workflow steps, topic and writer article grids from the second row. On load (`data-pile="load"`, so nothing waits half-piled for a scroll): the first row of the topic and writer grids, all Categories tiles. `pile-card`, start poses from `pileStyle` in `lib/motion.ts` |
+| Note climb | the About sticky note climbs out from behind the chat bubbles, which part to let it through; wobbles on hover | scroll-linked | About illustration (`buried-*`) |
+| Count up | numbers count from 0 when they scroll into view (not when already on screen at load); screen readers get the final value | 900ms ease-out | About "Small blog, loud numbers." (`CountUp`) |
+| Reading progress | bar on the top edge of the screen in the topic colour fills as the article body scrolls past; hidden without scroll-driven animations and under reduced motion | scroll-linked | Article page (`read-progress`) |
 | Page crossfade | old and new page crossfade; header stays put | 200ms | Public layout (`<ViewTransition>`) |
 | Modal | fade + scale 0.98 → 1 | 150ms | Search palette |
 

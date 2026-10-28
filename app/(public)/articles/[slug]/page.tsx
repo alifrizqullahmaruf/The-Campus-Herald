@@ -8,6 +8,9 @@ import { AuthorBox } from "@/components/article/author-box";
 import { FiledUnder } from "@/components/article/filed-under";
 import { Container } from "@/components/layout/container";
 import { CategoryBadge } from "@/components/ui/category-badge";
+import { RiseText } from "@/components/ui/rise-text";
+import { getCategoryBySlug } from "@/lib/categories";
+import { cx } from "@/lib/cx";
 import { getAdjacentArticles, getArticleBySlug, getPublishedArticles } from "@/lib/data/articles";
 import { formatDate } from "@/lib/format";
 
@@ -50,8 +53,9 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
           <Link href={`/categories/${article.category.slug}`}>
             <CategoryBadge name={article.category.name} />
           </Link>
-          <h1 className="mt-4 font-display text-[clamp(36px,6vw,72px)] font-black leading-[0.95]">
-            {article.title}
+          {/* anywhere: a very long word in a title breaks instead of widening a phone screen. */}
+          <h1 className="mt-4 font-display text-[clamp(36px,6vw,72px)] font-black leading-[0.95] [overflow-wrap:anywhere]">
+            <RiseText text={article.title} />
           </h1>
           <p className="mt-5 text-xl leading-relaxed text-ink-muted">{article.excerpt}</p>
           <p className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-meta">
@@ -78,7 +82,9 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
               <FiledUnder slug={article.category.slug} />
             </div>
           </div>
-          <div className="min-w-0">
+          {/* The body names the view timeline the reading-progress bar follows. */}
+          <div className="min-w-0 [view-timeline-name:--article-body]">
+            <div aria-hidden="true" className={cx("read-progress", getCategoryBySlug(article.category.slug)?.bgClass ?? "bg-accent")} />
             <ArticleBody article={article} />
             <div className="mt-12 max-w-[68ch]">
               <AuthorBox author={article.author} />

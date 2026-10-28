@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { cx } from "@/lib/cx";
 
 const INK = "var(--color-ink)";
@@ -66,6 +67,10 @@ function ChatBubble({ x, y, w, h, rotate, fill, lines = INK, tail }: Bubble) {
  * About page illustration for "Group chats bury the news": chat bubbles in the
  * topic colours pile up over a phone while one yellow sticky note (the Side
  * Notes mark) climbs out of the pile. Decorative; the heading carries the meaning.
+ * As it scrolls into view the note climbs up from behind the front bubbles, which
+ * part to let it through, and it wobbles on hover (`buried-*` in globals.css).
+ * Frame it with overflow-clip, not overflow-hidden: a hidden box becomes the
+ * scroller that the scroll-linked animation follows, and it never scrolls.
  */
 export function BuriedNotesArt({ className }: { className?: string }) {
   return (
@@ -73,7 +78,7 @@ export function BuriedNotesArt({ className }: { className?: string }) {
       aria-hidden="true"
       viewBox="0 0 400 300"
       preserveAspectRatio="xMidYMid slice"
-      className={cx("block size-full", className)}
+      className={cx("buried-art block size-full", className)}
     >
       <rect width="400" height="300" fill={PAPER} />
       {Array.from({ length: 6 }, (_, row) =>
@@ -90,18 +95,26 @@ export function BuriedNotesArt({ className }: { className?: string }) {
         <ChatBubble key={i} {...b} />
       ))}
 
-      {/* The sticky note climbing out: shadow, note, folded corner, lines. */}
-      <g transform="rotate(-10 205 140)">
-        <rect x="160" y="84" width="104" height="104" rx="4" fill={INK} transform="translate(8 8)" />
-        <rect x="160" y="84" width="104" height="104" rx="4" fill={NOTE} stroke={INK} strokeWidth="7" />
-        <path d="M 264 104 L 244 84" stroke={INK} strokeWidth="6" strokeLinecap="round" />
-        <line x1="178" y1="112" x2="244" y2="112" stroke={INK} strokeWidth="6" strokeLinecap="round" />
-        <line x1="178" y1="132" x2="234" y2="132" stroke={INK} strokeWidth="6" strokeLinecap="round" />
-        <path d="M 180 156 C 192 140 200 170 212 152 S 230 160 242 148" fill="none" stroke={ACCENT} strokeWidth="7" strokeLinecap="round" />
+      {/* The sticky note climbing out: shadow, note, folded corner, lines.
+          The outer groups carry the climb and the hover wobble (globals.css). */}
+      <g className="buried-note">
+        <g className="buried-wobble">
+          <g transform="rotate(-10 205 140)">
+            <rect x="160" y="84" width="104" height="104" rx="4" fill={INK} transform="translate(8 8)" />
+            <rect x="160" y="84" width="104" height="104" rx="4" fill={NOTE} stroke={INK} strokeWidth="7" />
+            <path d="M 264 104 L 244 84" stroke={INK} strokeWidth="6" strokeLinecap="round" />
+            <line x1="178" y1="112" x2="244" y2="112" stroke={INK} strokeWidth="6" strokeLinecap="round" />
+            <line x1="178" y1="132" x2="234" y2="132" stroke={INK} strokeWidth="6" strokeLinecap="round" />
+            <path d="M 180 156 C 192 140 200 170 212 152 S 230 160 242 148" fill="none" stroke={ACCENT} strokeWidth="7" strokeLinecap="round" />
+          </g>
+        </g>
       </g>
 
+      {/* Front bubbles start pushed toward the middle, over the note, and part to let it out. */}
       {FRONT.map((b, i) => (
-        <ChatBubble key={i} {...b} />
+        <g key={i} className="buried-bubble" style={{ "--part": b.tail === "left" ? "18px" : "-18px" } as CSSProperties}>
+          <ChatBubble {...b} />
+        </g>
       ))}
     </svg>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BuriedNotesArt } from "@/components/about/buried-notes-art";
+import { CountUp } from "@/components/about/count-up";
 import { AuthorCard } from "@/components/author/author-card";
 import { Container } from "@/components/layout/container";
 import { SectionBand } from "@/components/layout/section-band";
@@ -9,6 +10,7 @@ import { Eyebrow } from "@/components/ui/eyebrow";
 import { CATEGORIES } from "@/lib/categories";
 import { getPublishedArticles } from "@/lib/data/articles";
 import { getAuthorProfiles } from "@/lib/data/users";
+import { pileStyle } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "About",
@@ -45,7 +47,9 @@ export default async function AboutPage() {
 
       <div className="border-t-3 border-ink">
         <Container className="grid items-center gap-10 py-14 md:grid-cols-2 md:py-20">
-          <div className="aspect-4/3 -rotate-2 overflow-hidden rounded-card border-3 border-ink shadow-hard">
+          {/* overflow-clip, not -hidden: a hidden box would be the scroller the
+              illustration's scroll-linked animation follows, and it never scrolls. */}
+          <div className="aspect-4/3 -rotate-2 overflow-clip rounded-card border-3 border-ink shadow-hard">
             <BuriedNotesArt />
           </div>
           <div>
@@ -72,7 +76,7 @@ export default async function AboutPage() {
           <SectionHeader eyebrow="The workflow" title="How an article goes live." />
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {STEPS.map((step, i) => (
-              <li key={step.title} className="rounded-card border-3 border-ink bg-surface p-5 shadow-hard">
+              <li key={step.title} className="pile-card rounded-card border-3 border-ink bg-surface p-5 shadow-hard" style={pileStyle(i, 3)}>
                 <span className="font-display text-5xl font-black text-ink/50">{String(i + 1).padStart(2, "0")}</span>
                 <h3 className="mt-2 font-display text-2xl font-black">{step.title}.</h3>
                 <p className="mt-2 text-ink-muted">{step.text}</p>
@@ -95,7 +99,9 @@ export default async function AboutPage() {
                 className={`flex flex-col-reverse rounded-card border-3 border-ink p-4 text-ink shadow-hard ${STAT_TONES[i]} ${i % 2 ? "rotate-1" : "-rotate-1"}`}
               >
                 <dt className="mt-1 text-meta">{stat.label}</dt>
-                <dd className="font-display text-5xl font-black">{stat.value}</dd>
+                <dd className="font-display text-5xl font-black">
+                  <CountUp value={stat.value} />
+                </dd>
               </div>
             ))}
           </dl>

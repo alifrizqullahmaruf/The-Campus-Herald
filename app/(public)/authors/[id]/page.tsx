@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { ArticleCard } from "@/components/article/article-card";
 import { Container } from "@/components/layout/container";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { RiseText } from "@/components/ui/rise-text";
 import { getPublishedArticlesByAuthor } from "@/lib/data/articles";
 import { getAllAuthorIds, getAuthorProfile } from "@/lib/data/users";
+import { pileStyle } from "@/lib/motion";
 import { Avatar } from "@/components/author/avatar";
 
 // Reads `params` at the top so a shared link gets the whole page as HTML, even
@@ -46,7 +48,9 @@ export default async function AuthorPage({ params }: PageProps<"/authors/[id]">)
                 </span>
               )}
             </div>
-            <h1 className="mt-3 font-display text-[clamp(36px,7vw,80px)] font-black leading-[0.95]">{author.name}</h1>
+            <h1 className="mt-3 font-display text-[clamp(36px,7vw,80px)] font-black leading-[0.95]">
+              <RiseText text={author.name} />
+            </h1>
             <p className="mt-4 max-w-xl text-lg text-ink-muted">{author.bio}</p>
             <p className="mt-4 text-meta">
               {author.articleCount} published {author.articleCount === 1 ? "article" : "articles"}
@@ -65,8 +69,9 @@ export default async function AuthorPage({ params }: PageProps<"/authors/[id]">)
           </p>
         ) : (
           <ul className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {articles.map((article) => (
-              <li key={article.id} className="flex">
+            {articles.map((article, i) => (
+              // The first row can be on screen when the page opens, so it settles on load.
+              <li key={article.id} className="pile-card flex" data-pile={i < 3 ? "load" : undefined} style={pileStyle(i, 3)}>
                 <ArticleCard article={article} className="w-full" />
               </li>
             ))}

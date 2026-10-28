@@ -2,14 +2,16 @@ import { afterEach, describe, expect, test } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { GET as avatarRoute } from "../app/avatars/[id]/route";
 import { BuriedNotesArt } from "../components/about/buried-notes-art";
+import { CountUp } from "../components/about/count-up";
 import { existsSync } from "node:fs";
 import { ArticleCover } from "../components/article/article-cover";
 import { PhysicsPile } from "../components/physics/physics-pile";
+import { RiseText } from "../components/ui/rise-text";
 import { avatarSvg } from "../lib/avatar";
 import { avatarSrc } from "../lib/avatar-src";
 import { getArticleBySlug } from "../lib/data/articles";
 import { isHttpsUrl, isUnsplash } from "../lib/images";
-import { isDrag, seeded, toLocal, wrapOffset } from "../lib/motion";
+import { isDrag, pileStyle, seeded, toLocal, wrapOffset } from "../lib/motion";
 
 afterEach(cleanup);
 
@@ -44,6 +46,54 @@ describe("motion helpers", () => {
       expect(seeded(i)).toBeGreaterThanOrEqual(0);
       expect(seeded(i)).toBeLessThan(1);
     }
+  });
+
+  test("pile start poses pull toward the middle column and the next row", () => {
+    const pose = (i: number, columns: number) => pileStyle(i, columns) as Record<string, string>;
+    const px = (i: number, columns: number) => parseFloat(pose(i, columns)["--px"]);
+    // Three columns: the middle card barely moves sideways, the outer ones move a column in.
+    expect(Math.abs(px(1, 3))).toBeLessThanOrEqual(10);
+    expect(px(0, 3)).toBeGreaterThanOrEqual(90);
+    expect(px(2, 3)).toBeLessThanOrEqual(-90);
+    // Two columns: half a column each way.
+    expect(px(0, 2)).toBeGreaterThanOrEqual(40);
+    expect(px(0, 2)).toBeLessThanOrEqual(60);
+    expect(px(1, 2)).toBeGreaterThanOrEqual(-60);
+    expect(px(1, 2)).toBeLessThanOrEqual(-40);
+    // The first row drops toward the second, later rows rise; tilts stay within 15deg.
+    expect(pose(0, 3)["--py"]).toBe("45%");
+    expect(pose(3, 3)["--py"]).toBe("-45%");
+    for (let i = 0; i < 9; i++) expect(Math.abs(parseFloat(pose(i, 3)["--pr"]))).toBeLessThanOrEqual(15);
+    expect(pileStyle(4, 2)).toEqual(pileStyle(4, 2));
+    // Cards that settle on load go one after another.
+    expect(pose(2, 3)["--pile-i"]).toBe(2);
+  });
+});
+
+describe("page title and number motion", () => {
+  test("RiseText keeps the title as plain text, one rising span per word", () => {
+    const { container } = render(
+      <h1>
+        <RiseText text="Group chats bury the news." />
+      </h1>,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Group chats bury the news." })).toBeDefined();
+    expect(container.querySelector("h1")?.textContent).toBe("Group chats bury the news.");
+    const words = container.querySelectorAll<HTMLElement>(".reveal-line");
+    expect(words).toHaveLength(5);
+    // 30 ms apart (a third of the 90 ms step) ...
+    expect(words[3].style.getPropertyValue("--line")).toBe("1");
+    cleanup();
+    // ... and never more than 360 ms for long titles.
+    const { container: long } = render(<RiseText text={Array.from({ length: 20 }, (_, i) => `w${i}`).join(" ")} />);
+    expect([...long.querySelectorAll<HTMLElement>(".reveal-line")].at(-1)?.style.getPropertyValue("--line")).toBe("4");
+  });
+
+  test("CountUp shows the final number without the browser APIs, and always to screen readers", () => {
+    // jsdom has no IntersectionObserver, as in browsers that cannot animate it.
+    const { container } = render(<CountUp value={18} />);
+    expect(container.querySelector("[aria-hidden='true']")?.textContent).toBe("18");
+    expect(container.querySelector(".sr-only")?.textContent).toBe("18");
   });
 });
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { RiseText } from "@/components/ui/rise-text";
 import { cx } from "@/lib/cx";
 
 interface SectionHeaderProps {
@@ -25,7 +26,8 @@ export function SectionHeader({ eyebrow, title, aside, as: Heading = "h2", id, c
       <div>
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         <Heading id={id} className={cx("mt-2 font-display font-black leading-[0.95]", TITLE_SIZE[Heading])}>
-          {title}
+          {/* Page titles rise in word by word; section titles stay still. */}
+          {Heading === "h1" ? <RiseText text={title} /> : title}
         </Heading>
       </div>
       {aside && <div className="max-w-sm text-ink-muted md:pb-2 md:text-right">{aside}</div>}

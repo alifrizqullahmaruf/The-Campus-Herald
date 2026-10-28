@@ -1,7 +1,7 @@
 # Plan: Halaman dirender langsung lagi, foto sampul disimpan di proyek
 
 **Tanggal:** 2026-10-28
-**Status:** ✅ Selesai (menunggu konfirmasi commit)
+**Status:** ✅ Selesai
 
 ## Tujuan
 
@@ -33,7 +33,7 @@ Menghilangkan "loading sepersekian detik" yang dilihat user saat membuka halaman
 | 6 | Sesuaikan unit test | Claude | `__tests__/motion-images.test.tsx`, `__tests__/article.test.tsx`, `__tests__/search.test.tsx` | ✅ |
 | 7 | Dokumentasi | Claude | `docs/design.md`, `CLAUDE.md`, `docs/plans/2026-10-28-navigasi-instan.md` | ✅ |
 | 8 | Verifikasi dan `code-reviewer` sekali | Claude | – | ✅ |
-| 9 | Commit + push setelah konfirmasi | Claude | – | Menunggu konfirmasi |
+| 9 | Commit + push setelah konfirmasi | Claude | – | ✅ `613a882` |
 
 ## Yang dikerjakan
 

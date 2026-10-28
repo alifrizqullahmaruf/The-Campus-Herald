@@ -15,7 +15,7 @@ import { CategoryPill } from "@/components/ui/category-pill";
 import { CATEGORIES } from "@/lib/categories";
 import { getCategoryCounts, getPublishedArticles } from "@/lib/data/articles";
 import { cx } from "@/lib/cx";
-import { seeded } from "@/lib/motion";
+import { pileStyle, seeded } from "@/lib/motion";
 
 // Where hero items rest before (or without) physics: spread across the space
 // above the headline, each tilted (template: cards piled on the headline).
@@ -129,21 +129,11 @@ export default async function Home() {
           }
         />
         <ul className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {fresh.map((article, i) => {
-            const col = i % 3;
-            const row = Math.floor(i / 3);
-            const pile = {
-              // Toward the middle of the 3-column grid (used from lg up, see globals.css).
-              "--px": `${(1 - col) * 100 + Math.round(seeded(i + 11) * 20 - 10)}%`,
-              "--py": `${(row === 0 ? 1 : -1) * 45}%`,
-              "--pr": `${Math.round(seeded(i + 21) * 30 - 15)}deg`,
-            } as CSSProperties;
-            return (
-              <li key={article.id} className="pile-card flex" style={pile}>
-                <ArticleCard article={article} className="w-full" />
-              </li>
-            );
-          })}
+          {fresh.map((article, i) => (
+            <li key={article.id} className="pile-card flex" style={pileStyle(i, 3)}>
+              <ArticleCard article={article} className="w-full" />
+            </li>
+          ))}
         </ul>
       </Container>
 
