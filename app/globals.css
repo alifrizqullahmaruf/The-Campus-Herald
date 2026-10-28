@@ -322,21 +322,48 @@
   }
 }
 
-/* Page changes: a short crossfade (React <ViewTransition> in the public layout).
-   The header stays put; clicks pass through during the transition. */
+/* Page changes: on every navigation, public, login and dashboard alike, also
+   between them, the new page fades in over 200 ms. The root layout's
+   <ViewTransition> gives class "page" only to transitions of type "page", which
+   components/ui/link and router.push(…, { transitionTypes: PAGE_TRANSITION })
+   add; Suspense reveals, the palette and back/forward do not animate. The old
+   page goes at once rather than fading out: Next scrolls the new page to the
+   top as the transition starts, so a scrolled old page's snapshot would sit in
+   the wrong place or show blank.
+   Groups neither move nor resize; clicks pass through during the transition.
+   The root snapshot holds little more than the page background. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 200ms;
 }
-::view-transition-group(site-header) {
+::view-transition-group(root),
+::view-transition-group(.page) {
+  animation: none;
+}
+::view-transition-old(.page) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(.page) {
+  animation-duration: 200ms;
+}
+/* Chrome that stays on screen (class "chrome": the sticky public header, the
+   dashboard sidebar and tab bar) stays put between pages of its own area. When
+   it appears or disappears (public <-> login or dashboard), its snapshot is an
+   only child and it fades in or out instead. */
+::view-transition-group(.chrome) {
   animation: none;
   z-index: 100;
 }
-::view-transition-old(site-header) {
+::view-transition-old(.chrome):not(:only-child) {
   display: none;
 }
-::view-transition-new(site-header) {
+::view-transition-new(.chrome):not(:only-child) {
   animation: none;
+}
+::view-transition-old(.chrome):only-child,
+::view-transition-new(.chrome):only-child {
+  animation-duration: 200ms;
 }
 ::view-transition {
   pointer-events: none;

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { PhysicsPile, type PileItem } from "@/components/physics/physics-pile";
 import { NAV_LINKS } from "./nav-links";
 

@@ -111,7 +111,8 @@ describe("CommandPalette", () => {
     await act(async () => {
       fireEvent.keyDown(input, { key: "Enter" });
     });
-    expect(push).toHaveBeenCalledWith("/articles/second");
+    // Typed as a page change, so the new page fades in (components/ui/link.tsx).
+    expect(push).toHaveBeenCalledWith("/articles/second", { transitionTypes: ["page"] });
     expect(onClose).toHaveBeenCalled();
   });
 

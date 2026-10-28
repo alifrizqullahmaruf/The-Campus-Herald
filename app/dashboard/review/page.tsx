@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { getPendingArticles } from "@/lib/data/articles";

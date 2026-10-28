@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { LoginForm } from "@/components/dashboard/login-form";
 import { Logo } from "@/components/layout/logo";
 

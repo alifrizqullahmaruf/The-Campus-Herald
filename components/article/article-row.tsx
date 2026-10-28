@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { cx } from "@/lib/cx";
 import { formatCount } from "@/lib/format";

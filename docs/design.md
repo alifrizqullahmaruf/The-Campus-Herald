@@ -152,7 +152,7 @@ Measured from the template recording (2026-10-17): micro-interactions are quick 
 | Note climb | the About sticky note climbs out from behind the chat bubbles, which part to let it through; wobbles on hover | scroll-linked | About illustration (`buried-*`) |
 | Count up | numbers count from 0 when they scroll into view (not when already on screen at load); screen readers get the final value | 900ms ease-out | About "Small blog, loud numbers." (`CountUp`) |
 | Reading progress | bar on the top edge of the screen in the topic colour fills as the article body scrolls past; hidden without scroll-driven animations and under reduced motion | scroll-linked | Article page (`read-progress`) |
-| Page crossfade | old and new page crossfade; header stays put | 200ms | Public layout (`<ViewTransition>`) |
+| Page fade | the new page fades in, nothing slides or resizes; the old page goes at once (Next scrolls the new page to the top as the transition starts, so a scrolled old page could not fade out in place); the public header and the dashboard sidebar and tab bar stay put within their area and fade when switching between public, login and dashboard | 200ms | Every link or `router.push` navigation (type `page`, root layout `<ViewTransition>`); content loading in later and back/forward do not animate |
 | Modal | fade + scale 0.98 → 1 | 150ms | Search palette |
 
 Rules:

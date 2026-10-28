@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { CategoryPill } from "@/components/ui/category-pill";
 import { getCategoryBySlug } from "@/lib/categories";
 import type { CategorySlug } from "@/lib/types";

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { CoverImage } from "@/components/article/article-cover";
+import { PAGE_TRANSITION } from "@/components/ui/link";
 import { CATEGORIES, getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import type { SearchResult } from "@/lib/search";
@@ -61,7 +62,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
 
   function openResult(result: SearchResult) {
     dialogRef.current?.close();
-    router.push(`/articles/${result.slug}`);
+    router.push(`/articles/${result.slug}`, { transitionTypes: PAGE_TRANSITION });
   }
 
   function onInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -194,7 +195,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
             // Already on /search: its explorer keeps its own state (the URL it writes with
             // replaceState never reaches the server), so load the page fresh from the URL.
             if (window.location.pathname === "/search") window.location.assign(href);
-            else router.push(href);
+            else router.push(href, { transitionTypes: PAGE_TRANSITION });
           }}
           className="tap-target ml-auto text-ink underline underline-offset-4"
         >

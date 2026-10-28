@@ -4,6 +4,7 @@ import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { PAGE_TRANSITION } from "@/components/ui/link";
 import { cx } from "@/lib/cx";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,7 +31,7 @@ export function LoginForm() {
     const data = new FormData(event.currentTarget);
     const problem = validateLogin(String(data.get("email") ?? ""), String(data.get("password") ?? ""));
     setError(problem);
-    if (!problem) router.push("/dashboard");
+    if (!problem) router.push("/dashboard", { transitionTypes: PAGE_TRANSITION });
   }
 
   const field = cx(

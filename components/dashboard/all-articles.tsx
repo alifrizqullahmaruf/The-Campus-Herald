@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useId, useState } from "react";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { STATUS_STYLES, StatusBadge } from "@/components/ui/status-badge";

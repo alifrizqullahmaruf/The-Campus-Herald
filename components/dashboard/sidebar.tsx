@@ -1,7 +1,7 @@
 "use client";
 
 import { Files, Inbox, LogOut, SquarePen, Users, FileText, type LucideIcon } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/layout/logo-mark";
 import { cx } from "@/lib/cx";
@@ -118,8 +118,9 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
   return (
     <>
       {/* Large screens */}
-      {/* Sticky, so the navigation and Log out stay in view on long pages (editor, review). */}
-      <aside className="hidden w-64 shrink-0 flex-col overflow-y-auto border-r-3 border-ink bg-paper p-4 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:self-start">
+      {/* Sticky, so the navigation and Log out stay in view on long pages (editor, review).
+          Named so page fades leave it in place (globals.css, Page changes). */}
+      <aside className="hidden w-64 shrink-0 flex-col overflow-y-auto border-r-3 border-ink bg-paper p-4 [view-transition-class:chrome] [view-transition-name:dashboard-sidebar] lg:sticky lg:top-0 lg:flex lg:h-dvh lg:self-start">
         <Link href="/" className="logo-link flex items-center gap-2.5">
           <LogoMark className="w-11" />
           <span className="font-display text-sm font-black uppercase leading-none">
@@ -158,7 +159,7 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
       {/* Phones and tablets: bottom tab bar */}
       <nav
         aria-label="Dashboard"
-        className="fixed inset-x-0 bottom-0 z-40 grid h-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] grid-cols-5 gap-1 border-t-3 border-ink bg-paper px-1.5 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid h-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] grid-cols-5 gap-1 border-t-3 border-ink bg-paper px-1.5 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] [view-transition-class:chrome] [view-transition-name:dashboard-tabbar] lg:hidden"
       >
         {[writing[0], writing[1], editor[0], editor[1], editor[2]].map((item) => link(item, true))}
       </nav>

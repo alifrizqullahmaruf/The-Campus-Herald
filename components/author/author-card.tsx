@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { getCategoryBySlug } from "@/lib/categories";
 import { cx } from "@/lib/cx";
 import type { AuthorProfile } from "@/lib/data/users";

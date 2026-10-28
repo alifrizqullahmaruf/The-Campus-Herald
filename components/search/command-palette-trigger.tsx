@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import Link from "@/components/ui/link";
 
 // The palette UI is only downloaded the first time someone opens it.
 const CommandPalette = lazy(() => import("./command-palette"));

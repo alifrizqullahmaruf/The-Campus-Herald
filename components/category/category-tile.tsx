@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { Card } from "@/components/ui/card";
 import { cx } from "@/lib/cx";
 import type { CategoryStyle } from "@/lib/categories";

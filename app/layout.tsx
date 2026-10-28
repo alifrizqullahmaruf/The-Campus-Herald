@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SITE } from "@/lib/site";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
+import { ViewTransition } from "react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,7 +53,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* The new page fades in on every page change, public, login and
+            dashboard alike, also between them: navigations through
+            components/ui/link (type "page"). Other transitions (Suspense
+            reveals, the palette, back/forward) do not animate. globals.css,
+            Page changes. */}
+        <ViewTransition default="none" update={{ page: "page", default: "none" }}>
+          {children}
+        </ViewTransition>
+      </body>
     </html>
   );
 }

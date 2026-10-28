@@ -51,7 +51,8 @@ describe("LoginForm", () => {
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "rafi@herald.test" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
-    expect(push).toHaveBeenCalledWith("/dashboard");
+    // Typed as a page change, so the new page fades in (components/ui/link.tsx).
+    expect(push).toHaveBeenCalledWith("/dashboard", { transitionTypes: ["page"] });
   });
 });
 

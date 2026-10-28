@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { OpenPaletteButton, SearchIconLink } from "@/components/search/command-palette-trigger";
 import { Logo } from "./logo";
 import { MobileMenu } from "./mobile-menu";
@@ -8,8 +8,8 @@ import { NAV_LINKS } from "./nav-links";
 /** Sticky public header (docs/design.md 3, Header). */
 export function SiteHeader() {
   return (
-    // Named so page crossfades leave the header in place (globals.css).
-    <header className="sticky top-0 z-40 border-b-3 border-ink bg-paper" style={{ viewTransitionName: "site-header" }}>
+    // Named so page fades leave the header in place (globals.css, Page changes).
+    <header className="sticky top-0 z-40 border-b-3 border-ink bg-paper [view-transition-class:chrome] [view-transition-name:site-header]">
       <div className="mx-auto flex h-16 w-full max-w-[1120px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Logo />
 

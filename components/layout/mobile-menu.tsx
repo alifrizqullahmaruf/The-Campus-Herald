@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { CategoryPill } from "@/components/ui/category-pill";
