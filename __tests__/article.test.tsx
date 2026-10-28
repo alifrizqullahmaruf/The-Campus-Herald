@@ -80,8 +80,8 @@ describe("Most read", () => {
 
   test("thumbnail shows the cover photo, or generated art without one", async () => {
     const [article] = await getMostRead(1);
-    const { container } = render(<ArticleRow article={{ ...article, coverImage: "https://picsum.photos/id/20" }} />);
-    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/^https:\/\/picsum\.photos\/id\/20\/\d+\/\d+\.webp$/);
+    const { container } = render(<ArticleRow article={{ ...article, coverImage: "/covers/1-20.webp" }} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/^\/_next\/image\?url=%2Fcovers%2F1-20\.webp&w=\d+/);
     cleanup();
     const { container: plain } = render(<ArticleRow article={{ ...article, coverImage: null }} />);
     expect(plain.querySelector("img")).toBeNull();

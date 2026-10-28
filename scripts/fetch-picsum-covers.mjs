@@ -1,13 +1,20 @@
-// Fills lib/mock/covers.json with Picsum photos for the sample articles:
-// `npm run covers:picsum`. No API key needed. Picsum (picsum.photos) serves a
-// fixed set of Unsplash photos; each id below was picked by eye from Picsum's
-// catalogue to suit the story. The credit links the photographer's name to the
-// photo on Unsplash, and "Unsplash" to unsplash.com. Overwrites the file
-// (`npm run covers -- --force` switches to photos chosen through the Unsplash API).
+// Downloads the sample articles' cover photos from Picsum into public/covers/
+// and fills lib/mock/covers.json with their local paths: `npm run covers:picsum`.
+// No API key needed. Picsum (picsum.photos) serves a fixed set of Unsplash
+// photos; each id below was picked by eye from Picsum's catalogue to suit the
+// story. The photos are kept in the repo because loading them from Picsum took
+// 0.7–0.9 s each (a redirect, then the download); next/image resizes the local
+// files. The credit links the photographer's name to the photo on Unsplash, and
+// "Unsplash" to unsplash.com. Overwrites both (`npm run covers -- --force`
+// switches to photos chosen through the Unsplash API, which stay hotlinked).
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 
 const OUT_FILE = "lib/mock/covers.json";
+const PHOTO_DIR = "public/covers";
+// 4:3 at the largest size a cover is shown (docs/design.md).
+const WIDTH = 1600;
+const HEIGHT = 1200;
 
 // Sample article id (lib/mock/articles.ts) → Picsum photo id.
 const PICKS = {
@@ -40,21 +47,36 @@ function isHttpsOn(url, host) {
   }
 }
 
+// Everything is downloaded first (about 2 MB) and written at the end, so a failed
+// download leaves the current photos and covers.json untouched.
 const covers = {};
+const files = [];
 for (const [article, photo] of Object.entries(PICKS)) {
   const response = await fetch(`https://picsum.photos/id/${photo}/info`);
   if (!response.ok) throw new Error(`${response.status} for Picsum photo ${photo}`);
   const info = await response.json();
   // The photo page ends up as a link in the page, so it must be Unsplash's own.
   if (!isHttpsOn(info.url, "unsplash.com")) throw new Error(`Unexpected link for Picsum photo ${photo}: ${info.url}`);
+
+  const image = await fetch(`https://picsum.photos/id/${photo}/${WIDTH}/${HEIGHT}.webp`);
+  if (!image.ok || image.headers.get("content-type") !== "image/webp") {
+    throw new Error(`${image.status} ${image.headers.get("content-type")} for Picsum photo ${photo}`);
+  }
+  // The photo id is in the name, so a new pick gets a new URL (no stale caches).
+  const file = `${article}-${photo}.webp`;
+  files.push({ file, data: Buffer.from(await image.arrayBuffer()) });
+
   covers[article] = {
-    // The Picsum loader (components/article/picsum-image.tsx) appends the size.
-    url: `https://picsum.photos/id/${photo}`,
+    url: `/covers/${file}`,
     // Picsum gives no profile link, so the name links to the photo page.
     credit: { name: info.author, profileUrl: info.url, photoUrl: "https://unsplash.com/", source: "Unsplash" },
   };
   console.log(`#${article} -> Picsum ${photo} (${info.author})`);
 }
 
+// Start clean so photos that are no longer picked do not linger.
+rmSync(PHOTO_DIR, { recursive: true, force: true });
+mkdirSync(PHOTO_DIR, { recursive: true });
+for (const { file, data } of files) writeFileSync(`${PHOTO_DIR}/${file}`, data);
 writeFileSync(OUT_FILE, `${JSON.stringify(covers, null, 2)}\n`);
-console.log(`Wrote ${Object.keys(covers).length} covers to ${OUT_FILE}`);
+console.log(`Wrote ${files.length} photos to ${PHOTO_DIR} and ${Object.keys(covers).length} covers to ${OUT_FILE}`);

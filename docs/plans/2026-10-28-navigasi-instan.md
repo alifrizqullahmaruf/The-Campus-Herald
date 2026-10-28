@@ -1,7 +1,12 @@
 # Plan: Navigasi instan (peringatan "URL data outside of Suspense")
 
 **Tanggal:** 2026-10-28
-**Status:** ✅ Selesai (menunggu konfirmasi commit)
+**Status:** ✅ Selesai, lalu **dibatalkan** untuk halaman publik di `docs/plans/2026-10-28-render-langsung-foto-lokal.md`
+
+> **Pembatalan:**
+> - Kerangka di dalam `<Suspense>` membuat HTML hasil build berupa kerangka. React baru menampilkan isi artikel setelah foto sampul dimuat (~585 ms), dan tanpa JavaScript yang tampil hanya kerangka.
+> - Klaim di bawah bahwa "kunjungan langsung tetap mendapat halaman lengkap" ternyata keliru.
+> - Ketiga halaman publik kembali dirender langsung dengan `instant = false`, dan kerangka dihapus.
 
 ## Tujuan
 
@@ -31,7 +36,7 @@ Peringatan dev Next.js 16 *"Next.js encountered URL data outside of Suspense"* (
 | 6 | Dashboard: `instant = false` dengan komentar | Claude | `app/dashboard/articles/[id]/page.tsx`, `app/dashboard/review/[id]/page.tsx` | ✅ |
 | 7 | Dokumentasi: aturan kerangka di desain, contoh di styleguide, catatan arsitektur | Claude | `docs/design.md`, `app/styleguide/page.tsx`, `CLAUDE.md` | ✅ |
 | 8 | Verifikasi dan `code-reviewer` sekali | Claude | – | ✅ |
-| 9 | Commit + push setelah konfirmasi | Claude | – | Menunggu konfirmasi |
+| 9 | Commit + push setelah konfirmasi | Claude | – | ✅ `34baa83` |
 
 ## Yang dikerjakan
 

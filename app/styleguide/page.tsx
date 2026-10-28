@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { CategoryPill } from "@/components/ui/category-pill";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CATEGORIES } from "@/lib/categories";
 import { getCategoryCounts, getMostRead } from "@/lib/data/articles";
@@ -170,19 +169,6 @@ export default async function StyleguidePage() {
             <p className="font-display text-2xl font-extrabold">Surface card</p>
             <p className="mt-2 text-ink-muted">Used for widgets, modals and dashboard panels.</p>
           </Card>
-        </div>
-      </Section>
-
-      <Section title="Loading skeleton">
-        <p className="mb-6 max-w-xl text-ink-muted">
-          Shown while the article, topic and writer pages stream in after a click. Laid out like the page it stands in for.
-        </p>
-        <div className="max-w-md">
-          <Skeleton className="h-7 w-28 rounded-full" />
-          <Skeleton className="mt-4 h-12 w-full" />
-          <Skeleton className="mt-2 h-12 w-2/3" />
-          <Skeleton className="mt-5 h-5 w-4/5" />
-          <Skeleton className="mt-6 aspect-16/9" />
         </div>
       </Section>
     </main>

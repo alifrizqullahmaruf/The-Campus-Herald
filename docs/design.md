@@ -213,7 +213,7 @@ Large card in the category colour: mono "N articles in the archive" chip top-lef
 
 ### Images
 
-- **Article covers:** sample articles currently use **Picsum** photos (Unsplash photos served by picsum.photos, no API key), one hand-picked photo id per article in `scripts/fetch-picsum-covers.mjs` (`npm run covers:picsum`), stored in `lib/mock/covers.json`. Picsum sizes them by URL (custom `next/image` loader, 4:3 WebP, max 1600px) and the cover shows "Photo: Name on Unsplash" (the name links to the photo page, "Unsplash" to unsplash.com). Once an Unsplash Access Key exists, `npm run covers -- --force` replaces them with photos chosen by search terms through the Unsplash API (hotlinked with Unsplash's sizing parameters and UTM credit links, as its API guidelines require). Without a photo, the generated `CoverArt` pattern is used. Authors upload their own covers in Phase 4.
+- **Article covers:** sample articles currently use **Picsum** photos (Unsplash photos from picsum.photos, no API key), one hand-picked photo id per article in `scripts/fetch-picsum-covers.mjs` (`npm run covers:picsum`). The script downloads each once as a 1600×1200 WebP into `public/covers/` (about 2 MB for all 18) and lists them in `lib/mock/covers.json`; loading them from Picsum took 0.7–0.9 s each (a redirect, then the download). The Next image optimiser resizes the local files, and the cover shows "Photo: Name on Unsplash" (the name links to the photo page, "Unsplash" to unsplash.com). Once an Unsplash Access Key exists, `npm run covers -- --force` replaces them with photos chosen by search terms through the Unsplash API (hotlinked with Unsplash's sizing parameters and UTM credit links, as its API guidelines require). Without a photo, the generated `CoverArt` pattern is used. Authors upload their own covers in Phase 4.
 - **Writer avatars:** DiceBear "Notionists" (CC0, no attribution), generated from the writer's name on their main topic colour; served as static SVG files from `/avatars/[id]` so they stay out of the HTML. Initials remain the fallback (e.g. accounts added in the preview).
 
 ### Author card
@@ -242,9 +242,6 @@ Pill with `border-thin`, status fill, icon + label (see 2.1). Shown on every art
 
 ### Empty state
 Centred surface card with a tilted eyebrow and one sentence, plus one button ("Write your first article →").
-
-### Loading skeleton
-Shown while the article, topic and writer pages stream in after a click (they read the URL inside `<Suspense>`; direct visits get the full prerendered page). Faded `ink/10` blocks in the card radius, laid out like the page they stand in for so nothing jumps when the content arrives. They pulse only when motion is allowed, are hidden from screen readers, and sit in a `role="status"` wrapper with a visually hidden "Loading …" label. Component: `components/ui/skeleton.tsx`.
 
 ---
 
@@ -374,7 +371,7 @@ Also remove the template leftover `font-family: Arial, Helvetica, sans-serif` fr
 - ~~**UI copy language**~~ Decided 2026-10-15: **English** for all UI copy (menus, buttons, labels, section titles).
 - ~~**Logo**~~ Decided 2026-10-16: page-and-sticky-note mark (section 0).
 - **Dark mode:** deferred.
-- **LCP (2026-10-21: Archivo subset done; Geist step open).** Archivo is cut to width 125 and weights 800–900 (88 KB → 28 KB); headlines look the same, and → / ← now use Archivo (bolder) instead of the fallback font. Lighthouse mobile medians, simulated throttling before → after: home 3.31 → 3.10 s, article 3.70 → 3.41 s, authors 3.16 → 2.98 s. With real (DevTools) throttling all pages are under 3 s: home 2.65–2.72 s, article 2.55–2.59 s, authors 2.03–2.07 s. The remaining simulated gap comes mostly from the framework JavaScript and, on article pages, the Picsum cover photo (its LCP element, served through a redirect), not from fonts. Whether to also cut Geist (the plan's next step for the simulated numbers) is the user's call; `display: "optional"` was not used.
+- **LCP (2026-10-21: Archivo subset done; Geist step open).** Archivo is cut to width 125 and weights 800–900 (88 KB → 28 KB); headlines look the same, and → / ← now use Archivo (bolder) instead of the fallback font. Lighthouse mobile medians, simulated throttling before → after: home 3.31 → 3.10 s, article 3.70 → 3.41 s, authors 3.16 → 2.98 s. With real (DevTools) throttling all pages are under 3 s: home 2.65–2.72 s, article 2.55–2.59 s, authors 2.03–2.07 s. The remaining simulated gap comes mostly from the framework JavaScript and, on article pages, the Picsum cover photo (its LCP element, served through a redirect), not from fonts. Since 2026-10-28 the covers are local files in `public/covers/`, so that redirect is gone. Whether to also cut Geist (the plan's next step for the simulated numbers) is the user's call; `display: "optional"` was not used.
 
 ## 10. Implementation notes from Phase 1
 

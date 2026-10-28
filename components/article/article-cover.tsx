@@ -1,9 +1,8 @@
 import Image from "next/image";
 import { cx } from "@/lib/cx";
-import { isHttpsUrl, isPicsum, isUnsplash } from "@/lib/images";
+import { isHttpsUrl, isUnsplash } from "@/lib/images";
 import type { ArticleWithRelations, CategorySlug } from "@/lib/types";
 import { CoverArt } from "./cover-art";
-import { PicsumImage } from "./picsum-image";
 import { UnsplashImage } from "./unsplash-image";
 
 /**
@@ -37,9 +36,11 @@ export function ArticleCover({
 }
 
 /**
- * The cover picture alone (no frame, no credit), filling its parent: the photo
- * through the loader for its source, or generated art when there is none. Used
- * by ArticleCover and by small thumbnails (Most read, the search palette).
+ * The cover picture alone (no frame, no credit), filling its parent: generated
+ * art when there is no photo, an Unsplash photo hotlinked with Unsplash's own
+ * sizing, otherwise a local file (public/covers/, later uploads) resized by the
+ * Next image optimiser. Used by ArticleCover and by small thumbnails (Most read,
+ * the search palette).
  */
 export function CoverImage({
   src,
@@ -56,7 +57,6 @@ export function CoverImage({
 }) {
   if (!src) return <CoverArt seed={seed} category={category} />;
   if (isUnsplash(src)) return <UnsplashImage src={src} alt="" sizes={sizes} priority={priority} />;
-  if (isPicsum(src)) return <PicsumImage src={src} alt="" sizes={sizes} priority={priority} />;
   return <Image src={src} alt="" fill sizes={sizes} priority={priority} className="object-cover" />;
 }
 
