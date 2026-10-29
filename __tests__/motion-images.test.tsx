@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { GET as avatarRoute } from "../app/avatars/[id]/route";
 import { BuriedNotesArt } from "../components/about/buried-notes-art";
@@ -11,7 +11,7 @@ import { avatarSvg } from "../lib/avatar";
 import { avatarSrc } from "../lib/avatar-src";
 import { getArticleBySlug } from "../lib/data/articles";
 import { isHttpsUrl, isUnsplash } from "../lib/images";
-import { isDrag, pileStyle, seeded, toLocal, wrapOffset } from "../lib/motion";
+import { entranceDone, isDrag, pileStyle, seeded, toLocal, wrapOffset } from "../lib/motion";
 
 afterEach(cleanup);
 
@@ -67,6 +67,44 @@ describe("motion helpers", () => {
     expect(pileStyle(4, 2)).toEqual(pileStyle(4, 2));
     // Cards that settle on load go one after another.
     expect(pose(2, 3)["--pile-i"]).toBe(2);
+  });
+
+  // Fake elements: only getAnimations() is used.
+  const withAnimations = (...animations: Partial<Animation>[]) =>
+    ({ getAnimations: () => animations }) as unknown as Element;
+
+  test("entranceDone waits for running animations only", async () => {
+    let finish!: () => void;
+    const rising = new Promise<Animation>((resolve) => (finish = () => resolve({} as Animation)));
+    let done = false;
+    const wait = entranceDone([
+      withAnimations({ playState: "running", finished: rising }),
+      withAnimations({ playState: "finished", finished: new Promise(() => {}) }),
+    ]).then(() => (done = true));
+    await Promise.resolve();
+    expect(done).toBe(false);
+    finish();
+    await wait;
+    expect(done).toBe(true);
+    // Nothing running (or no Web Animations API, as in jsdom): at once.
+    await entranceDone([withAnimations(), document.createElement("span")]);
+  });
+
+  test("entranceDone gives up on endless animations after the cap", async () => {
+    vi.useFakeTimers();
+    try {
+      let done = false;
+      const wait = entranceDone([withAnimations({ playState: "running", finished: new Promise(() => {}) })], 1000).then(
+        () => (done = true),
+      );
+      await vi.advanceTimersByTimeAsync(999);
+      expect(done).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await wait;
+      expect(done).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

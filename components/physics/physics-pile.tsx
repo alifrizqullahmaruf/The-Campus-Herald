@@ -3,7 +3,7 @@
 import type * as MatterNS from "matter-js";
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { cx } from "@/lib/cx";
-import { canAnimate, isDrag, prefersReducedMotion, toLocal, type Point } from "@/lib/motion";
+import { canAnimate, entranceDone, isDrag, prefersReducedMotion, toLocal, type Point } from "@/lib/motion";
 
 /** Where an item rests before (or without) physics: percent of the container. */
 export interface RestPose {
@@ -80,6 +80,8 @@ export function PhysicsPile({
         // matter-js is CommonJS: depending on the bundler the API is on .default.
         const mod = (await import("matter-js")) as MatterModule & { default?: MatterModule };
         const Matter = mod.default ?? mod;
+        // Obstacles still rising into place (the hero headline) are measured where they come to rest.
+        await entranceDone(Array.from(container.querySelectorAll("[data-physics-obstacle]")));
         if (cancelled) return;
         // Late (the fallback already shows the static pile): start from the rest
         // poses instead of hiding the items and dropping them in again.
@@ -168,8 +170,11 @@ type MatterModule = typeof MatterNS;
 
 /** Builds the world, runs the loop and wires dragging. Returns a cleanup. */
 function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean): () => void {
-  const { Engine, Bodies, Body, Composite, Constraint } = Matter;
-  const engine = Engine.create({ enableSleeping: false });
+  const { Engine, Bodies, Body, Composite, Constraint, Sleeping } = Matter;
+  // Sleeping freezes items that have barely moved for a second; without it, an
+  // item wedged between others kept creeping for 10+ s. A collision with a
+  // moving item wakes them; so do dragging and resizing (wakeAll below).
+  const engine = Engine.create({ enableSleeping: true });
   engine.gravity.y = 1.1;
 
   // Items hidden at this screen size (display: none) take no part in the simulation.
@@ -192,27 +197,36 @@ function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean):
     return toContainer(r.left + r.width / 2, r.top + r.height / 2);
   };
 
-  // Bodies start where the static pile put them. When dropping in, they are
-  // lifted above the container so they fall one after another.
-  const bodies = elements.map((el, i) => {
+  const createItem = (el: HTMLElement, start: { x: number; y: number; angle: number; spin?: number }) => {
     const w = el.offsetWidth;
     const h = el.offsetHeight;
-    const rest = centre(el);
-    const cx = rest.x;
     const options = { restitution: 0.25, friction: 0.5, frictionAir: 0.012, density: 0.002 };
     const body =
       el.dataset.body === "circle"
-        ? Bodies.circle(cx, 0, w / 2, options)
-        : Bodies.rectangle(cx, 0, w, h, { ...options, chamfer: { radius: Math.min(14, h / 4) } });
-    if (dropIn) {
-      Body.setPosition(body, { x: cx, y: -h - i * 90 - 40 });
-      Body.setAngle(body, (((i * 37) % 50) - 25) * (Math.PI / 180));
-      Body.setAngularVelocity(body, (i % 2 ? 1 : -1) * 0.02);
-    } else {
-      Body.setPosition(body, rest);
-      Body.setAngle(body, (parseFloat(el.style.getPropertyValue("--rest-rotate")) || 0) * (Math.PI / 180));
-    }
+        ? Bodies.circle(start.x, 0, w / 2, options)
+        : Bodies.rectangle(start.x, 0, w, h, { ...options, chamfer: { radius: Math.min(14, h / 4) } });
+    Body.setPosition(body, { x: start.x, y: start.y });
+    Body.setAngle(body, start.angle);
+    if (start.spin) Body.setAngularVelocity(body, start.spin);
     return { el, body, w, h };
+  };
+  /** Lifted above the container, one after another, so they fall in turn. */
+  const dropStart = (i: number, x: number, h: number) => ({
+    x,
+    y: -h - i * 90 - 40,
+    angle: (((i * 37) % 50) - 25) * (Math.PI / 180),
+    spin: (i % 2 ? 1 : -1) * 0.02,
+  });
+
+  // Bodies start where the static pile put them, or drop in above those spots.
+  const bodies = elements.map((el, i) => {
+    const rest = centre(el);
+    return createItem(
+      el,
+      dropIn
+        ? dropStart(i, rest.x, el.offsetHeight)
+        : { ...rest, angle: (parseFloat(el.style.getPropertyValue("--rest-rotate")) || 0) * (Math.PI / 180) },
+    );
   });
 
   // Floor, walls and obstacles (headline lines, wordmark letters, ...).
@@ -252,6 +266,9 @@ function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean):
   };
   render();
   container.dataset.physics = "running" satisfies Status;
+  const wakeAll = () => {
+    for (const { body } of bodies) Sleeping.set(body, false);
+  };
 
   // Loop: fixed 60 Hz steps, paused off screen or in a background tab.
   let frame = 0;
@@ -286,7 +303,8 @@ function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean):
   document.addEventListener("visibilitychange", onVisibility);
   play();
 
-  // Rebuild walls and obstacles when the layout changes width.
+  // Rebuild walls and obstacles when the layout changes width, and the items
+  // when a breakpoint shows, hides or resizes them (syncItems below).
   const ro = new ResizeObserver(() => {
     if (Math.abs(container.offsetWidth - width) < 1 && Math.abs(container.offsetHeight - height) < 1) return;
     width = container.offsetWidth;
@@ -295,6 +313,8 @@ function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean):
     for (const { body } of bodies) {
       Body.setPosition(body, { x: Math.min(Math.max(body.position.x, 20), width - 20), y: Math.min(body.position.y, height - 20) });
     }
+    syncItems();
+    wakeAll();
   });
   ro.observe(container);
 
@@ -334,15 +354,58 @@ function runPile(Matter: MatterModule, container: HTMLElement, dropIn: boolean):
       Composite.add(engine.world, grab.constraint);
     }
     grab.constraint.pointA = p;
+    // A sleeping item does not follow the pointer, and one resting on the
+    // dragged item must fall when it is pulled away, however slowly.
+    wakeAll();
   };
   const onUp = (e: PointerEvent) => {
     if (!grab || grab.pointerId !== e.pointerId) return;
-    if (grab.constraint) Composite.remove(engine.world, grab.constraint);
+    if (grab.constraint) {
+      Composite.remove(engine.world, grab.constraint);
+      // Held still, the items around it fell asleep; whatever rested on it must fall.
+      wakeAll();
+    }
     delete grab.el.dataset.grabbed;
     grab = null;
     // The click ending this drag (if the browser sends one) fires before this
     // timeout; touch throws send none, and a later Enter must still work.
     if (suppressClick) window.setTimeout(() => (suppressClick = false), 0);
+  };
+
+  // A breakpoint can show or hide items (e.g. hero cards below lg) or resize
+  // them. Items that stay keep their place and tilt; new ones drop in above
+  // their rest spot; hidden ones leave the world.
+  const all = Array.from(container.querySelectorAll<HTMLElement>("[data-body]"));
+  const syncItems = () => {
+    const visible = all.filter((el) => el.offsetWidth > 0);
+    const unchanged =
+      visible.length === bodies.length &&
+      visible.every((el, i) => bodies[i].el === el && bodies[i].w === el.offsetWidth && bodies[i].h === el.offsetHeight);
+    if (unchanged) return;
+    if (grab) {
+      if (grab.constraint) Composite.remove(engine.world, grab.constraint);
+      delete grab.el.dataset.grabbed;
+      grab = null;
+    }
+    const before = new Map(bodies.map(({ el, body }) => [el, body]));
+    Composite.remove(
+      engine.world,
+      bodies.map((item) => item.body),
+    );
+    for (const { el } of bodies) if (!visible.includes(el)) el.style.transform = "";
+    const next = visible.map((el, i) => {
+      const old = before.get(el);
+      if (old) return createItem(el, { x: old.position.x, y: old.position.y, angle: old.angle });
+      const half = el.offsetWidth / 2;
+      const restX = ((parseFloat(el.style.getPropertyValue("--rest-left")) || 50) / 100) * width;
+      return createItem(el, dropStart(i, Math.min(Math.max(restX, half), width - half), el.offsetHeight));
+    });
+    bodies.splice(0, bodies.length, ...next);
+    Composite.add(
+      engine.world,
+      bodies.map((item) => item.body),
+    );
+    render();
   };
   // Links would otherwise start the browser's own drag and cancel ours.
   const onDragStart = (e: DragEvent) => e.preventDefault();

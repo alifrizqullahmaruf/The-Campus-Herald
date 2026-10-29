@@ -299,7 +299,11 @@
 
 /* Article reading progress: a bar along the top edge of the screen, in the
    topic colour, that fills as the article body (which names the view timeline)
-   scrolls past. Hidden without scroll-driven animations and under reduced motion. */
+   comes into view: empty when its first line reaches the bottom of the screen,
+   full when its last line does. Unlike `contain`, this also works for a body
+   shorter than the screen (tablets and desktops), where `contain` would fill
+   the bar within a few pixels at the end.
+   Hidden without scroll-driven animations and under reduced motion. */
 @keyframes read-progress {
   from { scale: 0 1; }
 }
@@ -317,7 +321,7 @@
       pointer-events: none;
       animation: read-progress linear both;
       animation-timeline: --article-body;
-      animation-range: contain 0% contain 100%;
+      animation-range: entry-crossing 0% entry-crossing 100%;
     }
   }
 }

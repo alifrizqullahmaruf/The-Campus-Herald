@@ -127,6 +127,85 @@ test("dragging a card follows the pointer while the hero is tilted", async ({ pa
   expect(Math.hypot(held.x + held.width / 2 - end.x, held.y + held.height / 2 - end.y)).toBeLessThan(12);
 });
 
+// docs/plans/2026-10-29-cek-animasi.md (A, B): the headline was measured while
+// still rising, so cards landed on its text; on phones and tablets the pile
+// stacked up behind the sticky header.
+for (const [width, height] of [
+  [375, 812],
+  [768, 1024],
+  [1280, 800],
+]) {
+  test(`hero cards land clear of the headline and below the header at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    // On a busy machine Matter.js can start after the 2.5 s fallback; the pile
+    // then starts from its rest poses instead of dropping in, which this test is not about.
+    await page.addInitScript(() => {
+      new MutationObserver(() => {
+        if (document.querySelector<HTMLElement>("[data-physics]")?.dataset.physics === "static")
+          document.documentElement.dataset.heroWentStatic = "true";
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-physics"] });
+    });
+    await settledHero(page);
+    test.skip(
+      (await page.locator("html").getAttribute("data-hero-went-static")) === "true",
+      "Matter.js started after the static fallback, so the cards did not drop in",
+    );
+    // Until the last card has stopped bouncing.
+    await page.waitForTimeout(3000);
+    const problems = await page.evaluate(() => {
+      const pile = document.querySelector<HTMLElement>("[data-physics]")!;
+      const box = pile.getBoundingClientRect();
+      const headerBottom = document.querySelector("header")!.getBoundingClientRect().bottom;
+      const obstacles = [...pile.querySelectorAll("[data-physics-obstacle]")].map((o) => o.getBoundingClientRect());
+      const found: string[] = [];
+      for (const el of pile.querySelectorAll<HTMLElement>("[data-body]")) {
+        if (el.offsetWidth === 0) continue;
+        const name = el.textContent!.trim().slice(0, 20);
+        if (el.getBoundingClientRect().top < headerBottom - 10) found.push(`${name}: under the header`);
+        // Points on the item's real (rotated) shape; transform-origin is its centre.
+        const m = new DOMMatrix(getComputedStyle(el).transform);
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        let covered = 0;
+        for (let sx = 0.1; sx < 1; sx += 0.2)
+          for (let sy = 0.1; sy < 1; sy += 0.2) {
+            if (el.dataset.body === "circle" && Math.hypot(sx - 0.5, sy - 0.5) > 0.5) continue;
+            const p = m.transformPoint(new DOMPoint((sx - 0.5) * w, (sy - 0.5) * h));
+            const x = box.left + w / 2 + p.x;
+            const y = box.top + h / 2 + p.y;
+            if (obstacles.some((o) => x > o.left + 2 && x < o.right - 2 && y > o.top + 2 && y < o.bottom - 2)) covered++;
+          }
+        if (covered > 0) found.push(`${name}: over the headline`);
+      }
+      return found;
+    });
+    expect(problems).toEqual([]);
+  });
+}
+
+test("cards a wider window shows join the pile, and hidden ones leave it", async ({ page }) => {
+  // Below lg the hero hides two cards (a half-screen window, a tablet turned sideways).
+  await page.setViewportSize({ width: 960, height: 800 });
+  await settledHero(page);
+  // Every item, also the hidden ones and the decorative stickers (not in the accessibility tree).
+  const items = page.locator('ul[aria-label="Latest notes"] > li');
+  // Shown items must all be driven by the simulation (none left unpositioned in
+  // the corner); hidden ones must not be (their bodies left the world).
+  const state = () =>
+    items.evaluateAll((els) => {
+      const all = els.map((el) => ({ shown: (el as HTMLElement).offsetWidth > 0, driven: (el as HTMLElement).style.transform !== "" }));
+      return {
+        shown: all.filter((s) => s.shown).length,
+        shownUndriven: all.filter((s) => s.shown && !s.driven).length,
+        hiddenDriven: all.filter((s) => !s.shown && s.driven).length,
+      };
+    });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect.poll(state).toEqual({ shown: 8, shownUndriven: 0, hiddenDriven: 0 });
+  await page.setViewportSize({ width: 960, height: 800 });
+  await expect.poll(state).toEqual({ shown: 6, shownUndriven: 0, hiddenDriven: 0 });
+});
+
 test.describe("touch", () => {
   test.use({ hasTouch: true });
 
@@ -180,6 +259,36 @@ test("footer pills fall onto the wordmark and still navigate", async ({ page }) 
   await footer.getByRole("link", { name: "About" }).click();
   await expect(page).toHaveURL(/\/about$/);
 });
+
+// docs/plans/2026-10-29-cek-animasi.md (C): with `contain`, a body shorter than
+// the screen filled the bar within a few pixels at the end.
+for (const [width, height] of [
+  [375, 812],
+  [1280, 800],
+  [1440, 900],
+]) {
+  test(`the reading progress bar fills as the article body comes into view at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/articles/whats-on-the-desk-of-the-students-who-top-their-year");
+    const { top, bottom } = await page.evaluate(() => {
+      const body = document.querySelector('[class*="--article-body"]')!.getBoundingClientRect();
+      return { top: body.top + scrollY, bottom: body.bottom + scrollY };
+    });
+    const bar = page.locator(".read-progress");
+    const progress = () =>
+      bar.evaluate((el) => {
+        const scale = getComputedStyle(el).scale;
+        return scale === "none" ? 1 : parseFloat(scale);
+      });
+    // Empty while the first line is below the screen, full once the last line is on it:
+    // the share of the body that has come into view.
+    const expected = (y: number) => Math.min(1, Math.max(0, (y - (top - height)) / (bottom - top)));
+    for (const y of [Math.max(0, top - height - 10), (top + bottom) / 2 - height, bottom - height + 10]) {
+      await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
+      await expect.poll(progress).toBeCloseTo(expected(y), 1);
+    }
+  });
+}
 
 test("Most read thumbnails show the cover photos", async ({ page }) => {
   await page.goto("/");

@@ -43,7 +43,14 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
         aside="Type a word or pick a topic. Press ⌘K (Ctrl+K) on any page to search from anywhere."
       />
       <Suspense
-        fallback={<div className="mt-8 h-40 animate-pulse rounded-card border-3 border-ink bg-cat-events/50" />}
+        fallback={
+          // At least a screen tall, like the results (every article is listed):
+          // otherwise the footer shows for a moment and jumps down, and its
+          // pile of links starts falling while it is on screen.
+          <div className="mt-8 min-h-svh">
+            <div className="h-40 animate-pulse rounded-card border-3 border-ink bg-cat-events/50" />
+          </div>
+        }
       >
         <Results searchParams={searchParams} />
       </Suspense>

@@ -82,3 +82,20 @@ export function pileStyle(i: number, columns: number): CSSProperties {
 export function canAnimate(): boolean {
   return typeof window !== "undefined" && typeof IntersectionObserver !== "undefined" && typeof requestAnimationFrame !== "undefined";
 }
+
+/**
+ * Resolves once the elements' own running animations have ended, e.g. a
+ * headline still rising into place before the physics piles measure it as an
+ * obstacle (measured mid-rise it sits lower than the text). Endless animations
+ * never end, so the wait is capped.
+ */
+export function entranceDone(elements: Element[], cap = 1000): Promise<void> {
+  const running = elements
+    .flatMap((el) => el.getAnimations?.() ?? [])
+    .filter((animation) => animation.playState === "running");
+  if (running.length === 0) return Promise.resolve();
+  return Promise.race([
+    Promise.allSettled(running.map((animation) => animation.finished)).then(() => undefined),
+    new Promise<void>((resolve) => setTimeout(resolve, cap)),
+  ]);
+}

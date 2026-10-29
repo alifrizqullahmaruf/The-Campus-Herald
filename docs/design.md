@@ -151,7 +151,7 @@ Measured from the template recording (2026-10-17): micro-interactions are quick 
 | Pile → grid | latest cards start as a tilted pile and settle into the grid; below `lg` only a fifth of the tilt (≤ 3deg) so full-width cards stay inside the gutter | scroll-linked; 600ms on load, 80ms stagger, for cards already on screen | Scroll-linked: home "Fresh off the notebook.", About workflow steps, topic and writer article grids from the second row. On load (`data-pile="load"`, so nothing waits half-piled for a scroll): the first row of the topic and writer grids, all Categories tiles. `pile-card`, start poses from `pileStyle` in `lib/motion.ts` |
 | Note climb | the About sticky note climbs out from behind the chat bubbles, which part to let it through; wobbles on hover | scroll-linked | About illustration (`buried-*`) |
 | Count up | numbers count from 0 when they scroll into view (not when already on screen at load); screen readers get the final value | 900ms ease-out | About "Small blog, loud numbers." (`CountUp`) |
-| Reading progress | bar on the top edge of the screen in the topic colour fills as the article body scrolls past; hidden without scroll-driven animations and under reduced motion | scroll-linked | Article page (`read-progress`) |
+| Reading progress | bar on the top edge of the screen in the topic colour fills as the article body comes into view: empty while its first line is below the screen, full once its last line is on it (works for bodies shorter than the screen too); hidden without scroll-driven animations and under reduced motion | scroll-linked | Article page (`read-progress`) |
 | Page fade | the new page fades in, nothing slides or resizes; the old page goes at once (Next scrolls the new page to the top as the transition starts, so a scrolled old page could not fade out in place); the public header and the dashboard sidebar and tab bar stay put within their area and fade when switching between public, login and dashboard | 200ms | Every link or `router.push` navigation (type `page`, root layout `<ViewTransition>`); content loading in later and back/forward do not animate |
 | Modal | fade + scale 0.98 → 1 | 150ms | Search palette |
 
@@ -159,8 +159,8 @@ Rules:
 
 - **Reduced motion:** everything above stops. Piles show their static tilted rest poses, rows stop drifting (still draggable), scroll-linked effects are off, page changes swap instantly.
 - **Drag is optional:** every draggable item is a normal link; a press that moves less than 5px is a click. Keyboard users tab to the links as usual.
-- **Performance:** Matter.js (~25 KB gzip) loads only after the page has loaded (hero) or when the pile scrolls into view (footer); simulations pause off screen and in background tabs. Scroll-linked effects are CSS only; browsers without scroll-driven animations show the final layout.
-- **Phones:** same behaviour as desktop (user decision). The hero shows 4 cards instead of 6 so the pile fits above the headline. Cards use `touch-action: none` so they can be dragged; scrolling works anywhere else.
+- **Performance:** Matter.js (~25 KB gzip) loads only after the page has loaded (hero) or when the pile scrolls into view (footer); simulations pause off screen and in background tabs, and items that have come to rest sleep until something hits them or a drag starts. Obstacles (the hero headline) are measured once their own entrance animation has ended. Scroll-linked effects are CSS only; browsers without scroll-driven animations show the final layout.
+- **Phones and tablets:** same behaviour as desktop (user decision). Below `lg` the headline spans the page, so the hero shows fewer cards to keep the pile above the headline and below the header: 4 of 6 on tablets, 2 on phones (both stickers stay). Cards use `touch-action: none` so they can be dragged; scrolling works anywhere else.
 
 ---
 

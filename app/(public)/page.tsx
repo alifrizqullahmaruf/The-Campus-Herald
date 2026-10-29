@@ -39,12 +39,18 @@ export default async function Home() {
   const fresh = latest.filter((article) => article.id !== feature.id).slice(0, 6);
 
   const heroItems: PileItem[] = [
-    // Phones get four cards so the pile fits above the headline.
+    // Below lg the headline spans the page and the cards land in the space above
+    // it, so fewer cards: four on tablets, two on phones (measured at
+    // 320–1023px; with more they stack up behind the header).
     ...latest.slice(0, 6).map((article, i) => ({
       key: article.id,
       node: <HeroNoteCard article={article} />,
       // --rest-pad: half the tilted card's width per breakpoint, keeps its rest pose on screen.
-      className: cx("[--rest-pad:92px] sm:[--rest-pad:110px] md:[--rest-pad:128px]", i >= 4 && "max-sm:hidden"),
+      className: cx(
+        "[--rest-pad:92px] sm:[--rest-pad:110px] md:[--rest-pad:128px]",
+        i >= 4 && "max-lg:hidden",
+        i >= 2 && "max-sm:hidden",
+      ),
     })),
     { key: "editor", node: <EditorSticker />, shape: "circle" as const, decorative: true, className: "[--rest-pad:52px]" },
     {
