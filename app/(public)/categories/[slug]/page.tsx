@@ -70,7 +70,7 @@ export default async function CategoryPage({ params }: PageProps<"/categories/[s
           )}
         </section>
         <aside className="lg:sticky lg:top-24">
-          <MostRead compact />
+          <MostRead compact riseOnLoad />
         </aside>
       </Container>
     </>

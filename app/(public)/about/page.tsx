@@ -120,8 +120,9 @@ export default async function AboutPage() {
         />
         <ul className="mt-10 grid gap-4 min-[360px]:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {authors.slice(0, 4).map((author, i) => (
-            // Three columns on tablets: the fourth card joins from lg.
-            <li key={author.id} className={i === 3 ? "md:max-lg:hidden" : undefined}>
+            // Three columns on tablets: the fourth card joins from lg. Like the
+            // Authors page, the cards settle from a pile as they scroll in.
+            <li key={author.id} className={i === 3 ? "pile-card md:max-lg:hidden" : "pile-card"} style={pileStyle(i, 4)}>
               <AuthorCard author={author} />
             </li>
           ))}

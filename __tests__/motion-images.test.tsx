@@ -11,7 +11,7 @@ import { avatarSvg } from "../lib/avatar";
 import { avatarSrc } from "../lib/avatar-src";
 import { getArticleBySlug } from "../lib/data/articles";
 import { isHttpsUrl, isUnsplash } from "../lib/images";
-import { entranceDone, isDrag, pileStyle, seeded, toLocal, wrapOffset } from "../lib/motion";
+import { entranceDone, isDrag, pileStyle, riseStyle, seeded, toLocal, wrapOffset } from "../lib/motion";
 
 afterEach(cleanup);
 
@@ -67,6 +67,15 @@ describe("motion helpers", () => {
     expect(pileStyle(4, 2)).toEqual(pileStyle(4, 2));
     // Cards that settle on load go one after another.
     expect(pose(2, 3)["--pile-i"]).toBe(2);
+  });
+
+  test("rising rows get a small seeded tilt and their place in the stagger", () => {
+    for (let i = 0; i < 10; i++) {
+      const style = riseStyle(i) as Record<string, string | number>;
+      expect(Math.abs(parseFloat(style["--rise-r"] as string))).toBeLessThanOrEqual(3);
+      expect(style["--rise-i"]).toBe(i);
+    }
+    expect(riseStyle(4)).toEqual(riseStyle(4));
   });
 
   // Fake elements: only getAnimations() is used.

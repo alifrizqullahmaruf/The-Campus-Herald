@@ -298,6 +298,54 @@ test("Most read thumbnails show the cover photos", async ({ page }) => {
   await expect.poll(() => thumbs.first().evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
 });
 
+// docs/plans/2026-10-29-animasi-most-read-authors.md: Most read rows rise into
+// place, author cards settle from a pile.
+/** Per element: its first animation's name and timeline, and whether it rests untransformed. */
+const motionOf = (els: Element[]) =>
+  els.map((el) => {
+    const style = getComputedStyle(el);
+    const zero = (value: string) => value === "none" || value.split(" ").every((part) => parseFloat(part) === 0);
+    const animation = el.getAnimations()[0] as CSSAnimation | undefined;
+    return {
+      name: animation?.animationName ?? null,
+      scrollLinked: animation ? !(animation.timeline instanceof DocumentTimeline) : null,
+      atRest: zero(style.translate) && zero(style.rotate),
+    };
+  });
+
+test("Most read rows rise into place as they scroll in", async ({ page }) => {
+  await page.goto("/");
+  const rows = page.locator('section[aria-labelledby="most-read-title"] li');
+  await expect(rows).toHaveCount(5);
+  // Below the fold, the rows wait a little lower, on a scroll-linked animation
+  // (polled: the view timeline can take a frame to resolve after load).
+  await expect
+    .poll(async () => {
+      const before = await rows.evaluateAll(motionOf);
+      return before.every((row) => row.name === "row-rise" && row.scrollLinked) && !before.at(-1)!.atRest;
+    })
+    .toBe(true);
+  // Scrolled into the middle of the screen, every row has risen into place.
+  await rows.last().evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - innerHeight / 3, behavior: "instant" }));
+  await expect.poll(async () => (await rows.evaluateAll(motionOf)).every((row) => row.atRest)).toBe(true);
+});
+
+test("the topic sidebar's Most read rises on load, and author cards settle on load", async ({ page }) => {
+  for (const [path, selector, name] of [
+    ["/categories/organisations", 'section[aria-labelledby="most-read-title"] li', "row-rise"],
+    ["/authors", 'section[aria-label="Authors"] li', "pile-to-grid"],
+  ]) {
+    await page.goto(path);
+    const items = page.locator(selector);
+    // On screen when the page opens: a timed animation (still listed once it
+    // has finished, as it fills both ways), not one waiting for a scroll.
+    const start = await items.evaluateAll(motionOf);
+    expect(start.length).toBeGreaterThan(0);
+    expect(start.every((item) => item.name === name && item.scrollLinked === false)).toBe(true);
+    await expect.poll(async () => (await items.evaluateAll(motionOf)).every((item) => item.atRest)).toBe(true);
+  }
+});
+
 test("headlines use the subset display font at width 125%", async ({ page }) => {
   await page.goto("/authors");
   await page.evaluate(() => document.fonts.ready);
@@ -326,5 +374,18 @@ test.describe("reduced motion", () => {
     const card = page.getByRole("list", { name: "Latest notes" }).getByRole("listitem").first();
     await expect(card).toHaveCSS("touch-action", "auto");
     await expect(card).not.toHaveCSS("cursor", "grab");
+  });
+
+  test("Most read rows and author cards do not move", async ({ page }) => {
+    for (const [path, selector] of [
+      ["/", 'section[aria-labelledby="most-read-title"] li'],
+      ["/categories/organisations", 'section[aria-labelledby="most-read-title"] li'],
+      ["/authors", 'section[aria-label="Authors"] li'],
+    ]) {
+      await page.goto(path);
+      const items = await page.locator(selector).evaluateAll(motionOf);
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.every((item) => item.name === null && item.atRest)).toBe(true);
+    }
   });
 });

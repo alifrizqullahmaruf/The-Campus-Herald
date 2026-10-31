@@ -249,12 +249,44 @@
   }
 }
 /* Cards already on screen when the page opens (the first row of the topic and
-   writer grids, the Categories tiles) settle from the same pile once on load,
-   staggered by --pile-i, instead of waiting half-piled for a scroll. */
+   writer grids, the Categories tiles, the Authors cards) settle from the same
+   pile once on load, staggered by --pile-i, instead of waiting half-piled for a
+   scroll. The stagger stops after eight cards, so a long list (more writers
+   later) still settles within about a second. */
 @media (prefers-reduced-motion: no-preference) {
   .pile-card[data-pile="load"] {
     animation: pile-to-grid 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    animation-delay: calc(var(--pile-i, 0) * 80ms + 150ms);
+    animation-delay: calc(min(var(--pile-i, 0), 7) * 80ms + 150ms);
+  }
+}
+
+/* List rows (Most read): each row rises a little and straightens from a slight
+   tilt (--rise-r, riseStyle in lib/motion.ts) as it scrolls in. Rows enter one
+   after another, so they rise in turn. No opacity: the text stays readable.
+   Browsers without scroll-driven animations simply show the list. */
+@keyframes row-rise {
+  from {
+    translate: 0 24px;
+    rotate: var(--rise-r, 0deg);
+  }
+}
+@utility rise-row {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: row-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 25%;
+    }
+  }
+}
+/* From lg the Most read on topic pages sits in a sticky sidebar near the top,
+   where a scroll-linked rise would show nothing: its rows rise once on load,
+   staggered by --rise-i. On a laptop-height screen only the top rows are in
+   view at first; the others have settled by the time they are scrolled to. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 64rem) {
+  .rise-row[data-rise="load-lg"] {
+    animation: row-rise 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--rise-i, 0) * 70ms + 150ms);
   }
 }
 
