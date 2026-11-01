@@ -14,7 +14,9 @@ describe("ArticleBody", () => {
     const root = container.firstElementChild as HTMLElement;
     expect(root.className).toContain("prose-herald");
     expect(root.querySelector("blockquote")).not.toBeNull();
-    expect(root.querySelector("h2")?.textContent).toBe("What happens next");
+    // A short fact list under a bold label (docs/plans/2026-11-01-isi-berita-lebih-panjang.md).
+    expect(root.querySelector("p > strong")?.textContent).toBe("What we saw on most desks");
+    expect(root.querySelectorAll("li").length).toBeGreaterThanOrEqual(3);
     expect(root.style.getPropertyValue("--cat-bg")).toBe("var(--color-cat-academics)");
     // Academics is blue, so the quote text is white.
     expect(root.style.getPropertyValue("--cat-fg")).toBe("#ffffff");

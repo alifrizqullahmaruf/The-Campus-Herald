@@ -1,7 +1,7 @@
 # Plan: Animasi masuk untuk komponen About dan bagian Most read
 
 **Tanggal:** 2026-11-01
-**Status:** ✅ Selesai, terverifikasi, di-commit (push ditunda atas permintaan user)
+**Status:** ✅ Selesai, terverifikasi, di-commit dan di-push (`9cadce7`)
 
 ## Tujuan
 
@@ -47,7 +47,7 @@ Halaman lain tidak berubah. `SectionHeader` dan `Eyebrow` hanya beranimasi denga
 | 5 | Test unit dan E2E | Claude | `__tests__/motion-images.test.tsx`, `e2e/motion.spec.ts` | ✅ |
 | 6 | Dokumentasi | Claude | `docs/design.md`, `CLAUDE.md` | ✅ |
 | 7 | Verifikasi, `code-reviewer` sekali, perbaikan temuan | Claude | `app/(public)/about/page.tsx`, `e2e/motion.spec.ts` | ✅ |
-| 8 | Commit setelah konfirmasi (push ditunda atas permintaan user) | User / Claude | – | ✅ Commit; push menunggu |
+| 8 | Commit setelah konfirmasi, push saat user meminta | User / Claude | – | ✅ |
 
 ## Perubahan dari plan
 
