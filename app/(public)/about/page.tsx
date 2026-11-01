@@ -7,6 +7,7 @@ import { SectionBand } from "@/components/layout/section-band";
 import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { RiseText } from "@/components/ui/rise-text";
 import { CATEGORIES } from "@/lib/categories";
 import { getPublishedArticles } from "@/lib/data/articles";
 import { getAuthorProfiles } from "@/lib/data/users";
@@ -39,30 +40,34 @@ export default async function AboutPage() {
       <Container className="py-14 md:py-20">
         <SectionHeader
           as="h1"
+          reveal
           eyebrow="About us"
           title="Notes from the side of campus."
           aside="Side Notes is the community blog of The Campus Herald, the student press society: the stories, opinions and small wins that do not fit a front page."
         />
       </Container>
 
-      <div className="border-t-3 border-ink">
+      {/* overflow-x-clip: the frame starts tilted (reveal-tilt) and would widen
+          the page on phones while it waits below the screen; clip is not a
+          scroller, so the scroll-linked animations still follow the page. */}
+      <div className="overflow-x-clip border-t-3 border-ink">
         <Container className="grid items-center gap-10 py-14 md:grid-cols-2 md:py-20">
           {/* overflow-clip, not -hidden: a hidden box would be the scroller the
               illustration's scroll-linked animation follows, and it never scrolls. */}
-          <div className="aspect-4/3 -rotate-2 overflow-clip rounded-card border-3 border-ink shadow-hard">
+          <div className="reveal-tilt aspect-4/3 -rotate-2 overflow-clip rounded-card border-3 border-ink shadow-hard">
             <BuriedNotesArt />
           </div>
           <div>
-            <Eyebrow>Why we built it</Eyebrow>
+            <Eyebrow reveal="scroll">Why we built it</Eyebrow>
             <h2 className="mt-3 font-display text-[clamp(28px,4vw,48px)] font-black leading-none">
-              Group chats bury the news.
+              <RiseText text="Group chats bury the news." on="scroll" />
             </h2>
             <div className="mt-5 space-y-4 text-lg leading-relaxed text-ink-muted">
-              <p>
+              <p className="reveal-rise">
                 For years, campus news lived in WhatsApp groups and on Instagram. Posts were buried within hours,
                 nothing could be searched, and anyone could post anything without a second pair of eyes.
               </p>
-              <p>
+              <p className="reveal-rise">
                 So the Herald started Side Notes, a blog of its own. Every note sits in one of five topics, stays in the archive
                 for good, and is read by an editor before anyone else sees it.
               </p>
@@ -73,7 +78,7 @@ export default async function AboutPage() {
 
       <SectionBand className="bg-cat-events">
         <Container>
-          <SectionHeader eyebrow="The workflow" title="How an article goes live." />
+          <SectionHeader reveal eyebrow="The workflow" title="How an article goes live." />
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {STEPS.map((step, i) => (
               <li key={step.title} className="pile-card rounded-card border-3 border-ink bg-surface p-5 shadow-hard" style={pileStyle(i, 3)}>
@@ -88,15 +93,17 @@ export default async function AboutPage() {
 
       <section aria-labelledby="numbers-title" className="border-b-3 border-ink bg-cat-academics py-16 text-white md:py-24">
         <Container>
-          <Eyebrow>So far</Eyebrow>
+          <Eyebrow reveal="scroll">So far</Eyebrow>
           <h2 id="numbers-title" className="mt-2 font-display text-[clamp(32px,5vw,56px)] font-black leading-[0.95]">
-            Small blog, loud numbers.
+            <RiseText text="Small blog, loud numbers." on="scroll" />
           </h2>
           <dl className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {stats.map((stat, i) => (
+              // From a pile into the grid as they scroll in, ending at their 1deg tilt.
               <div
                 key={stat.label}
-                className={`flex flex-col-reverse rounded-card border-3 border-ink p-4 text-ink shadow-hard ${STAT_TONES[i]} ${i % 2 ? "rotate-1" : "-rotate-1"}`}
+                className={`pile-card flex flex-col-reverse rounded-card border-3 border-ink p-4 text-ink shadow-hard ${STAT_TONES[i]} ${i % 2 ? "rotate-1" : "-rotate-1"}`}
+                style={pileStyle(i, 4)}
               >
                 <dt className="mt-1 text-meta">{stat.label}</dt>
                 <dd className="font-display text-5xl font-black">
@@ -110,6 +117,7 @@ export default async function AboutPage() {
 
       <Container className="py-16 md:py-24">
         <SectionHeader
+          reveal
           eyebrow="The writers"
           title="Meet the authors."
           aside={

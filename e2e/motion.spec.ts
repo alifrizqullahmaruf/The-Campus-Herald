@@ -346,6 +346,75 @@ test("the topic sidebar's Most read rises on load, and author cards settle on lo
   }
 });
 
+// docs/plans/2026-11-01-animasi-about-most-read.md: eyebrows, section titles,
+// paragraphs and the illustration frame enter as they scroll in, and each is at
+// rest as soon as it is fully on screen (a title is never half out of its mask).
+const REVEALS = ".reveal-word, .reveal-pop, .reveal-rise, .reveal-tilt";
+/** Pieces fully on screen whose entrance has not finished. */
+const unfinishedInView = (els: Element[]) =>
+  els
+    .filter((el) => {
+      const box = (el.classList.contains("reveal-word") ? el.parentElement! : el).getBoundingClientRect();
+      const progress = el.getAnimations()[0]?.effect?.getComputedTiming().progress;
+      return box.top >= 0 && box.bottom <= innerHeight && progress != null && progress < 1;
+    })
+    .map((el) => el.textContent!.trim().slice(0, 20));
+
+for (const [width, height] of [
+  [375, 812],
+  [1280, 800],
+]) {
+  test(`About and Most read pieces are at rest whenever fully on screen at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    for (const path of ["/about", "/"]) {
+      await page.goto(path);
+      const pieces = page.locator(REVEALS);
+      expect(await pieces.count()).toBeGreaterThan(0);
+      const bottom = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+      for (let y = 0; y <= bottom; y += Math.round(height / 3)) {
+        await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
+        await expect.poll(() => pieces.evaluateAll(unfinishedInView)).toEqual([]);
+      }
+    }
+  });
+}
+
+test("About: the header plays on load, the rest waits for a scroll, number cards keep their tilt", async ({ page }) => {
+  await page.goto("/about");
+  // Header: eyebrow and aside on timed animations (on screen from the start).
+  const header = page.locator("main").locator(".reveal-pop, .reveal-rise").first();
+  await expect.poll(() => header.evaluate((el) => el.getAnimations()[0]?.timeline instanceof DocumentTimeline)).toBe(true);
+  // Below the fold, the numbers section waits on scroll-linked animations.
+  const numbers = page.locator('section[aria-labelledby="numbers-title"]');
+  const words = numbers.locator(".reveal-word");
+  await expect(words).toHaveCount(4);
+  await expect
+    .poll(() =>
+      words.evaluateAll((els) =>
+        els.every((el) => {
+          const animation = el.getAnimations()[0];
+          return !!animation && !(animation.timeline instanceof DocumentTimeline) && animation.effect!.getComputedTiming().progress! < 1;
+        }),
+      ),
+    )
+    .toBe(true);
+  // Scrolled into the middle of the screen: settled, the cards back at their 1deg tilt.
+  await numbers.evaluate((el) => window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 40, behavior: "instant" }));
+  await expect.poll(() => numbers.locator(REVEALS).evaluateAll(unfinishedInView)).toEqual([]);
+  await expect
+    .poll(() => numbers.locator("dl > div").evaluateAll((els) => els.map((el) => getComputedStyle(el).rotate)))
+    .toEqual(["-1deg", "1deg", "-1deg", "1deg"]);
+});
+
+test("the About illustration frame, waiting tilted below a short screen, does not widen the page", async ({ page }) => {
+  // A screen short enough that the frame starts fully below the bottom edge,
+  // waiting at its start pose, tilted -8deg (without the clip: ~12px wider page).
+  await page.setViewportSize({ width: 639, height: 400 });
+  await page.goto("/about");
+  await expect.poll(() => page.locator(".reveal-tilt").evaluate((el) => getComputedStyle(el).rotate)).toBe("-8deg");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});
+
 test("headlines use the subset display font at width 125%", async ({ page }) => {
   await page.goto("/authors");
   await page.evaluate(() => document.fonts.ready);
@@ -387,5 +456,12 @@ test.describe("reduced motion", () => {
       expect(items.length).toBeGreaterThan(0);
       expect(items.every((item) => item.name === null && item.atRest)).toBe(true);
     }
+  });
+
+  test("About's eyebrows, titles, paragraphs and frame do not move", async ({ page }) => {
+    await page.goto("/about");
+    const pieces = await page.locator(REVEALS).evaluateAll((els) => els.map((el) => el.getAnimations().length));
+    expect(pieces.length).toBeGreaterThan(0);
+    expect(pieces.every((count) => count === 0)).toBe(true);
   });
 });

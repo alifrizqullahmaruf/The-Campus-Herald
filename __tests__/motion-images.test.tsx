@@ -6,6 +6,7 @@ import { CountUp } from "../components/about/count-up";
 import { existsSync } from "node:fs";
 import { ArticleCover } from "../components/article/article-cover";
 import { PhysicsPile } from "../components/physics/physics-pile";
+import { Eyebrow } from "../components/ui/eyebrow";
 import { RiseText } from "../components/ui/rise-text";
 import { avatarSvg } from "../lib/avatar";
 import { avatarSrc } from "../lib/avatar-src";
@@ -72,7 +73,7 @@ describe("motion helpers", () => {
   test("rising rows get a small seeded tilt and their place in the stagger", () => {
     for (let i = 0; i < 10; i++) {
       const style = riseStyle(i) as Record<string, string | number>;
-      expect(Math.abs(parseFloat(style["--rise-r"] as string))).toBeLessThanOrEqual(3);
+      expect(Math.abs(parseFloat(style["--rise-r"] as string))).toBeLessThanOrEqual(5);
       expect(style["--rise-i"]).toBe(i);
     }
     expect(riseStyle(4)).toEqual(riseStyle(4));
@@ -134,6 +135,34 @@ describe("page title and number motion", () => {
     // ... and never more than 360 ms for long titles.
     const { container: long } = render(<RiseText text={Array.from({ length: 20 }, (_, i) => `w${i}`).join(" ")} />);
     expect([...long.querySelectorAll<HTMLElement>(".reveal-line")].at(-1)?.style.getPropertyValue("--line")).toBe("4");
+  });
+
+  test("section titles rise on scroll: each word in a mask that names its own view timeline", () => {
+    const { container } = render(
+      <h2>
+        <RiseText text="Most read." on="scroll" />
+      </h2>,
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Most read." })).toBeDefined();
+    expect(container.querySelector(".reveal-line")).toBeNull();
+    const words = container.querySelectorAll<HTMLElement>(".reveal-word");
+    expect(words).toHaveLength(2);
+    words.forEach((word) => expect(word.parentElement?.classList.contains("reveal-mask")).toBe(true));
+  });
+
+  test("the eyebrow pops in only when asked, on scroll or on load", () => {
+    const { container } = render(
+      <>
+        <Eyebrow>Still</Eyebrow>
+        <Eyebrow reveal="scroll">Scroll</Eyebrow>
+        <Eyebrow reveal="load-lg">Load</Eyebrow>
+      </>,
+    );
+    const [still, scroll, load] = container.querySelectorAll("span");
+    expect(still.classList.contains("reveal-pop")).toBe(false);
+    expect(scroll.classList.contains("reveal-pop")).toBe(true);
+    expect(scroll.hasAttribute("data-reveal")).toBe(false);
+    expect(load.getAttribute("data-reveal")).toBe("load-lg");
   });
 
   test("CountUp shows the final number without the browser APIs, and always to screen readers", () => {

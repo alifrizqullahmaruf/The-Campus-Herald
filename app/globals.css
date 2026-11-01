@@ -224,7 +224,8 @@
     translate: var(--pile-x, 0px) var(--pile-y, 0px);
     rotate: var(--pile-r, 0deg);
   }
-  to { translate: 0 0; rotate: 0deg; }
+  /* No `to`: the cards end at their own resting pose (e.g. the About number
+     cards stay tilted by 1deg). */
 }
 @utility pile-card {
   /* Cards gather toward the middle only from lg, where the grids have their
@@ -266,7 +267,7 @@
    Browsers without scroll-driven animations simply show the list. */
 @keyframes row-rise {
   from {
-    translate: 0 24px;
+    translate: 0 48px;
     rotate: var(--rise-r, 0deg);
   }
 }
@@ -287,6 +288,92 @@
   .rise-row[data-rise="load-lg"] {
     animation: row-rise 450ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     animation-delay: calc(var(--rise-i, 0) * 70ms + 150ms);
+  }
+}
+
+/* Section entrances (About and Most read): eyebrow tags pop into their tilt,
+   section titles rise word by word, paragraphs rise, the About illustration's
+   frame tilts into place. Each piece moves on its own view timeline over
+   `entry 0% → entry 100%`, so it is at rest as soon as it is fully on screen:
+   a title is never left half out of its mask while it can be read. No `to`
+   keyframes: each ends at its own resting pose (the eyebrow's -3deg tilt).
+   Pieces on screen when the page opens play once on load instead
+   (data-reveal="load"; "load-lg" from lg, for the sticky topic sidebar).
+   No opacity; browsers without scroll-driven animations show them at rest. */
+@keyframes eyebrow-pop {
+  from {
+    scale: 0.6;
+    rotate: 8deg;
+  }
+}
+@keyframes text-rise {
+  from { translate: 0 32px; }
+}
+@keyframes frame-tilt {
+  from {
+    translate: 0 40px;
+    rotate: -8deg;
+  }
+}
+@utility reveal-pop {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: eyebrow-pop linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+@utility reveal-rise {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: text-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+@utility reveal-tilt {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: frame-tilt linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+/* Section titles (RiseText on="scroll"): each word's mask names its own view
+   timeline, and the word rises out of it as that line comes fully into view,
+   the words of a line one after another (--line). */
+@utility reveal-mask {
+  view-timeline-name: --word;
+}
+@utility reveal-word {
+  display: inline-block;
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: line-rise linear both;
+      animation-timeline: --word;
+      animation-range: entry min(calc(var(--line, 0) * 20%), 60%) entry 100%;
+    }
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* The About header, after its title has risen. */
+  .reveal-pop[data-reveal="load"] {
+    animation: eyebrow-pop 300ms cubic-bezier(0.2, 0.8, 0.2, 1) 350ms both;
+  }
+  .reveal-rise[data-reveal="load"] {
+    animation: text-rise 450ms cubic-bezier(0.2, 0.8, 0.2, 1) 250ms both;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 64rem) {
+  .reveal-pop[data-reveal="load-lg"] {
+    animation: eyebrow-pop 300ms cubic-bezier(0.2, 0.8, 0.2, 1) 100ms both;
+  }
+  [data-reveal="load-lg"] .reveal-word {
+    animation: line-rise 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--line, 0) * 90ms + 150ms);
   }
 }
 

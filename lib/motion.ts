@@ -80,12 +80,12 @@ export function pileStyle(i: number, columns: number): CSSProperties {
 
 /**
  * Start tilt of the i-th `rise-row` (globals.css: list rows that rise into
- * place, e.g. Most read), seeded within ±3deg. `--rise-i` staggers rows that
+ * place, e.g. Most read), seeded within ±5deg. `--rise-i` staggers rows that
  * rise on load (`data-rise="load-lg"`).
  */
 export function riseStyle(i: number): CSSProperties {
   return {
-    "--rise-r": `${Math.round(seeded(i + 31) * 6 - 3)}deg`,
+    "--rise-r": `${Math.round(seeded(i + 31) * 10 - 5)}deg`,
     "--rise-i": i,
   } as CSSProperties;
 }
