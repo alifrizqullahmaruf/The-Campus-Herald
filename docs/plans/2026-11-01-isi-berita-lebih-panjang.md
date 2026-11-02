@@ -1,7 +1,7 @@
 # Plan: Isi berita contoh lebih panjang
 
 **Tanggal:** 2026-11-01
-**Status:** ✅ Selesai, terverifikasi, di-commit (push ditunda atas permintaan user)
+**Status:** ✅ Selesai, terverifikasi, di-commit dan di-push (`ec85d10`)
 
 ## Tujuan
 
@@ -51,7 +51,7 @@ Hanya memakai HTML yang bisa dibuka editor Tiptap: `p`, `strong`, `em`, `ul`/`ol
 | 5 | Test: cek label daftar (ganti "What happens next"); blok test baru "sample article bodies" | Claude | `__tests__/article-page.test.tsx`, `__tests__/data-articles.test.ts` | ✅ |
 | 6 | Dokumentasi; catatan seed Fase 2 di roadmap lokal | Claude | `CLAUDE.md`, `docs/plans/2026-10-15-roadmap.md` (lokal) | ✅ |
 | 7 | Verifikasi, `code-reviewer` sekali, perbaikan temuan | Claude | `lib/mock/bodies.ts`, test, `CLAUDE.md` | ✅ |
-| 8 | Commit setelah konfirmasi (push ditunda atas permintaan user) | User / Claude | – | ✅ Commit; push menunggu |
+| 8 | Commit setelah konfirmasi, push saat user meminta | User / Claude | – | ✅ |
 
 ## Perubahan dari plan
 

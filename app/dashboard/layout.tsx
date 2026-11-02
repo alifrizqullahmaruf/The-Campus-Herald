@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { PreviewBanner } from "@/components/dashboard/preview-banner";
 import { DashboardTopBar, Sidebar } from "@/components/dashboard/sidebar";
 import { getPendingArticles } from "@/lib/data/articles";
-import { getAllUsers } from "@/lib/data/users";
-import { PREVIEW_ADMIN_ID, PREVIEW_AUTHOR_ID } from "@/lib/mock/session";
+import { getPreviewUser } from "@/lib/data/session";
 
 export const metadata: Metadata = {
   title: { default: "Dashboard", template: "%s · Dashboard · Side Notes" },
@@ -12,9 +11,11 @@ export const metadata: Metadata = {
 
 // Calmer than the public site (docs/design.md 4, Dashboard): same tokens, less colour, no tilt.
 export default async function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
-  const [users, pending] = await Promise.all([getAllUsers(), getPendingArticles()]);
-  const author = users.find((u) => u.id === PREVIEW_AUTHOR_ID)!;
-  const admin = users.find((u) => u.id === PREVIEW_ADMIN_ID)!;
+  const [author, admin, pending] = await Promise.all([
+    getPreviewUser("author"),
+    getPreviewUser("admin"),
+    getPendingArticles(),
+  ]);
 
   return (
     <div className="flex min-h-screen">

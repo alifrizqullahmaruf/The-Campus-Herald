@@ -1,11 +1,32 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * Presses Ctrl+K until quick search opens. The shortcut listener is attached in an
+ * effect after hydration, and "networkidle" does not wait for that: on a busy machine
+ * (full suite, server just started) it fires while the page is still hydrating, the
+ * press is lost and the palette never opens (docs/plans/2026-11-02-persiapan-fase-2.md).
+ * A key is pressed again only while the palette is not showing.
+ */
+async function openQuickSearch(page: Page) {
+  const palette = page.getByRole("dialog", { name: "Quick search" });
+  await expect(async () => {
+    if (!(await palette.isVisible())) await page.keyboard.press("Control+K");
+    await expect(palette).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+  return palette;
+}
 
 test("Ctrl+K opens quick search; Enter opens the selected article", async ({ page }) => {
   await page.goto("/");
-  // The shortcut listener attaches on hydration; wait for it before pressing keys.
-  await page.waitForLoadState("networkidle");
+  let palette = await openQuickSearch(page);
+  // Once the page is hydrated, a single press must open it: the retry above only
+  // covers the wait for hydration, not a palette that opens on the second press.
+  await page.keyboard.press("Escape");
+  await expect(palette).toBeHidden();
   await page.keyboard.press("Control+K");
-  const input = page.getByRole("combobox", { name: "Search articles" });
+  palette = page.getByRole("dialog", { name: "Quick search" });
+  await expect(palette).toBeVisible();
+  const input = palette.getByRole("combobox", { name: "Search articles" });
   await expect(input).toBeFocused();
   await input.fill("coffee");
   await expect(page.getByRole("option")).toHaveCount(1);
@@ -17,9 +38,7 @@ test("Ctrl+K opens quick search; Enter opens the selected article", async ({ pag
 for (const start of ["/about", "/search?q=coffee"]) {
   test(`"All results" in quick search opens the search page with the query and topic (from ${start})`, async ({ page }) => {
     await page.goto(start);
-    await page.waitForLoadState("networkidle");
-    await page.keyboard.press("Control+K");
-    const palette = page.getByRole("dialog", { name: "Quick search" });
+    const palette = await openQuickSearch(page);
     await palette.getByRole("combobox", { name: "Search articles" }).fill("music");
     await palette.getByRole("group", { name: "Filter by category" }).getByRole("button", { name: "Events" }).click();
     await palette.getByRole("link", { name: "All results →" }).click();
@@ -37,8 +56,7 @@ test(`"All results" resets the search page even when the URL matches how it was 
   // Typing updates the URL in place (history.replaceState), not through the server.
   await page.locator("#search-page-input").fill("music");
   await expect(page).toHaveURL(/\/search\?q=music$/);
-  await page.keyboard.press("Control+K");
-  const palette = page.getByRole("dialog", { name: "Quick search" });
+  const palette = await openQuickSearch(page);
   await palette.getByRole("link", { name: "All results →" }).click();
   await expect(palette).toBeHidden();
   await expect(page).toHaveURL(/\/search$/);

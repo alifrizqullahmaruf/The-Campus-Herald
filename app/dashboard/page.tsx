@@ -3,12 +3,13 @@ import { MyArticles } from "@/components/dashboard/my-articles";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
 import { getArticlesByAuthor } from "@/lib/data/articles";
-import { PREVIEW_AUTHOR_ID } from "@/lib/mock/session";
+import { getPreviewUser } from "@/lib/data/session";
 
 export const metadata: Metadata = { title: "My articles" };
 
 export default async function MyArticlesPage() {
-  const articles = await getArticlesByAuthor(PREVIEW_AUTHOR_ID);
+  const author = await getPreviewUser("author");
+  const articles = await getArticlesByAuthor(author.id);
   // The list does not need article bodies.
   const light = articles.map((article) => ({ ...article, body: "" }));
   return (

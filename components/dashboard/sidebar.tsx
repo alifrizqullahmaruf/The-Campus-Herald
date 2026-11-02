@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/layout/logo-mark";
 import { cx } from "@/lib/cx";
 import { Avatar } from "@/components/author/avatar";
-import { isAdminPath } from "@/lib/mock/session";
+import { isAdminPath } from "@/lib/dashboard-paths";
 import type { User } from "@/lib/types";
 
 interface NavItem {
