@@ -71,6 +71,7 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file**
 - `npm run fonts`: rebuild the cut-down display font `app/fonts/archivo-display.woff2` (Archivo at width 125, weights 800–900) from the google/fonts repository; run only when the character set or weights change
 - `npm run covers:picsum`: download the hand-picked Picsum cover photos (no key, 1600×1200 WebP) into `public/covers/` and list them in `lib/mock/covers.json`
 - `npm run covers`: fetch Unsplash cover photos for the sample articles into `lib/mock/covers.json` (needs `UNSPLASH_ACCESS_KEY` in `.env.local`; add `-- --force` to replace existing covers; run once, 2 requests per article)
+- `npm run db:check`: check the PostgreSQL connection in `DATABASE_URL` (`.env.local`, copied from `.env.example`; the password never goes through chat). Prints version, database and user, or a hint on failure. The client for app code is `sql` in `lib/db.ts` (server-only), imported only by `lib/data/*`
 - `npm run test:e2e`: Playwright against a production build (run `npm run build` first; it starts `next start` on port 3200). Uses the installed Microsoft Edge (`channel: "msedge"`), so no browser download. `npx playwright test e2e/flows.spec.ts --project=desktop` runs one file.
 
 Unit tests (Vitest + React Testing Library, jsdom) live in `__tests__/`. Vitest cannot render `async` Server Components, so pages are covered by `e2e/`: one h1 and no console errors on every route, axe WCAG 2.1 AA checks, key flows, and no horizontal scroll at 375px (`phone` project).
