@@ -8,23 +8,26 @@ import postgres from "postgres";
 const url = process.env.DATABASE_URL;
 if (!url) {
   throw new Error(
-    "DATABASE_URL is not set. Copy .env.example to .env.local, fill in the password, " +
-      "then check the connection with `npm run db:check`.",
+    "DATABASE_URL is not set. Run `npm run db:setup` to create a local server, " +
+      "or see .env.example to use another one.",
   );
 }
 
-// postgres.js parses the URL with `new URL` and decodeURIComponent. A TypeError
-// from `new URL` carries the whole URL (its `input` property), password included,
-// and could end up in the dev terminal or a build log. It is replaced by an error
-// that has neither the URL nor a `cause`.
+// Keeps the password out of the dev terminal and build logs. postgres.js parses the
+// URL with `new URL` and decodeURIComponent, and a TypeError from `new URL` carries
+// the whole URL (its `input` property), so it is replaced by an error with neither
+// the URL nor a `cause`. A second @ is an unencoded @ in the password: postgres.js
+// would read part of the password as the host and name it in connection errors.
 function connect(connectionUrl: string) {
+  const invalid = new Error(
+    "DATABASE_URL is not a valid connection URL. URL-encode special characters in the password " +
+      "(e.g. @ as %40, / as %2F, % as %25), then check it with `npm run db:check`.",
+  );
+  if (connectionUrl.split("@").length > 2) throw invalid;
   try {
     return postgres(connectionUrl);
   } catch {
-    throw new Error(
-      "DATABASE_URL is not a valid connection URL. URL-encode special characters in the password " +
-        "(e.g. / as %2F, % as %25), then check it with `npm run db:check`.",
-    );
+    throw invalid;
   }
 }
 

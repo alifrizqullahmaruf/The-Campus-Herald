@@ -12,7 +12,11 @@
     "covers": "node scripts/fetch-covers.mjs",
     "covers:picsum": "node scripts/fetch-picsum-covers.mjs",
     "fonts": "node scripts/subset-fonts.mjs",
-    "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs"
+    "db:setup": "node scripts/db-local.mjs setup",
+    "db:start": "node scripts/db-local.mjs start",
+    "db:stop": "node scripts/db-local.mjs stop",
+    "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs"
   },
   "dependencies": {
     "@dicebear/core": "^9.4.3",

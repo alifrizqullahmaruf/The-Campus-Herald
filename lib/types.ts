@@ -18,9 +18,9 @@ export interface User {
   email: string;
   role: Role;
   isActive: boolean;
-  /** Short public bio for the author card and author page. Not in the stage 06 schema yet. */
+  /** Short public bio for the author card and author page. */
   bio: string;
-  /** Beat shown on the author card, e.g. "Opinion writer". Not in the stage 06 schema yet. */
+  /** Beat shown on the author card, e.g. "Opinion writer". */
   beat: string;
 }
 
@@ -46,10 +46,10 @@ export interface Article {
   slug: string;
   /** Sanitised HTML from the editor. */
   body: string;
-  /** One- or two-sentence summary for cards. Derived from the body once a database exists. */
+  /** One- or two-sentence summary for cards. */
   excerpt: string;
   coverImage: string | null;
-  /** Credit for a stock cover photo (Unsplash requires it); null for author uploads. Not in the stage 06 schema yet. */
+  /** Credit for a stock cover photo (Unsplash requires it); null for author uploads. */
   coverCredit: CoverCredit | null;
   status: ArticleStatus;
   reviewNote: string | null;

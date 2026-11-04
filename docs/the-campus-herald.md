@@ -321,6 +321,8 @@ classDiagram
         +string passwordHash
         +Role role
         +bool isActive
+        +string bio
+        +string beat
         +login()
         +logout()
     }
@@ -330,10 +332,14 @@ classDiagram
         +string title
         +string slug
         +string body
+        +string excerpt
         +string coverImage
+        +string coverAlt
+        +CoverCredit coverCredit
         +ArticleStatus status
         +string reviewNote
         +int viewCount
+        +datetime createdAt
         +datetime submittedAt
         +datetime publishedAt
         +saveDraft()
@@ -358,6 +364,13 @@ classDiagram
         +int id
         +string name
         +string slug
+    }
+
+    class CoverCredit {
+        +string name
+        +string profileUrl
+        +string photoUrl
+        +string source
     }
 
     class Role {
@@ -404,6 +417,8 @@ erDiagram
         string password_hash "disimpan terenkripsi"
         string role "author | admin"
         boolean is_active "false = akun dinonaktifkan admin"
+        text bio "profil singkat di halaman penulis"
+        string beat "peran di kartu penulis"
     }
 
     %% ===== ISI SITUS =====
@@ -419,15 +434,22 @@ erDiagram
         string title
         string slug UK
         text body
+        text excerpt "ringkasan untuk kartu artikel"
         string cover_image "nullable"
+        string cover_alt "nullable - teks alt sampul"
+        string cover_credit_name "nullable - kredit foto"
+        string cover_credit_profile_url "nullable"
+        string cover_credit_photo_url "nullable"
+        string cover_credit_source "nullable"
         string status "draft | pending | published | rejected"
         text review_note "nullable - catatan admin saat ditolak"
         int view_count "untuk widget most-read"
         int author_id FK
         int reviewer_id FK "nullable - diisi saat direview"
         int category_id FK
-        timestamp submitted_at "nullable"
-        timestamp published_at "nullable"
+        timestamptz created_at
+        timestamptz submitted_at "nullable"
+        timestamptz published_at "nullable"
     }
 
     %% ===== FITUR LANJUTAN (di luar scope SRS saat ini) =====
@@ -438,10 +460,10 @@ erDiagram
 
     COMMENT {
         int id PK
-        string body
+        text body
         int article_id FK
         int user_id FK "nullable"
-        timestamp created_at
+        timestamptz created_at
     }
     TAG {
         int id PK
@@ -514,6 +536,8 @@ erDiagram
         string password_hash
         string role "author | admin"
         boolean is_active
+        text bio
+        string beat
     }
     CATEGORY {
         int id PK
@@ -525,22 +549,29 @@ erDiagram
         string title
         string slug UK
         text body
+        text excerpt
         string cover_image "nullable"
+        string cover_alt "nullable"
+        string cover_credit_name "nullable"
+        string cover_credit_profile_url "nullable"
+        string cover_credit_photo_url "nullable"
+        string cover_credit_source "nullable"
         string status "draft | pending | published | rejected"
         text review_note "nullable"
         int view_count
         int author_id FK
         int reviewer_id FK "nullable"
         int category_id FK
-        timestamp submitted_at "nullable"
-        timestamp published_at "nullable"
+        timestamptz created_at
+        timestamptz submitted_at "nullable"
+        timestamptz published_at "nullable"
     }
     COMMENT {
         int id PK
         text body
         int article_id FK
         int user_id FK "nullable"
-        timestamp created_at
+        timestamptz created_at
     }
     TAG {
         int id PK
@@ -564,7 +595,9 @@ CREATE TABLE users (
     email         VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role          VARCHAR(10)  NOT NULL CHECK (role IN ('author', 'admin')),
-    is_active     BOOLEAN      NOT NULL DEFAULT TRUE
+    is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
+    bio           TEXT         NOT NULL DEFAULT '',
+    beat          VARCHAR(100) NOT NULL DEFAULT ''
 );
 
 CREATE TABLE categories (
@@ -574,28 +607,41 @@ CREATE TABLE categories (
 );
 
 CREATE TABLE articles (
-    id           SERIAL PRIMARY KEY,
-    title        VARCHAR(200) NOT NULL,
-    slug         VARCHAR(220) NOT NULL UNIQUE,
-    body         TEXT         NOT NULL,
-    cover_image  VARCHAR(255),
-    status       VARCHAR(10)  NOT NULL DEFAULT 'draft'
-                 CHECK (status IN ('draft', 'pending', 'published', 'rejected')),
-    review_note  TEXT,
-    view_count   INTEGER      NOT NULL DEFAULT 0,
-    author_id    INTEGER      NOT NULL REFERENCES users(id),
-    reviewer_id  INTEGER      REFERENCES users(id),
-    category_id  INTEGER      NOT NULL REFERENCES categories(id),
-    submitted_at TIMESTAMP,
-    published_at TIMESTAMP
+    id                       SERIAL PRIMARY KEY,
+    title                    VARCHAR(200) NOT NULL,
+    slug                     VARCHAR(220) NOT NULL UNIQUE,
+    body                     TEXT         NOT NULL,
+    excerpt                  TEXT         NOT NULL DEFAULT '',
+    cover_image              TEXT,
+    cover_alt                VARCHAR(255),
+    cover_credit_name        VARCHAR(100),
+    cover_credit_profile_url TEXT,
+    cover_credit_photo_url   TEXT,
+    cover_credit_source      VARCHAR(50),
+    status                   VARCHAR(10)  NOT NULL DEFAULT 'draft'
+                             CHECK (status IN ('draft', 'pending', 'published', 'rejected')),
+    review_note              TEXT,
+    view_count               INTEGER      NOT NULL DEFAULT 0,
+    author_id                INTEGER      NOT NULL REFERENCES users(id),
+    reviewer_id              INTEGER      REFERENCES users(id),
+    category_id              INTEGER      NOT NULL REFERENCES categories(id),
+    created_at               TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    submitted_at             TIMESTAMPTZ,
+    published_at             TIMESTAMPTZ,
+    -- A photo credit is whole or absent, like `coverCredit` in lib/types.ts.
+    CONSTRAINT articles_cover_credit_complete CHECK (
+        num_nulls(cover_credit_name, cover_credit_profile_url,
+                  cover_credit_photo_url, cover_credit_source) IN (0, 4)
+    )
 );
 
+-- Future features: created now per the spec, empty and unused for the time being.
 CREATE TABLE comments (
     id         SERIAL PRIMARY KEY,
-    body       TEXT      NOT NULL,
-    article_id INTEGER   NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-    user_id    INTEGER   REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    body       TEXT        NOT NULL,
+    article_id INTEGER     NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+    user_id    INTEGER     REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE tags (
@@ -647,6 +693,8 @@ INSERT INTO categories (name, slug) VALUES
 - **Tidak ada `ON DELETE CASCADE` dari `users`**: administrator mengganti anggota tiap pergantian kepengurusan. Akun dinonaktifkan dengan `is_active = FALSE` (bukan dihapus) agar artikel lama tetap punya penulis.
 - **`view_count`**: mendukung widget most-read di sidebar, permintaan klien.
 - **Dua indeks**: satu untuk daftar artikel per kategori, satu untuk widget most-read, demi target halaman di bawah 3 detik.
+- **Kolom tambahan saat implementasi**: situs juga membutuhkan `bio` dan `beat` (kartu dan halaman penulis), `excerpt` (kartu artikel), `created_at` (daftar artikel di dashboard), `cover_alt` (teks alt sampul), dan empat kolom `cover_credit_*` (kredit foto). Kredit foto harus lengkap atau kosong sama sekali, dan aturan ini dijaga oleh constraint `articles_cover_credit_complete`.
+- **`TIMESTAMPTZ` untuk semua kolom waktu**: `TIMESTAMP` tanpa zona waktu dibaca driver sebagai waktu lokal komputer, sehingga nilai yang sama menjadi titik waktu yang berbeda di laptop (WIB) dan di server (UTC). `TIMESTAMPTZ` menyimpan satu titik waktu yang sama di mana pun.
 - **Status `comments` dan `tags`**: ikut dibuat karena brief tahap ini memintanya. SRS menyatakan komentar out of scope dan kategori hanya lima yang tetap, sehingga keduanya diperlakukan sebagai fitur lanjutan sampai SRS diperbarui.
 ````
 
