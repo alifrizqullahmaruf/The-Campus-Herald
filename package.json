@@ -16,7 +16,8 @@
     "db:start": "node scripts/db-local.mjs start",
     "db:stop": "node scripts/db-local.mjs stop",
     "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs",
-    "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs"
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs",
+    "db:seed": "tsx --env-file-if-exists=.env.local scripts/db-seed.ts"
   },
   "dependencies": {
     "@dicebear/core": "^9.4.3",
@@ -50,6 +51,7 @@
     "jsdom": "^30.1.2",
     "subset-font": "^2.9.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.4"
   }

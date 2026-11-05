@@ -663,12 +663,14 @@ CREATE INDEX idx_articles_most_read ON articles (status, view_count DESC);
 ### Data awal: lima kategori tetap
 
 ```sql
-INSERT INTO categories (name, slug) VALUES
-  ('Academics', 'academics'),
-  ('Organisations', 'organisations'),
-  ('Events', 'events'),
-  ('Opinion', 'opinion'),
-  ('Achievements', 'achievements');
+INSERT INTO categories (id, name, slug) VALUES
+  (1, 'Academics', 'academics'),
+  (2, 'Organisations', 'organisations'),
+  (3, 'Events', 'events'),
+  (4, 'Opinion', 'opinion'),
+  (5, 'Achievements', 'achievements');
+
+SELECT setval(pg_get_serial_sequence('categories', 'id'), 5);
 ```
 
 ---

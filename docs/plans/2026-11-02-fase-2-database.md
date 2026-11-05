@@ -32,7 +32,8 @@ Data situs pindah dari `lib/mock/*` ke PostgreSQL. Isi `lib/data/*` diganti quer
 **Migrasi dan seed:**
 
 - Migrasi: file `.sql` berurutan di `db/migrations/`, dijalankan oleh skrip kecil (`npm run db:migrate`). Skrip mencatat file yang sudah dijalankan di tabel `schema_migrations`, dan setiap file dijalankan dalam satu transaksi.
-- Seed (`npm run db:seed`): dari data contoh yang sudah ada, yaitu 5 topic, 7 user, dan 23 artikel dengan isi lengkap (`lib/mock/bodies.ts`). Id dipertahankan, lalu sequence di-reset.
+- 5 topic ada di migrasi `002_categories.sql` (diputuskan 2026-11-05), karena dibutuhkan di semua database.
+- Seed (`npm run db:seed`): dari data contoh yang sudah ada, yaitu 7 user dan 23 artikel dengan isi lengkap (`lib/mock/bodies.ts`). Id dipertahankan, lalu sequence di-reset.
 - Skrip seed ditulis dalam TypeScript dan dijalankan dengan `tsx` (dev dependency). Node 24 tidak bisa langsung mengimpor `lib/mock/*.ts`, karena impor tanpa ekstensi (`./bodies`) dan JSON tanpa `with { type: "json" }`.
 - `password_hash` diisi nilai yang tidak bisa dipakai untuk login. Hash sungguhan dibuat di Fase 3.
 
@@ -62,7 +63,7 @@ Satu langkah = satu commit per hari, mengikuti jadwal harian (roadmap lokal, dis
 | 1 | Rab 4 Nov | Buat server, database `side_notes`, user-nya, dan `.env.local` (awalnya tugas user; user meminta Claude mengerjakannya) | Claude | `scripts/db-local.mjs`, `package.json`, `.env.example`, `.env.local` (tidak di-commit) | ✅ |
 | 2 | Sel 3 Nov | Pasang `postgres` (3.4.9) dan `server-only`; buat `lib/db.ts`, `npm run db:check`, `.env.example` | Claude | `package.json`, `lib/db.ts`, `scripts/db-check.mjs`, `.env.example`, `.gitignore`, `CLAUDE.md` | ✅ |
 | 3 | Rab 4 Nov | Migrasi skema (tahap 06 + kolom tambahan + tabel fitur lanjutan) dan skrip migrate; SQL tahap 06 di spesifikasi ikut diperbarui | Claude | `db/migrations/001_schema.sql`, `scripts/db-migrate.mjs`, `scripts/db-client.mjs`, `scripts/db-check.mjs`, `lib/db.ts`, `lib/types.ts`, `docs/the-campus-herald.md`, `CLAUDE.md` | ✅ |
-| 4 | Kam 5 Nov | Seed dari data contoh (TypeScript, dijalankan dengan `tsx`) | Claude | `scripts/db-seed.ts` | Belum |
+| 4 | Kam 5 Nov | Migrasi 5 topic; seed dari data contoh (TypeScript, dijalankan dengan `tsx`) | Claude | `db/migrations/002_categories.sql`, `scripts/db-seed.ts`, `package.json`, `docs/the-campus-herald.md`, `CLAUDE.md` | ✅ |
 | 5 | Jum 6 Nov | 6 fungsi `lib/data/users.ts` → SQL + cache; unit test memakai data contoh (implementasi mock dipindah ke `lib/mock/`, dipasang lewat `vi.mock`) | Claude | `lib/data/users.ts`, `lib/mock/`, `__tests__/` | Belum |
 | 6 | Sab 7 Nov | 6 fungsi artikel publik → SQL + cache; halaman `[slug]`/`[id]` tetap ○ | Claude | `lib/data/articles.ts` | Belum |
 | 7 | Sen 9 Nov | `searchArticles`, 4 fungsi dashboard, dan `getPreviewUser` → SQL; dokumentasi (perintah db, syarat build/E2E); E2E penuh; tampilan sama | Claude | `lib/data/*.ts`, `CLAUDE.md` | Belum |
@@ -172,7 +173,6 @@ Hari cadangan: Min 8 Nov.
 **Catatan untuk hari berikutnya (temuan Rendah):**
 
 - **Fase 5:** `.env.local` tidak masuk git, tapi ikut tersinkron ke OneDrive bersama folder proyek. Risikonya kecil selama server hanya di `localhost`, jadi simpan URL Neon hanya di pengaturan Vercel, bukan di file ini.
-- **Hari 3 (seed), perlu keputusan user:** 5 topic hanya ada di `db:seed`, jadi database produksi tanpa data contoh tidak punya topic. Alternatifnya, migrasi `002` dengan id tetap dan seed memakai `ON CONFLICT`.
 - **Hari 5–7 (`lib/data/*`):**
   - `TIMESTAMPTZ` kembali sebagai `Date`, sedangkan `lib/types.ts` memakai string. Pakai `.toISOString()` di pemetaan; `sql<Article[]>` tidak menangkap ini.
   - `count(*)` dan `sum()` kembali sebagai string. Pakai `::int`.
@@ -180,3 +180,28 @@ Hari cadangan: Min 8 Nov.
 - **Fase 4:**
   - Label "Updated" di `components/dashboard/my-articles.tsx:69` menampilkan `createdAt`; skema belum punya `updated_at`.
   - Pertimbangkan constraint alur artikel: `published` wajib punya `published_at`, `rejected` wajib punya `review_note`.
+
+## Hari 3 (Kam 5 Nov): topic dan seed
+
+- **`002_categories.sql`:** 5 topic dengan id 1–5, sama dengan `lib/categories.ts`. Blok "Data awal" di spesifikasi mengikuti file ini.
+- **`npm run db:seed`** (`scripts/db-seed.ts`): mengganti semua user dan artikel dengan `MOCK_USERS` dan `MOCK_ARTICLES`, dalam satu transaksi. Id tetap, sequence di-reset.
+- **Pengaman:** seed menghapus isi tabel, jadi dua hal dicek lebih dulu (tidak ada di draft). Host selain komputer ini ditolak, kecuali dengan `-- --remote`. Database yang belum menjalankan migrasi `002` proyek ini juga ditolak, supaya `localhost` yang salah (service Windows, tunnel) tidak terkosongkan.
+- **`password_hash`:** nilai `!no-login`, bukan hash, jadi tidak bisa dipakai login sampai Fase 3.
+- **Di luar rencana:** `withDatabase` dipanggil tanpa `await` di tingkat atas, karena `tsx` menjalankan `.ts` di proyek ini sebagai CommonJS.
+
+| Cek | Hasil |
+|-----|-------|
+| `npm run db:migrate` | ✅ `002_categories.sql` berjalan; 5 topic cocok dengan `lib/categories.ts` |
+| `npm run db:seed` dua kali | ✅ 7 user, 23 artikel (18 published, 2 pending, 2 draft, 1 rejected) |
+| Database dibandingkan dengan `lib/mock`, per kolom | ✅ 0 perbedaan, termasuk isi, tanggal, dan kredit foto |
+| Sequence (dalam transaksi yang dibatalkan) | ✅ user baru id 8, artikel baru id 24 |
+| URL jauh palsu; dengan `--remote`; URL rusak | ✅ ditolak tanpa menyentuh data; mencoba konek lalu `ENOTFOUND`; `ERR_INVALID_URL`; password tidak tercetak |
+| Seed gagal di tengah (constraint sementara, sudah dihapus) | ✅ pesan jelas, data lama utuh |
+| Migrasi `002` tidak tercatat; database tanpa tabel proyek | ✅ ditolak tanpa mengubah data; petunjuk `db:migrate` |
+| `npm test -- --run`, `npm run lint`, `npx tsc --noEmit`, `npm run build` | ✅ 115/115, halaman tetap ○ static |
+
+**`code-reviewer`:** tidak ada Kritis atau Tinggi; 1 Sedang dan 6 Rendah.
+
+- **Diperbaiki:** pengaman migrasi di atas, `lock_timeout` 5 detik, entri `::1` yang tidak pernah cocok (postgres.js 3.4.9 tidak mengurai host IPv6), petunjuk `42P01`, komentar.
+- **Tidak diubah:** seed tetap `.ts` yang berjalan sebagai CommonJS. Berjalan baik; `await` di tingkat atas dalam `db-client.mjs` kemungkinan akan membuatnya gagal.
+- **Syarat Fase 3 (Sedang):** `!no-login` hanya aman kalau pemeriksa password menolak format yang tidak dikenal. Pemeriksa scrypt yang mengambil panjang kunci dari nilai tersimpan bisa meloloskan password apa pun (kunci kosong dianggap sama). Cek format hash dengan ketat, anggap format asing sebagai login gagal, dan tambahkan unit test untuk `!no-login`.

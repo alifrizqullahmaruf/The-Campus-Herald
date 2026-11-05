@@ -1,4 +1,4 @@
-// Shared by the database scripts (db-check, db-migrate, later db-seed): opens the
+// Shared by the database scripts (db-check, db-migrate, db-seed): opens the
 // connection from DATABASE_URL, reports failures with a hint, always closes it.
 // This is the one place that decides what a script may print about the connection.
 
@@ -16,6 +16,7 @@ const HINTS = {
   "3D000": "That database does not exist. Was CREATE DATABASE run?",
   // Since PostgreSQL 15 only the database owner may create tables in schema public.
   "42501": "Permission denied. The user must own the database: run ALTER DATABASE side_notes OWNER TO side_notes as a superuser.",
+  "42P01": "A table is missing. Run npm run db:migrate first, and check that this is the right database.",
   CONNECT_TIMEOUT: "No answer within 5 s. Check the host and port, or a firewall in between.",
   ERR_INVALID_URL: "DATABASE_URL is not a valid URL. URL-encode special characters in the password (e.g. / as %2F, # as %23).",
 };
