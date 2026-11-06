@@ -50,7 +50,7 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file**
 - `app/(public)/`: reader-facing pages sharing a header/footer layout (`/`, `/categories/[slug]`, `/articles/[slug]`, `/search`, `/authors/[id]`, `/about`). The layout also mounts the ⌘K palette listener and keeps everything in one wrapper `div` (see Page fade below).
 - `app/dashboard/`: author pages (`/dashboard`, `/dashboard/articles/new|[id]`) and admin pages (`/dashboard/review`, `/dashboard/articles`, `/dashboard/authors`) in a sidebar shell. `app/login/` stands alone. All dashboard UI is a preview: buttons change client state only, and `getPreviewUser` in `lib/data/session.ts` picks the preview user (Rafi as author, Dewi as admin); `isAdminPath` (which dashboard paths are admin pages) is in `lib/dashboard-paths.ts`.
 - `app/api/search/route.ts`: JSON search used by the palette.
-- `lib/data/*`: **the only way pages read data.** These functions are async and currently read `lib/mock/*`; Phase 2 replaces their bodies with database queries while keeping their signatures. Public functions return published articles only. The sample article bodies are hand-written in `lib/mock/bodies.ts` (news ~300 words, features ~500, opinion ~600; only HTML the editor can open), a ready seed for Phase 2.
+- `lib/data/*`: **the only way pages read data.** These functions are async. Phase 2 is replacing their bodies with database queries while keeping their signatures: `users.ts` reads PostgreSQL (`"use cache"`, `cacheLife("max")`, `cacheTag`; columns named, never `select *`, so `password_hash` stays out of cached results), `articles.ts` and `session.ts` still read `lib/mock/*`. Public functions return published articles only. The sample article bodies are hand-written in `lib/mock/bodies.ts` (news ~300 words, features ~500, opinion ~600; only HTML the editor can open), a ready seed for Phase 2.
 - `lib/types.ts` mirrors the schema in `db/migrations/` (the stage 06 schema plus the columns the site needs; `cover_alt` has no field until Phase 4). `lib/categories.ts` is the single category → colour mapping; use it instead of hard-coding colours. `lib/search.ts` holds the one matching rule shared by server and browser.
 - `components/ui` (Button, Card, pills, badges), `components/layout`, `components/article`, `components/search`, `components/author`, `components/dashboard`, `components/editor` (Tiptap).
 - Dynamic routes prerender via `generateStaticParams` (Cache Components requires at least one param; `dynamicParams` is unavailable). Unknown params call `notFound()`, which streams the 404 UI with HTTP 200.
@@ -64,7 +64,7 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file**
 ## Commands
 
 - `npm run dev`: dev server (Turbopack). If new Tailwind classes do not show up, restart it.
-- `npm run build`: production build
+- `npm run build`: production build. Prerendering reads the database, so the server must be on and migrated and seeded (`npm run db:start`); data changed directly in the database shows up after the next build
 - `npm run start`: serve the production build
 - `npm run lint`: ESLint 9 flat config (`eslint-config-next` core-web-vitals + typescript)
 - `npm test`: Vitest in watch mode; `npm test -- --run` runs once, `npx vitest run __tests__/search.test.tsx` runs a single file, `-t "<name>"` filters by test name
@@ -77,7 +77,7 @@ Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file**
 - `npm run db:seed`: replace all users and articles with the sample data from `lib/mock` (`scripts/db-seed.ts`, run with `tsx`; the five topics come from migration `002`). Keeps ids, runs in one transaction, can be repeated. Refuses a database on another host unless given `-- --remote`. Accounts get a `password_hash` that cannot log in until Phase 3
 - `npm run test:e2e`: Playwright against a production build (run `npm run build` first; it starts `next start` on port 3200). Uses the installed Microsoft Edge (`channel: "msedge"`), so no browser download. `npx playwright test e2e/flows.spec.ts --project=desktop` runs one file.
 
-Unit tests (Vitest + React Testing Library, jsdom) live in `__tests__/`. Vitest cannot render `async` Server Components, so pages are covered by `e2e/`: one h1 and no console errors on every route, axe WCAG 2.1 AA checks, key flows, and no horizontal scroll at 375px (`phone` project).
+Unit tests (Vitest + React Testing Library, jsdom) live in `__tests__/`. They use no database: `__tests__/setup.ts` replaces the database-backed `lib/data` modules with sample-data versions in `lib/mock/` (`users-data.ts`), so the SQL is covered by `e2e/`. Vitest cannot render `async` Server Components, so pages are covered by `e2e/`: one h1 and no console errors on every route, axe WCAG 2.1 AA checks, key flows, and no horizontal scroll at 375px (`phone` project).
 
 ## Stack notes
 

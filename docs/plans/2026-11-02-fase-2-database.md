@@ -64,7 +64,7 @@ Satu langkah = satu commit per hari, mengikuti jadwal harian (roadmap lokal, dis
 | 2 | Sel 3 Nov | Pasang `postgres` (3.4.9) dan `server-only`; buat `lib/db.ts`, `npm run db:check`, `.env.example` | Claude | `package.json`, `lib/db.ts`, `scripts/db-check.mjs`, `.env.example`, `.gitignore`, `CLAUDE.md` | ✅ |
 | 3 | Rab 4 Nov | Migrasi skema (tahap 06 + kolom tambahan + tabel fitur lanjutan) dan skrip migrate; SQL tahap 06 di spesifikasi ikut diperbarui | Claude | `db/migrations/001_schema.sql`, `scripts/db-migrate.mjs`, `scripts/db-client.mjs`, `scripts/db-check.mjs`, `lib/db.ts`, `lib/types.ts`, `docs/the-campus-herald.md`, `CLAUDE.md` | ✅ |
 | 4 | Kam 5 Nov | Migrasi 5 topic; seed dari data contoh (TypeScript, dijalankan dengan `tsx`) | Claude | `db/migrations/002_categories.sql`, `scripts/db-seed.ts`, `package.json`, `docs/the-campus-herald.md`, `CLAUDE.md` | ✅ |
-| 5 | Jum 6 Nov | 6 fungsi `lib/data/users.ts` → SQL + cache; unit test memakai data contoh (implementasi mock dipindah ke `lib/mock/`, dipasang lewat `vi.mock`) | Claude | `lib/data/users.ts`, `lib/mock/`, `__tests__/` | Belum |
+| 5 | Jum 6 Nov | 6 fungsi `lib/data/users.ts` → SQL + cache; unit test memakai data contoh (implementasi mock dipindah ke `lib/mock/`, dipasang lewat `vi.mock`) | Claude | `lib/data/users.ts`, `lib/db.ts`, `lib/mock/users-data.ts`, `__tests__/setup.ts`, `vitest.config.mts`, `CLAUDE.md` | ✅ |
 | 6 | Sab 7 Nov | 6 fungsi artikel publik → SQL + cache; halaman `[slug]`/`[id]` tetap ○ | Claude | `lib/data/articles.ts` | Belum |
 | 7 | Sen 9 Nov | `searchArticles`, 4 fungsi dashboard, dan `getPreviewUser` → SQL; dokumentasi (perintah db, syarat build/E2E); E2E penuh; tampilan sama | Claude | `lib/data/*.ts`, `CLAUDE.md` | Belum |
 
@@ -205,3 +205,39 @@ Hari cadangan: Min 8 Nov.
 - **Diperbaiki:** pengaman migrasi di atas, `lock_timeout` 5 detik, entri `::1` yang tidak pernah cocok (postgres.js 3.4.9 tidak mengurai host IPv6), petunjuk `42P01`, komentar.
 - **Tidak diubah:** seed tetap `.ts` yang berjalan sebagai CommonJS. Berjalan baik; `await` di tingkat atas dalam `db-client.mjs` kemungkinan akan membuatnya gagal.
 - **Syarat Fase 3 (Sedang):** `!no-login` hanya aman kalau pemeriksa password menolak format yang tidak dikenal. Pemeriksa scrypt yang mengambil panjang kunci dari nilai tersimpan bisa meloloskan password apa pun (kunci kosong dianggap sama). Cek format hash dengan ketat, anggap format asing sebagai login gagal, dan tambahkan unit test untuk `!no-login`.
+
+## Hari 4 (Jum 6 Nov): data penulis dari database
+
+- **`lib/data/users.ts`:** 6 fungsi membaca PostgreSQL, dengan `"use cache"`, `cacheLife("max")`, dan tag `users` (profil juga `articles`). Kolom ditulis satu per satu, jadi `password_hash` tidak masuk ke hasil cache. Urutan nama tetap `localeCompare` di JavaScript.
+- **Unit test:** isi lama pindah utuh ke `lib/mock/users-data.ts`, dipasang untuk semua test lewat `__tests__/setup.ts`. Vitest tidak memuat `lib/db.ts`.
+- **`lib/db.ts`:** `max: 5`, `idle_timeout: 20` (catatan review hari 1).
+- **Konsekuensi:** `npm run build` kini butuh server database menyala.
+
+| Cek | Hasil |
+|-----|-------|
+| HTML `/authors`, `/authors/1..7`, `/authors/99`, `/about`, `/dashboard/authors`, sebelum dan sesudah | ✅ 0 perbedaan, termasuk warna kartu dan urutan penulis |
+| `/avatars/1..7` | ✅ sama per byte |
+| `bio` diubah langsung di database, lalu build | ✅ penanda muncul di `/about`, `/authors`, `/authors/2`; setelah seed dan build ulang, hilang |
+| Status build | ✅ `/authors`, `/authors/[id]`, `/about`, `/dashboard/authors` tetap ○ static; build selesai, tidak menggantung |
+| Build saat server database mati | ✅ gagal (exit 1) dengan `ECONNREFUSED`, tanpa password |
+| `.next` (tanpa folder cache) | ✅ password database tidak ada; `password_hash` hanya di komentar kode pada source map server, tidak ada di `.next/static` |
+| `npm test -- --run`, `npm run lint`, `npx tsc --noEmit` | ✅ 115/115 |
+| `npm run test:e2e` penuh | ✅ 505 lolos, 0 gagal (6 test baru) |
+
+**`code-reviewer`:** tidak ada Kritis atau Tinggi; 1 Sedang dan 5 Rendah.
+
+- **Sedang, diperbaiki:** `/authors/99999999999` dan `/authors/1e21` lolos `Number.isInteger`, lalu PostgreSQL menolak nilainya, sehingga pengunjung melihat halaman error, bukan not-found. Terbukti di build sebelum perbaikan (digest error berupa angka). Id di luar rentang kini langsung `null`. Ada 6 test E2E baru, termasuk id admin dan anggota lama, karena unit test tidak menyentuh SQL.
+- **Rendah, diperbaiki:** `cacheLife("max")` di `renderAvatar` (revalidate turun dari default 15 menit menjadi 30 hari; `__tests__/setup.ts` ikut memalsukan `next/cache`), dan `order by id` supaya urutan nama kembar pasti.
+
+**Tindak lanjut:**
+
+- **Fase 3, syarat sebelum data asli:** `/dashboard/authors` statis dan memuat email semua akun di HTML-nya, tanpa login. Aman selama datanya sampel. Halaman ini tidak boleh tetap statis setelah ada login (`authentication-with-cache-components.md`).
+- **Hari berikutnya:**
+  - Query artikel yang menyertakan penulis wajib memakai tag `articles` dan `users`.
+  - `lib/data/articles.ts` butuh baris `vi.mock` serupa di `__tests__/setup.ts`, dan id dari URL perlu pemeriksaan rentang yang sama.
+- **Fase 4:**
+  - `updateTag` hanya bisa di Server Action.
+  - Kenaikan `view_count` jangan memicu tag `articles`, karena setiap kunjungan akan membuang seluruh cache.
+- **Fase 5:**
+  - Build gagal kalau belum ada author (`generateStaticParams` kosong), jadi pastikan minimal satu author ada sebelum build pertama.
+  - Cache bawaan ada di memori tiap instance, jadi perlu dicek di Vercel.

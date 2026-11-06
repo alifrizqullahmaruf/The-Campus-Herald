@@ -25,7 +25,9 @@ function connect(connectionUrl: string) {
   );
   if (connectionUrl.split("@").length > 2) throw invalid;
   try {
-    return postgres(connectionUrl);
+    // A build prerenders in several workers, each with its own pool, so each stays
+    // small, and idle connections close so they cannot hold a process open.
+    return postgres(connectionUrl, { max: 5, idle_timeout: 20 });
   } catch {
     throw invalid;
   }

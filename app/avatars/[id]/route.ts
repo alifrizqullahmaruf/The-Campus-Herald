@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import { avatarSvg } from "@/lib/avatar";
 import { getAllUsers, getAuthorProfile } from "@/lib/data/users";
 
@@ -11,6 +12,7 @@ export async function generateStaticParams() {
 
 async function renderAvatar(id: Promise<string>): Promise<string | null> {
   "use cache";
+  cacheLife("max");
   const userId = Number(await id);
   const user = (await getAllUsers()).find((u) => u.id === userId);
   if (!user) return null;

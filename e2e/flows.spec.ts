@@ -132,3 +132,18 @@ test("log in opens the dashboard", async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { level: 1, name: "My articles." })).toBeVisible();
 });
+
+// These read the database, which unit tests do not touch. A number too big for an integer
+// column used to reach PostgreSQL and show the error page (docs/plans/2026-11-02-fase-2-database.md).
+for (const path of ["/authors/99999999999", "/authors/1e21", "/authors/99", "/authors/1", "/authors/abc"]) {
+  test(`${path} is the not-found page`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("This page is not in the margins.");
+  });
+}
+
+test("a former member keeps their author page", async ({ page }) => {
+  await page.goto("/authors/7");
+  await expect(page.getByRole("heading", { level: 1, name: "Laras Wibowo" })).toBeVisible();
+  await expect(page.getByText("Former member")).toBeVisible();
+});
