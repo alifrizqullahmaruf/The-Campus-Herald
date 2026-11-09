@@ -1,243 +1,91 @@
 # Plan: Fase 2 — database PostgreSQL
 
-**Tanggal:** 2026-11-02
-**Status:** Disetujui 2026-11-03. Dikerjakan satu langkah per hari, 3–9 Nov (lihat "Tugas per hari").
+**Tanggal:** 2026-11-02 (brainstorm), dikerjakan 3–9 Nov 2026
+**Status:** ✅ Selesai 2026-11-09. Semua halaman membaca PostgreSQL; tampilannya sama persis dengan versi data contoh.
 
 ## Tujuan
 
-Data situs pindah dari `lib/mock/*` ke PostgreSQL. Isi `lib/data/*` diganti query sungguhan dengan signature tetap, jadi halaman dan komponen tidak berubah. Tampilan situs harus sama persis; bedanya hanya sumber datanya.
+Data situs pindah dari `lib/mock/*` ke PostgreSQL. Isi `lib/data/*` diganti query sungguhan dengan signature tetap, jadi halaman dan komponen tidak berubah.
 
-## Keputusan user (brainstorm 2026-11-02)
+## Keputusan
 
 | Hal | Keputusan |
 |-----|-----------|
-| Database | **Diubah 2026-11-04:** server PostgreSQL 18 **khusus proyek** (`localhost:5433`, data di `%LOCALAPPDATA%side-notes`), memakai program yang sudah terpasang. Keputusan awal adalah service `postgresql-x64-18` di port 5432, tapi saat diminta menyiapkan database sendiri, Claude tidak punya password superuser-nya. Pindah kembali cukup dengan mengganti `DATABASE_URL`. Cloud (Neon) baru saat deploy |
-| Akses | **SQL langsung dengan `postgres.js`**, tanpa ORM |
-| Deploy nanti | **Vercel** (Fase 5; koneksi lewat `DATABASE_URL`, jadi tinggal ganti URL) |
-| Skema | Skema tahap 06 **ditambah kolom yang dipakai situs**, dan SQL di `docs/the-campus-herald.md` **ikut diperbarui** |
-| Tabel fitur lanjutan | `comments`, `tags`, `article_tags` **dibuat** sesuai spesifikasi (kosong, belum dipakai) |
-| Unit test | **Tetap memakai data contoh**: lapisan database dipalsukan, query SQL teruji lewat E2E |
-| Urutan | Persiapan dulu: dashboard lewat `lib/data`, dan selidiki `flows.spec.ts` yang kadang gagal |
-| Gambar sampul | Diputuskan di Fase 4 (unggah sampul). Di Fase 2 sampul tetap berupa path/URL seperti sekarang |
+| Database | Server PostgreSQL 18 **khusus proyek** di `localhost:5433` (`npm run db:setup`/`db:start`/`db:stop`), datanya di `%LOCALAPPDATA%\side-notes`, di luar OneDrive. **Diubah 2026-11-04:** rencana awalnya service `postgresql-x64-18` di port 5432, tapi password superuser-nya tidak tersedia. Pindah server cukup dengan mengganti `DATABASE_URL`. Neon baru saat deploy (Fase 5) |
+| Akses | SQL langsung dengan `postgres.js` 3.4.9 (bukan 4.0.0, yang dirilis 5 hari sebelumnya), tanpa ORM |
+| Skema | Tahap 06 ditambah kolom yang dipakai situs (`bio`, `beat`, `excerpt`, `created_at`, `cover_alt`, 4 kolom kredit foto). Semua kolom waktu `TIMESTAMPTZ`, karena `TIMESTAMP` dibaca sebagai waktu lokal komputer. SQL di `docs/the-campus-herald.md` disalin dari migrasi |
+| Tabel fitur lanjutan | `comments`, `tags`, `article_tags` dibuat, kosong |
+| 5 topic | Migrasi `002`, bukan seed, supaya ada di semua database (2026-11-05) |
+| Unit test | Tetap memakai data contoh: `__tests__/setup.ts` mengganti `lib/data/*` dengan versi `lib/mock/*-data.ts`. SQL teruji lewat E2E dan pembandingan halaman |
+| Cache | Setiap fungsi data memakai `"use cache"`, `cacheLife("max")`, dan tag `articles`/`users`. Halaman tetap ○ static |
+| Password | Tidak pernah lewat chat; `db:setup` membuatnya acak dan tidak mencetaknya |
 
-## Rancangan (garis besar, dirinci saat plan ini dikerjakan)
+## Tugas
 
-**Kolom tambahan** (dari riset; hasil akhirnya di `db/migrations/001_schema.sql`):
+| # | Hari | Tugas | Siapa | Commit | Status |
+|---|------|-------|-------|--------|--------|
+| 1 | Sel 3 Nov | `postgres`, `server-only`, `lib/db.ts`, `npm run db:check`, `.env.example` | Claude | `e17d819` | ✅ |
+| 2 | Rab 4 Nov | Server khusus proyek dan `.env.local` (awalnya tugas user, lalu user meminta Claude mengerjakannya) | Claude | `6c083ae` | ✅ |
+| 3 | Rab 4 Nov | Skema `001_schema.sql`, `npm run db:migrate`, `scripts/db-client.mjs`, spesifikasi | Claude | `6c083ae` | ✅ |
+| 4 | Kam 5 Nov | Migrasi 5 topic, `npm run db:seed` (`tsx`) | Claude | `ae26c53` | ✅ |
+| 5 | Jum 6 Nov | `lib/data/users.ts` dari database; data palsu untuk unit test | Claude | `5638ed8` | ✅ |
+| 6 | Sen 9 Nov | `lib/data/articles.ts` (11 fungsi) dan `lib/data/session.ts` dari database. Langkah Sabtu dan Senin digabung, karena keduanya di file yang sama | Claude | commit hari ini | ✅ |
 
-| Tabel | Kolom |
-|-------|-------|
-| `users` | `bio TEXT NOT NULL DEFAULT ''`, `beat VARCHAR(100) NOT NULL DEFAULT ''` |
-| `articles` | `excerpt TEXT NOT NULL DEFAULT ''`, `cover_credit_name`, `cover_credit_profile_url`, `cover_credit_photo_url`, `cover_credit_source`, `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`; dan `cover_alt VARCHAR(255)` sebagai kolom **baru** untuk unggah sampul di Fase 4 (editor sudah menanyakan teks alt, tapi `Article` belum punya field-nya dan sampul kini dirender dengan `alt=""`) |
+## File
 
-**Migrasi dan seed:**
+- **Database:** `db/migrations/001_schema.sql`, `db/migrations/002_categories.sql`
+- **Skrip:** `scripts/db-client.mjs`, `scripts/db-check.mjs`, `scripts/db-migrate.mjs`, `scripts/db-local.mjs`, `scripts/db-seed.ts`
+- **Aplikasi:** `lib/db.ts`, `lib/data/articles.ts`, `lib/data/users.ts`, `lib/data/session.ts`, `lib/data/ids.ts`, `lib/reading-time.ts`, `app/avatars/[id]/route.ts` (`cacheLife`)
+- **Test:** `__tests__/setup.ts`, `lib/mock/articles-data.ts`, `lib/mock/users-data.ts`, `lib/mock/session-data.ts`, `vitest.config.mts`, `e2e/flows.spec.ts`
+- **Dokumen:** `docs/the-campus-herald.md` (diagram, SQL, keputusan desain), `CLAUDE.md`, `.env.example`, `.gitignore`, `package.json`
 
-- Migrasi: file `.sql` berurutan di `db/migrations/`, dijalankan oleh skrip kecil (`npm run db:migrate`). Skrip mencatat file yang sudah dijalankan di tabel `schema_migrations`, dan setiap file dijalankan dalam satu transaksi.
-- 5 topic ada di migrasi `002_categories.sql` (diputuskan 2026-11-05), karena dibutuhkan di semua database.
-- Seed (`npm run db:seed`): dari data contoh yang sudah ada, yaitu 7 user dan 23 artikel dengan isi lengkap (`lib/mock/bodies.ts`). Id dipertahankan, lalu sequence di-reset.
-- Skrip seed ditulis dalam TypeScript dan dijalankan dengan `tsx` (dev dependency). Node 24 tidak bisa langsung mengimpor `lib/mock/*.ts`, karena impor tanpa ekstensi (`./bodies`) dan JSON tanpa `with { type: "json" }`.
-- `password_hash` diisi nilai yang tidak bisa dipakai untuk login. Hash sungguhan dibuat di Fase 3.
-
-**Akses database:**
-
-- `lib/db.ts` (server-only) membuat client `postgres` dari `DATABASE_URL`.
-- Fungsi di `lib/data/*` menjalankan SQL dan memetakan baris `snake_case` ke tipe `camelCase` di `lib/types.ts`.
-
-**Cache (Cache Components):**
-
-- Setiap fungsi data memakai `"use cache"` + `cacheLife` + `cacheTag`. Tanpa itu build gagal, dan halaman `[slug]`/`[id]` harus tetap ○ static (`CLAUDE.md`).
-- Tag per jenis data (artikel, user) supaya Fase 4 bisa memanggil `updateTag` setelah menyimpan.
-- Aturannya dicek di `node_modules/next/dist/docs/` saat implementasi.
-
-**Lingkungan:**
-
-- Build dan E2E butuh database yang berjalan dan sudah di-seed, karena prerender membaca database.
-- `.env.local` berisi `DATABASE_URL`, ditulis oleh `npm run db:setup` dengan password acak yang tidak pernah dicetak.
-- Server khusus proyek tidak menyala sendiri: setelah komputer restart, jalankan `npm run db:start`.
-
-## Tugas per hari
-
-Satu langkah = satu commit per hari, mengikuti jadwal harian (roadmap lokal, disetujui 2026-11-03). Setiap hari: verifikasi (test, lint, build; E2E kalau halaman berubah), `code-reviewer` sekali, lalu commit dan push setelah user mengonfirmasi.
-
-| # | Hari | Tugas | Siapa | File | Status |
-|---|------|-------|-------|------|--------|
-| 1 | Rab 4 Nov | Buat server, database `side_notes`, user-nya, dan `.env.local` (awalnya tugas user; user meminta Claude mengerjakannya) | Claude | `scripts/db-local.mjs`, `package.json`, `.env.example`, `.env.local` (tidak di-commit) | ✅ |
-| 2 | Sel 3 Nov | Pasang `postgres` (3.4.9) dan `server-only`; buat `lib/db.ts`, `npm run db:check`, `.env.example` | Claude | `package.json`, `lib/db.ts`, `scripts/db-check.mjs`, `.env.example`, `.gitignore`, `CLAUDE.md` | ✅ |
-| 3 | Rab 4 Nov | Migrasi skema (tahap 06 + kolom tambahan + tabel fitur lanjutan) dan skrip migrate; SQL tahap 06 di spesifikasi ikut diperbarui | Claude | `db/migrations/001_schema.sql`, `scripts/db-migrate.mjs`, `scripts/db-client.mjs`, `scripts/db-check.mjs`, `lib/db.ts`, `lib/types.ts`, `docs/the-campus-herald.md`, `CLAUDE.md` | ✅ |
-| 4 | Kam 5 Nov | Migrasi 5 topic; seed dari data contoh (TypeScript, dijalankan dengan `tsx`) | Claude | `db/migrations/002_categories.sql`, `scripts/db-seed.ts`, `package.json`, `docs/the-campus-herald.md`, `CLAUDE.md` | ✅ |
-| 5 | Jum 6 Nov | 6 fungsi `lib/data/users.ts` → SQL + cache; unit test memakai data contoh (implementasi mock dipindah ke `lib/mock/`, dipasang lewat `vi.mock`) | Claude | `lib/data/users.ts`, `lib/db.ts`, `lib/mock/users-data.ts`, `__tests__/setup.ts`, `vitest.config.mts`, `CLAUDE.md` | ✅ |
-| 6 | Sab 7 Nov | 6 fungsi artikel publik → SQL + cache; halaman `[slug]`/`[id]` tetap ○ | Claude | `lib/data/articles.ts` | Belum |
-| 7 | Sen 9 Nov | `searchArticles`, 4 fungsi dashboard, dan `getPreviewUser` → SQL; dokumentasi (perintah db, syarat build/E2E); E2E penuh; tampilan sama | Claude | `lib/data/*.ts`, `CLAUDE.md` | Belum |
-
-Hari cadangan: Min 8 Nov.
-
-## Hari 1 (Sel 3 Nov): koneksi database
-
-- **`postgres` 3.4.9, bukan 4.0.0:** versi 4.0.0 adalah versi mayor baru yang dirilis 29 Okt 2026 (5 hari sebelumnya), sehingga dipilih 3.4.9 yang stabil sejak April. `^3.4.9` tidak naik ke 4.
-- **`server-only`:** menurut docs Next sifatnya opsional (Next menanganinya sendiri). Tetap dipasang supaya modul juga bisa di-resolve di luar Next (Vitest, `tsx`); di sana impornya langsung gagal, sehingga test dan skrip tidak bisa diam-diam memakai database.
-- **`lib/db.ts`:**
-  - satu client `sql` dari `DATABASE_URL`, dengan pesan error yang jelas kalau variabelnya kosong;
-  - di dev, client disimpan di `globalThis` supaya hot reload tidak membuka pool baru;
-  - belum diimpor halaman mana pun.
-- **`npm run db:check`** (`scripts/db-check.mjs`, `node --env-file-if-exists=.env.local`):
-  - mencetak versi PostgreSQL, database, dan user;
-  - tidak pernah mencetak `DATABASE_URL`;
-  - kalau gagal, memberi petunjuk sesuai kode error: service mati (`ECONNREFUSED`, dengan pesan cadangan karena AggregateError tidak punya pesan), user atau password salah (`28P01`; PostgreSQL juga memakai kode ini untuk user yang tidak ada), database belum ada (`3D000`).
-- **`.env.example`** ikut di-commit (`!.env.example` di `.gitignore`), sedangkan `.env.local` tetap diabaikan.
-- **Tambahan di luar plan:** baris `npm run db:check` di bagian Commands `CLAUDE.md`, supaya dokumentasi sesuai dengan commit hari ini.
+## Verifikasi
 
 | Cek | Hasil |
 |-----|-------|
-| `db:check` tanpa `.env.local` / port salah / user salah | ✅ pesan dan petunjuk yang benar, exit 1 |
-| `npm test -- --run` | ✅ 115/115 |
-| `npm run lint`, `npx tsc --noEmit` | ✅ |
-| `npm run build` | ✅ (halaman belum membaca database; `[slug]`/`[id]` tetap ○) |
-| `npm run db:check` dengan database sungguhan | ✅ dijalankan 4 Nov: PostgreSQL 18.6, `side_notes` / `side_notes` |
-| `code-reviewer` (hari 1) | 1 Tinggi dan 1 Sedang, diperbaiki; 3 Rendah: 1 diperbaiki, 2 jadi catatan untuk hari 3 dan 5 (di bawah) |
+| **Tampilan sama** | HTML 97 halaman (beranda, 5 topic, 18 artikel, pencarian, penulis, About, styleguide, semua halaman dashboard termasuk editor dan review id 1–23 dan id di luar rentang), 5 respons `/api/search`, dan 7 avatar: 0 perbedaan sebelum dan sesudah |
+| **Data benar-benar dari database** | Penanda yang ditulis langsung di database muncul setelah build: `bio` (hari 4), dan judul artikel di beranda, halaman artikel, topic, dashboard, dan pencarian (hari 6). Setelah seed ulang, semua 97 halaman kembali sama persis |
+| **Isi database** | Dibandingkan dengan `lib/mock` per kolom: 0 perbedaan (5 topic, 7 user, 23 artikel) |
+| **Static** | Semua halaman `[slug]`/`[id]` dan dashboard tetap ○ |
+| **Keamanan** | Password tidak tercetak di semua jalur gagal yang diuji (URL rusak, `@`/`/`/`#`/`%` tanpa encode, server mati, setup gagal di tengah). Tidak ada di `.next`. `password_hash` tidak pernah dipilih dan tidak ada di `.next/static` |
+| **Migrasi dan seed** | Bisa diulang. Kegagalan di tengah tidak meninggalkan sisa. Seed menolak host lain dan database yang belum dimigrasi |
+| **Test** | Unit 115/115, lint, tsc, build; E2E penuh 505 lolos, 0 gagal (hari 4 dan hari 6) |
+| **`code-reviewer`** | 7 kali review selama fase ini. Temuan Tinggi: 1, password bisa bocor (hari 1). Temuan Sedang: 9, termasuk id di luar rentang yang menampilkan halaman error. Semua diperbaiki |
 
-**Perbaikan dari review:**
+**Hari 6 (Sen 9 Nov):**
 
-- **Tinggi, `db-check.mjs`: password bisa bocor.**
-  - **Penyebab:** password dengan `/` atau `#` yang tidak di-encode membuat `new URL` di postgres.js melempar TypeError. Error itu tidak tertangkap, sehingga Node mencetak properti `input`-nya, yaitu seluruh URL beserta password.
-  - **Perbaikan:**
-    - client kini dibuat di dalam `try`, dan yang dicetak hanya `error.message`;
-    - petunjuk baru untuk URL tidak valid, untuk `%` yang tidak di-encode (URIError), dan untuk `CONNECT_TIMEOUT`.
-- **Sedang, `lib/db.ts`: risiko yang sama saat modul dimuat** (terminal dev, atau log build Vercel nanti).
-  - **Perbaikan:** `postgres(url)` dibungkus `connect()`, yang melempar `Error` baru tanpa URL dan tanpa `cause`.
-- **Dicek ulang dengan password palsu** (`/`, `#`, `%zz`, port salah): tidak ada yang bocor, dan setiap kasus mendapat petunjuk yang tepat. `lib/db.ts` diimpor dengan `node --conditions=react-server`: URL rusak menghasilkan pesan aman tanpa `input` dan tanpa `cause`, sedangkan URL valid menghasilkan client.
+- **Urutan:** daftar memakai pemutus id saat nilainya kembar (artikel 1/21 dan 8/19 sama tanggal dibuatnya), sesuai urutan data contoh.
+- **Pencarian dan prev/next:** tetap dihitung di JavaScript di atas daftar yang sudah di-cache, supaya aturan cocok di `lib/search.ts` sama dengan di browser.
+- **`code-reviewer`:** tidak ada Kritis, Tinggi, atau Sedang. Tiga temuan Rendah diperbaiki:
+  - artikel tanpa tanggal kini diurutkan seperti data contoh (`nulls last`/`nulls first`);
+  - `limit`/`offset` negatif dibatasi ke 0, karena PostgreSQL menolaknya;
+  - komentar silang untuk id preview user, yang tertulis di dua tempat.
+- **Setelah perbaikan:** 97 halaman tetap sama persis, test alur dan halaman lolos 18/18.
 
-**Catatan untuk hari berikutnya (temuan Rendah):**
+## Tindak lanjut
 
-- **Hari 5 (Jum 6 Nov):** 13 file test mengimpor `lib/data/*`. Begitu `lib/data` mengimpor `lib/db`, impor itu gagal di Vitest dengan pesan `server-only` yang menyesatkan. Pasang mock `@/lib/db` sekali secara global (`setupFiles` di `vitest.config.ts`), bukan satu per test.
-- **Hari 3–6:** tetapkan `max` dan `idle_timeout` pool secara eksplisit. Saat build, prerender berjalan di beberapa worker, masing-masing dengan pool sendiri (default 10); ini juga perlu untuk Neon nanti. Mengubah `DATABASE_URL` saat `next dev` berjalan baru berlaku setelah server di-restart.
+**Fase 3 (login):**
 
-## Hari 2 (Rab 4 Nov): skema dan migrasi
+- **Pemeriksa password:** `!no-login` di seed hanya aman kalau pemeriksa password menolak format hash yang tidak dikenal. Pemeriksa scrypt yang mengambil panjang kunci dari nilai tersimpan bisa meloloskan password apa pun. Tambahkan unit test untuk nilai ini.
+- **Dashboard statis:** `/dashboard/authors` statis dan memuat email semua akun. Setelah ada login, halaman dashboard tidak boleh tetap statis (`authentication-with-cache-components.md`). Jangan deploy dengan data asli sebelum ini beres.
+- **Pengganti preview user:** `getPreviewUser` diganti user yang login; butir 3 `clean-code` (satu daftar path admin).
 
-- **`db/migrations/001_schema.sql`:** 6 tabel dan 2 indeks dari tahap 06, ditambah kolom yang disepakati. Blok SQL di spesifikasi disalin dari file ini (sudah dibandingkan dengan `diff`: sama persis).
-- **`npm run db:migrate`** (`scripts/db-migrate.mjs`): menjalankan file yang belum tercatat di `schema_migrations`, berurutan menurut nama. Setiap file berjalan dalam satu transaksi bersama pencatatannya.
-- **`scripts/db-client.mjs`:** `withDatabase(run)` menyatukan koneksi, pesan error, dan perlindungan password dari `db-check.mjs`. Dipakai juga oleh seed besok.
-- **Spesifikasi:** class diagram (termasuk class `CoverCredit`), dua ER diagram, blok SQL, dan dua poin baru di "Keputusan desain".
-- **`scripts/db-local.mjs`** (`npm run db:setup`, `db:start`, `db:stop`): server PostgreSQL 18 khusus proyek. Ditambahkan karena user meminta Claude menyiapkan database sendiri, dan server terpasang menolak tanpa password superuser. Claude tidak mencari password itu dan tidak mengubah `pg_hba.conf`.
-  - Data ada di `%LOCALAPPDATA%`, karena proyek ini di OneDrive dan sinkronisasi bisa merusak file database yang sedang dipakai.
-  - User `side_notes` bukan superuser, sama seperti di Neon nanti.
-  - `db:stop` tidak ada di plan hari ini; ditambahkan karena dibutuhkan untuk mematikan atau menghapus server.
+**Fase 4:**
 
-**Berbeda dari rancangan awal (disetujui user dalam plan hari ini):**
+- **Ukuran cache:** daftar artikel mengambil `body` hanya untuk menghitung `readingMinutes`, jadi entri cache membesar seiring jumlah artikel. Pertimbangkan menghitung waktu baca di SQL.
+- **Kredit foto:** `source` di-hardcode "Unsplash" sesuai tipe, padahal foto lokal berasal dari Picsum.
 
-- **`TIMESTAMPTZ`, bukan `TIMESTAMP`, untuk semua kolom waktu.** postgres.js membaca `TIMESTAMP` sebagai waktu lokal komputer, sedangkan `lib/format.ts` menampilkan tanggal dalam UTC. Waktunya akan bergeser 7 jam di laptop (WIB) tapi tidak di Vercel (UTC).
-- **`bio`, `beat`, dan `excerpt` memakai `NOT NULL DEFAULT ''`,** sesuai `lib/types.ts`.
-- **Constraint `articles_cover_credit_complete`:** kredit foto harus lengkap atau kosong sama sekali.
+- **Invalidasi cache:** `updateTag("articles")` atau `updateTag("users")` setelah menyimpan. `updateTag` hanya bisa di Server Action.
+- **`view_count`:** kenaikannya jangan memicu tag `articles`, karena setiap kunjungan akan membuang seluruh cache.
+- **Skema dan alur:**
+  - label "Updated" di dashboard menampilkan `createdAt`, karena belum ada `updated_at`;
+  - pertimbangkan constraint alur (`published` wajib punya `published_at`, `rejected` wajib punya `review_note`).
 
-**Perbaikan dari review (`code-reviewer`):**
+**Fase 5:**
 
-| Tingkat | Temuan | Perbaikan |
-|---------|--------|-----------|
-| Sedang | Password berisi `@` tanpa encode, diikuti `/`, `?`, atau `#`: potongan password dibaca sebagai host dan tercetak di pesan `ENOTFOUND` | `@` kedua ditolak lebih dulu, di `db-client.mjs` dan `lib/db.ts`. Skrip hanya mencetak pesan dari server PostgreSQL; error lain hanya kodenya |
-| Sedang | `db:migrate` gagal tanpa petunjuk kalau user bukan pemilik database (`42501`, sejak PostgreSQL 15) | Petunjuk untuk `42501`. Perintah di plan sudah memakai `OWNER` |
-| Rendah | Skrip menggantung kalau ada koma setelah `@` pertama di password | Tertutup oleh penolakan `@` kedua |
-| Rendah | `VARCHAR(255)` berisiko untuk URL Unsplash panjang yang ditulis `npm run covers` | `cover_image` dan dua kolom URL kredit memakai `TEXT` (berubah dari plan; murah selama migrasi belum pernah berjalan) |
-| Rendah | Spesifikasi: `COMMENT.body` tertulis `string`; `CoverCredit` tidak punya class | Diperbaiki |
+- **URL Neon** hanya disimpan di Vercel, karena `.env.local` ikut tersinkron ke OneDrive.
+- **Build pertama** gagal kalau belum ada author (`generateStaticParams` kosong).
+- **Cache bawaan** ada di memori tiap instance, jadi perlu dicek di Vercel.
+- **Seed ke Neon** butuh `-- --remote`.
 
-**Perbaikan dari review kedua (hanya `db-local.mjs`, karena skrip ini menangani password):**
-
-| Tingkat | Temuan | Perbaikan |
-|---------|--------|-----------|
-| Sedang | Kalau `initdb` gagal, `process.exit` melewati `finally`, sehingga file password superuser tertinggal | Cek status dipindah ke setelah file dihapus; file sisa dari run yang terhenti dihapus di awal `setup` |
-| Sedang | Langkah pemulihan hanya muncul di satu jalur gagal, padahal setelah `initdb` password superuser sudah tidak ada | Semua langkah setelah `initdb` dibungkus satu `try/catch` dengan langkah pemulihan yang sama |
-| Rendah | `create role` yang gagal bisa tertulis di log beserta password | `set log_min_error_statement = panic` di sesi itu |
-| Rendah | `export DATABASE_URL=` dan `.env.local` UTF-16 lolos dari penolakan | Regex diperluas; file berisi NUL ditolak |
-| Rendah | `isRunning` menganggap semua status selain 0 sebagai mati | Hanya exit 3 yang berarti mati; status lain gagal dengan pesan jelas |
-| Rendah | Pesan penolakan tidak memberi langkah berikutnya; tiga petunjuk belum cocok dengan alur baru | Pesan dan petunjuk diperbarui, termasuk di `lib/db.ts` |
-
-**Hasil verifikasi:**
-
-| Cek | Hasil |
-|-----|-------|
-| `npm test -- --run` | ✅ 115/115 |
-| `npm run lint`, `npx tsc --noEmit` | ✅ |
-| `npm run build` | ✅ halaman tetap ○ static |
-| 9 URL palsu ke `db-migrate.mjs`, 3 ke `lib/db.ts` (termasuk bukti reviewer) | ✅ tidak ada password yang tercetak, tidak ada yang menggantung |
-| `npm run db:setup` pertama, lalu kedua | ✅ selesai tanpa mencetak password, tidak ada file password tertinggal; yang kedua berhenti tanpa mengubah apa pun |
-| `.env.local` | ✅ diabaikan git |
-| Port | ✅ 5433 hanya di `127.0.0.1` dan `::1`; service 5432 tetap berjalan |
-| `npm run db:migrate` pertama, lalu kedua | ✅ `Applying 001_schema.sql`, lalu `No new migrations.` |
-| Isi database | ✅ 6 tabel + `schema_migrations`, 2 indeks, semua kolom waktu `timestamptz`, 0 baris; `side_notes` bukan superuser dan memiliki database |
-| Aturan tabel (dalam transaksi yang dibatalkan) | ✅ menolak `role` dan `status` yang tidak dikenal, kredit foto setengah terisi, author yang tidak ada, dan email kembar; baris yang sah diterima |
-| Tanggal | ✅ `2026-10-12T08:00:00.000Z` kembali utuh setelah disimpan |
-| File migrasi rusak (sementara, sudah dihapus) | ✅ gagal dengan pesan jelas, tidak ada tabel sisa, tidak tercatat |
-| Jalur gagal `db:setup` (salinan terpisah, sudah dihapus): `initdb` gagal, port terpakai, `.env.local` tidak bisa ditulis, `export DATABASE_URL`, UTF-16 | ✅ pesan dan langkah pemulihan benar, tidak ada file password tertinggal, tidak ada password di keluaran maupun log |
-| `db:setup` sukses dengan `.env.local` yang sudah berisi baris lain tanpa newline di akhir | ✅ baris baru terpisah dengan benar, `db:check` berhasil |
-| Server dimatikan, lalu `npm run db:start` | ✅ saat mati muncul petunjuk `db:start`; setelah dinyalakan `db:check` berhasil; `db:start` kedua hanya memberi tahu |
-
-**Belum diuji:** `create role` yang gagal (tidak bisa dipicu di server baru) dan Ctrl+C saat `initdb` berjalan; keduanya hanya dianalisis dari kode.
-
-**Catatan untuk hari berikutnya (temuan Rendah):**
-
-- **Fase 5:** `.env.local` tidak masuk git, tapi ikut tersinkron ke OneDrive bersama folder proyek. Risikonya kecil selama server hanya di `localhost`, jadi simpan URL Neon hanya di pengaturan Vercel, bukan di file ini.
-- **Hari 5–7 (`lib/data/*`):**
-  - `TIMESTAMPTZ` kembali sebagai `Date`, sedangkan `lib/types.ts` memakai string. Pakai `.toISOString()` di pemetaan; `sql<Article[]>` tidak menangkap ini.
-  - `count(*)` dan `sum()` kembali sebagai string. Pakai `::int`.
-  - Jangan `select *` pada `users`, supaya `password_hash` tidak masuk ke hasil `"use cache"`.
-- **Fase 4:**
-  - Label "Updated" di `components/dashboard/my-articles.tsx:69` menampilkan `createdAt`; skema belum punya `updated_at`.
-  - Pertimbangkan constraint alur artikel: `published` wajib punya `published_at`, `rejected` wajib punya `review_note`.
-
-## Hari 3 (Kam 5 Nov): topic dan seed
-
-- **`002_categories.sql`:** 5 topic dengan id 1–5, sama dengan `lib/categories.ts`. Blok "Data awal" di spesifikasi mengikuti file ini.
-- **`npm run db:seed`** (`scripts/db-seed.ts`): mengganti semua user dan artikel dengan `MOCK_USERS` dan `MOCK_ARTICLES`, dalam satu transaksi. Id tetap, sequence di-reset.
-- **Pengaman:** seed menghapus isi tabel, jadi dua hal dicek lebih dulu (tidak ada di draft). Host selain komputer ini ditolak, kecuali dengan `-- --remote`. Database yang belum menjalankan migrasi `002` proyek ini juga ditolak, supaya `localhost` yang salah (service Windows, tunnel) tidak terkosongkan.
-- **`password_hash`:** nilai `!no-login`, bukan hash, jadi tidak bisa dipakai login sampai Fase 3.
-- **Di luar rencana:** `withDatabase` dipanggil tanpa `await` di tingkat atas, karena `tsx` menjalankan `.ts` di proyek ini sebagai CommonJS.
-
-| Cek | Hasil |
-|-----|-------|
-| `npm run db:migrate` | ✅ `002_categories.sql` berjalan; 5 topic cocok dengan `lib/categories.ts` |
-| `npm run db:seed` dua kali | ✅ 7 user, 23 artikel (18 published, 2 pending, 2 draft, 1 rejected) |
-| Database dibandingkan dengan `lib/mock`, per kolom | ✅ 0 perbedaan, termasuk isi, tanggal, dan kredit foto |
-| Sequence (dalam transaksi yang dibatalkan) | ✅ user baru id 8, artikel baru id 24 |
-| URL jauh palsu; dengan `--remote`; URL rusak | ✅ ditolak tanpa menyentuh data; mencoba konek lalu `ENOTFOUND`; `ERR_INVALID_URL`; password tidak tercetak |
-| Seed gagal di tengah (constraint sementara, sudah dihapus) | ✅ pesan jelas, data lama utuh |
-| Migrasi `002` tidak tercatat; database tanpa tabel proyek | ✅ ditolak tanpa mengubah data; petunjuk `db:migrate` |
-| `npm test -- --run`, `npm run lint`, `npx tsc --noEmit`, `npm run build` | ✅ 115/115, halaman tetap ○ static |
-
-**`code-reviewer`:** tidak ada Kritis atau Tinggi; 1 Sedang dan 6 Rendah.
-
-- **Diperbaiki:** pengaman migrasi di atas, `lock_timeout` 5 detik, entri `::1` yang tidak pernah cocok (postgres.js 3.4.9 tidak mengurai host IPv6), petunjuk `42P01`, komentar.
-- **Tidak diubah:** seed tetap `.ts` yang berjalan sebagai CommonJS. Berjalan baik; `await` di tingkat atas dalam `db-client.mjs` kemungkinan akan membuatnya gagal.
-- **Syarat Fase 3 (Sedang):** `!no-login` hanya aman kalau pemeriksa password menolak format yang tidak dikenal. Pemeriksa scrypt yang mengambil panjang kunci dari nilai tersimpan bisa meloloskan password apa pun (kunci kosong dianggap sama). Cek format hash dengan ketat, anggap format asing sebagai login gagal, dan tambahkan unit test untuk `!no-login`.
-
-## Hari 4 (Jum 6 Nov): data penulis dari database
-
-- **`lib/data/users.ts`:** 6 fungsi membaca PostgreSQL, dengan `"use cache"`, `cacheLife("max")`, dan tag `users` (profil juga `articles`). Kolom ditulis satu per satu, jadi `password_hash` tidak masuk ke hasil cache. Urutan nama tetap `localeCompare` di JavaScript.
-- **Unit test:** isi lama pindah utuh ke `lib/mock/users-data.ts`, dipasang untuk semua test lewat `__tests__/setup.ts`. Vitest tidak memuat `lib/db.ts`.
-- **`lib/db.ts`:** `max: 5`, `idle_timeout: 20` (catatan review hari 1).
-- **Konsekuensi:** `npm run build` kini butuh server database menyala.
-
-| Cek | Hasil |
-|-----|-------|
-| HTML `/authors`, `/authors/1..7`, `/authors/99`, `/about`, `/dashboard/authors`, sebelum dan sesudah | ✅ 0 perbedaan, termasuk warna kartu dan urutan penulis |
-| `/avatars/1..7` | ✅ sama per byte |
-| `bio` diubah langsung di database, lalu build | ✅ penanda muncul di `/about`, `/authors`, `/authors/2`; setelah seed dan build ulang, hilang |
-| Status build | ✅ `/authors`, `/authors/[id]`, `/about`, `/dashboard/authors` tetap ○ static; build selesai, tidak menggantung |
-| Build saat server database mati | ✅ gagal (exit 1) dengan `ECONNREFUSED`, tanpa password |
-| `.next` (tanpa folder cache) | ✅ password database tidak ada; `password_hash` hanya di komentar kode pada source map server, tidak ada di `.next/static` |
-| `npm test -- --run`, `npm run lint`, `npx tsc --noEmit` | ✅ 115/115 |
-| `npm run test:e2e` penuh | ✅ 505 lolos, 0 gagal (6 test baru) |
-
-**`code-reviewer`:** tidak ada Kritis atau Tinggi; 1 Sedang dan 5 Rendah.
-
-- **Sedang, diperbaiki:** `/authors/99999999999` dan `/authors/1e21` lolos `Number.isInteger`, lalu PostgreSQL menolak nilainya, sehingga pengunjung melihat halaman error, bukan not-found. Terbukti di build sebelum perbaikan (digest error berupa angka). Id di luar rentang kini langsung `null`. Ada 6 test E2E baru, termasuk id admin dan anggota lama, karena unit test tidak menyentuh SQL.
-- **Rendah, diperbaiki:** `cacheLife("max")` di `renderAvatar` (revalidate turun dari default 15 menit menjadi 30 hari; `__tests__/setup.ts` ikut memalsukan `next/cache`), dan `order by id` supaya urutan nama kembar pasti.
-
-**Tindak lanjut:**
-
-- **Fase 3, syarat sebelum data asli:** `/dashboard/authors` statis dan memuat email semua akun di HTML-nya, tanpa login. Aman selama datanya sampel. Halaman ini tidak boleh tetap statis setelah ada login (`authentication-with-cache-components.md`).
-- **Hari berikutnya:**
-  - Query artikel yang menyertakan penulis wajib memakai tag `articles` dan `users`.
-  - `lib/data/articles.ts` butuh baris `vi.mock` serupa di `__tests__/setup.ts`, dan id dari URL perlu pemeriksaan rentang yang sama.
-- **Fase 4:**
-  - `updateTag` hanya bisa di Server Action.
-  - Kenaikan `view_count` jangan memicu tag `articles`, karena setiap kunjungan akan membuang seluruh cache.
-- **Fase 5:**
-  - Build gagal kalau belum ada author (`generateStaticParams` kosong), jadi pastikan minimal satu author ada sebelum build pertama.
-  - Cache bawaan ada di memori tiap instance, jadi perlu dicek di Vercel.
+**Belum diuji:** `create role` yang gagal saat `db:setup`, dan Ctrl+C saat `initdb` berjalan; keduanya hanya dianalisis dari kode.

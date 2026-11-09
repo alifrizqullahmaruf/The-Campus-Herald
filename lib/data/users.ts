@@ -6,6 +6,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getCategoryById } from "../categories";
 import { sql } from "../db";
 import type { AuthorSummary, CategorySlug, Role, User } from "../types";
+import { isValidId } from "./ids";
 
 export interface AuthorProfile extends AuthorSummary {
   isActive: boolean;
@@ -35,12 +36,6 @@ const profileColumns = sql`
     group by a.category_id
     order by count(*) desc, a.category_id
     limit 1) as top_category_id`;
-
-// URLs can hold any number, and PostgreSQL rejects one that does not fit an integer
-// column with an error, not an empty result.
-function isValidId(id: number): boolean {
-  return Number.isInteger(id) && id >= 1 && id <= 2147483647;
-}
 
 function toProfile(row: ProfileRow): AuthorProfile {
   return {
