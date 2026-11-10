@@ -17,13 +17,19 @@ export function openSearchPalette() {
 export function CommandPaletteTrigger() {
   const [open, setOpen] = useState(false);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const isOpen = useRef(false);
 
   const show = useCallback(() => {
-    returnFocus.current = document.activeElement as HTMLElement | null;
+    // Remember where focus was only when opening: with the palette already open, the
+    // active element is the palette's own input, which is gone once it closes. (The
+    // native <dialog> restores focus by itself in current browsers; this is the fallback.)
+    if (!isOpen.current) returnFocus.current = document.activeElement as HTMLElement | null;
+    isOpen.current = true;
     setOpen(true);
   }, []);
 
   const close = useCallback(() => {
+    isOpen.current = false;
     setOpen(false);
     returnFocus.current?.focus();
   }, []);

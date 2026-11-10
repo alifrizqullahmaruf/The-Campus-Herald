@@ -74,6 +74,36 @@ test("Esc closes quick search and returns focus", async ({ page }) => {
   await expect(chip).toBeFocused();
 });
 
+// A behaviour check, not a regression test for the isOpen ref in command-palette-trigger:
+// the native <dialog> already restores focus in Edge, so this passes with or without it.
+test("a second Ctrl+K while quick search is open keeps where focus returns", async ({ page }) => {
+  await page.goto("/categories");
+  await page.waitForLoadState("networkidle");
+  const chip = page.getByRole("button", { name: "Open quick search" });
+  const palette = page.getByRole("dialog", { name: "Quick search" });
+  // Hydration has finished once the shortcut works (see openQuickSearch).
+  await openQuickSearch(page);
+  await page.keyboard.press("Escape");
+  await expect(palette).toBeHidden();
+  await chip.click();
+  await expect(palette).toBeVisible();
+  // A second press must not make the palette's own input the place to return to.
+  await page.keyboard.press("Control+K");
+  await expect(palette).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(palette).toBeHidden();
+  await expect(chip).toBeFocused();
+  // The same after a click on the backdrop, the other way to close it.
+  await chip.click();
+  await expect(palette).toBeVisible();
+  await page.keyboard.press("Control+K");
+  await expect(palette).toBeVisible();
+  // The dialog has a margin, so this corner is always the backdrop.
+  await page.mouse.click(5, 5);
+  await expect(palette).toBeHidden();
+  await expect(chip).toBeFocused();
+});
+
 test("header search form works without the palette", async ({ page }) => {
   await page.goto("/about");
   await page.getByRole("searchbox", { name: "Search articles" }).first().fill("piano");

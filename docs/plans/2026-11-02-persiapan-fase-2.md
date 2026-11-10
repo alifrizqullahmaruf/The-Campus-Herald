@@ -73,5 +73,5 @@ Dua pekerjaan kecil dari roadmap ("Tahap dekat", tugas 2 dan 3), yang user pilih
 ## Tindak lanjut
 
 - **Race serupa di dua test lain** (belum pernah gagal): test Esc di `e2e/flows.spec.ts` (klik chip sebelum hydrate) dan test ikon search di HP di `e2e/responsive.spec.ts` (klik sebelum hydrate bisa membuka `/search`, bukan palet). Bisa memakai helper tunggu-hydrate bersama.
-- **Bug kecil yang sudah ada:** di `components/search/command-palette-trigger.tsx`, menekan Ctrl+K lagi saat palet sudah terbuka menimpa `returnFocus`, sehingga fokus jatuh ke `body` saat palet ditutup. Perbaikannya: simpan `returnFocus` hanya kalau palet belum terbuka. Perlu plan tersendiri.
+- **✅ Ditutup 2026-11-10 ([Fase 3](2026-11-10-fase-3-login.md)): tidak terlihat di browser, karena `<dialog>` bawaan mengembalikan fokus sendiri; perbaikan cadangan tetap dipasang. Catatan asli:**  di `components/search/command-palette-trigger.tsx`, menekan Ctrl+K lagi saat palet sudah terbuka menimpa `returnFocus`, sehingga fokus jatuh ke `body` saat palet ditutup. Perbaikannya: simpan `returnFocus` hanya kalau palet belum terbuka. Perlu plan tersendiri.
 - **Butir 3 `clean-code`** (satu daftar path admin) di Fase 3.
