@@ -3,14 +3,33 @@
 // adds the topics. It REPLACES all users and articles, in one transaction, so it can
 // be repeated and a failure leaves the old data as it was.
 
+// On this computer every sample account gets the password in DEV_PASSWORD (.env.local),
+// created at random on the first run and never printed. With --remote they get
+// "!no-login" instead, which is not a hash and so never verifies (lib/auth/password.ts):
+// the shared dev password must not reach a database other people can log in to.
+
+import { randomBytes } from "node:crypto";
 import type postgres from "postgres";
+import { hashPassword } from "../lib/auth/password";
 import { MOCK_ARTICLES } from "../lib/mock/articles";
 import { MOCK_USERS } from "../lib/mock/users";
 import { withDatabase } from "./db-client.mjs";
+import { appendEnv } from "./env-file.mjs";
 
-// Not a hash, so nobody can log in until Phase 3 sets real passwords. This holds only
-// if the Phase 3 check treats an unknown format as a failed login.
 const NO_LOGIN = "!no-login";
+
+/** DEV_PASSWORD from .env.local, created there first if it is missing. */
+function devPassword(): string {
+  const existing = process.env.DEV_PASSWORD;
+  if (existing !== undefined) {
+    if (existing.length < 8) throw new Error("DEV_PASSWORD in .env.local is shorter than 8 characters.");
+    return existing;
+  }
+  const created = randomBytes(18).toString("base64url");
+  appendEnv("DEV_PASSWORD", created);
+  console.log("Created DEV_PASSWORD in .env.local: the password of every sample account.");
+  return created;
+}
 
 const users = MOCK_USERS.map((user) => ({
   id: user.id,
@@ -68,15 +87,30 @@ void withDatabase(async (sql: postgres.Sql) => {
   }
   console.log(`Seeding ${sql.options.host[0]}:${sql.options.port[0]}/${sql.options.database}`);
 
+  // --remote never gets the dev password, even through a tunnel that looks local.
+  let password: string | null = null;
+  if (local && !process.argv.includes("--remote")) {
+    try {
+      password = devPassword();
+    } catch (error) {
+      console.error(`${(error as Error).message} Nothing was changed.`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+  // Each account gets its own salt, so equal passwords still give different hashes.
+  const hashes = await Promise.all(users.map(() => (password === null ? NO_LOGIN : hashPassword(password))));
+  const rows = users.map((user, i) => ({ ...user, password_hash: hashes[i] }));
+
   await sql.begin(async (tx) => {
     // Fail rather than hang if another connection is holding these tables.
     await tx`set local lock_timeout = '5s'`;
     await tx`truncate articles, users restart identity cascade`;
-    await tx`insert into users ${tx(users)}`;
+    await tx`insert into users ${tx(rows)}`;
     await tx`insert into articles ${tx(articles)}`;
     // The rows have fixed ids, so the next ids must continue after them.
     await tx`select setval(pg_get_serial_sequence('users', 'id'), (select max(id) from users))`;
     await tx`select setval(pg_get_serial_sequence('articles', 'id'), (select max(id) from articles))`;
   });
-  console.log(`Seeded ${users.length} users and ${articles.length} articles.`);
+  console.log(`Seeded ${users.length} users and ${articles.length} articles; sample accounts ${password === null ? "cannot log in" : "use DEV_PASSWORD"}.`);
 });
