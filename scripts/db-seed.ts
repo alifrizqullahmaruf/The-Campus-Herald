@@ -11,6 +11,7 @@
 import { randomBytes } from "node:crypto";
 import type postgres from "postgres";
 import { hashPassword } from "../lib/auth/password";
+import { sessionSecret } from "../lib/auth/session-token";
 import { MOCK_ARTICLES } from "../lib/mock/articles";
 import { MOCK_USERS } from "../lib/mock/users";
 import { withDatabase } from "./db-client.mjs";
@@ -29,6 +30,17 @@ function devPassword(): string {
   appendEnv("DEV_PASSWORD", created);
   console.log("Created DEV_PASSWORD in .env.local: the password of every sample account.");
   return created;
+}
+
+/**
+ * Adds SESSION_SECRET to .env.local if it is missing: the key that signs login cookies
+ * (lib/auth/session-token.ts). Seeding is the step that makes the sample accounts usable,
+ * so it also makes logging in to them work. Another database's app sets its own.
+ */
+function ensureSessionSecret(): void {
+  if (process.env.SESSION_SECRET !== undefined) return;
+  appendEnv("SESSION_SECRET", randomBytes(32).toString("base64url"));
+  console.log("Created SESSION_SECRET in .env.local: the key that signs login cookies.");
 }
 
 const users = MOCK_USERS.map((user) => ({
@@ -91,7 +103,10 @@ void withDatabase(async (sql: postgres.Sql) => {
   let password: string | null = null;
   if (local && !process.argv.includes("--remote")) {
     try {
+      // Check an existing secret before anything is written to .env.local.
+      if (process.env.SESSION_SECRET !== undefined) sessionSecret(process.env.SESSION_SECRET);
       password = devPassword();
+      ensureSessionSecret();
     } catch (error) {
       console.error(`${(error as Error).message} Nothing was changed.`);
       process.exitCode = 1;
