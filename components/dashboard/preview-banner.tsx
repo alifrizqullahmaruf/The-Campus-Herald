@@ -6,8 +6,8 @@ export function PreviewBanner() {
     <div role="note" className="flex items-center gap-2 border-b-3 border-ink bg-accent px-4 py-2 text-sm">
       <Info aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.5} />
       <p>
-        <strong className="font-display font-extrabold">Preview, not connected.</strong> Nothing you do here is saved
-        yet; login and saving arrive with the database.
+        <strong className="font-display font-extrabold">Preview.</strong> Nothing you do here is saved yet; saving
+        arrives in the next phase.
       </p>
     </div>
   );

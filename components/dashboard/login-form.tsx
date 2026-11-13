@@ -1,37 +1,44 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { PAGE_TRANSITION } from "@/components/ui/link";
+import { login, type LoginState } from "@/lib/auth/actions";
+import { validateLogin } from "@/lib/auth/login-rules";
 import { cx } from "@/lib/cx";
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function validateLogin(email: string, password: string): string | null {
-  if (!email.trim() || !password) return "Enter your email and password.";
-  if (!EMAIL.test(email.trim())) return "That email address does not look right.";
-  return null;
-}
+const INITIAL: LoginState = { error: null, email: "" };
 
 /**
- * Log-in form. Preview: any well-formed email and password opens the dashboard.
- * Phase 3 replaces the submit handler with a Server Action (bcrypt + session cookie).
+ * Log-in form. The Server Action `login` (lib/auth/actions.ts) checks the password and
+ * sets the session cookie; the browser only catches empty or malformed fields early.
+ * Without JavaScript the form still posts to the same action.
  */
 export function LoginForm() {
-  const router = useRouter();
   const emailId = useId();
   const passwordId = useId();
   const errorId = useId();
-  const [error, setError] = useState<string | null>(null);
+  const [state, formAction, pending] = useActionState(login, INITIAL);
+  // An early hint from the browser, cleared by the next submit.
+  const [hint, setHint] = useState<{ error: string; after: LoginState } | null>(null);
+  const error = hint && hint.after === state ? hint.error : state.error;
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  // The disabled button loses focus while the form is sent; after a refusal, focus goes to
+  // the password (the email is kept), so keyboard users can type it again at once.
+  useEffect(() => {
+    if (state.error) passwordRef.current?.focus();
+  }, [state]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
     const data = new FormData(event.currentTarget);
     const problem = validateLogin(String(data.get("email") ?? ""), String(data.get("password") ?? ""));
-    setError(problem);
-    if (!problem) router.push("/dashboard", { transitionTypes: PAGE_TRANSITION });
+    if (problem) {
+      event.preventDefault();
+      setHint({ error: problem, after: state });
+    } else {
+      setHint(null);
+    }
   }
 
   const field = cx(
@@ -41,27 +48,41 @@ export function LoginForm() {
   );
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-describedby={error ? errorId : undefined} className="mt-6 space-y-4">
+    <form
+      action={formAction}
+      onSubmit={onSubmit}
+      noValidate
+      aria-describedby={error ? errorId : undefined}
+      className="mt-6 space-y-4"
+    >
       <div>
         <label htmlFor={emailId} className="mb-1.5 block font-semibold">
           Email
         </label>
-        <input id={emailId} name="email" type="email" autoComplete="username" className={field} />
+        {/* React resets the form after the action, back to this value: the typed email stays. */}
+        <input
+          id={emailId}
+          name="email"
+          type="email"
+          autoComplete="username"
+          defaultValue={state.email}
+          className={field}
+        />
       </div>
       <div>
         <label htmlFor={passwordId} className="mb-1.5 block font-semibold">
           Password
         </label>
-        <input id={passwordId} name="password" type="password" autoComplete="current-password" className={field} />
+        <input ref={passwordRef} id={passwordId} name="password" type="password" autoComplete="current-password" className={field} />
       </div>
       {error && (
         <p id={errorId} role="alert" className="flex items-center gap-1.5 text-sm font-semibold">
-          <AlertTriangle aria-hidden="true" className="size-4 text-cat-opinion" strokeWidth={2.5} />
+          <AlertTriangle aria-hidden="true" className="size-4 shrink-0 text-cat-opinion" strokeWidth={2.5} />
           {error}
         </p>
       )}
-      <Button type="submit" className="w-full">
-        Log in
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Logging in…" : "Log in"}
       </Button>
     </form>
   );

@@ -1,6 +1,15 @@
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3200;
+
+// DEV_PASSWORD (the sample accounts' password, from `npm run db:seed`) for the login tests.
+// Like the seed's --env-file, a value already in the environment is not replaced.
+try {
+  process.loadEnvFile(join(__dirname, ".env.local"));
+} catch {
+  // No .env.local: the login tests say what is missing (e2e/auth.ts).
+}
 
 // End-to-end tests against a production build. Uses the locally installed
 // Microsoft Edge (channel "msedge"), so no browser download is needed.

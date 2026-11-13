@@ -25,3 +25,17 @@ export async function getAccountById(id: number): Promise<AccountRecord | null> 
   const { is_active, password_hash, ...user } = row;
   return { user: { ...user, isActive: is_active }, passwordHash: password_hash };
 }
+
+/**
+ * The account with this email, ignoring case, or null. Emails are unique only as typed
+ * (db/migrations/001), so "Rafi@x" and "rafi@x" could both exist: then neither logs in,
+ * the same rule as `npm run db:set-password`.
+ */
+export async function getAccountByEmail(email: string): Promise<AccountRecord | null> {
+  const rows = await sql<AccountRow[]>`
+    select id, name, email, role, is_active, bio, beat, password_hash from users
+    where lower(email) = lower(${email}) limit 2`;
+  if (rows.length !== 1) return null;
+  const { is_active, password_hash, ...user } = rows[0];
+  return { user: { ...user, isActive: is_active }, passwordHash: password_hash };
+}

@@ -5,6 +5,7 @@
 
 import { createInterface } from "node:readline";
 import type postgres from "postgres";
+import { MAX_PASSWORD_LENGTH } from "../lib/auth/login-rules";
 import { hashPassword } from "../lib/auth/password";
 import { withDatabase } from "./db-client.mjs";
 
@@ -75,6 +76,8 @@ async function main() {
     const [first, second] = await readPassword();
     if (first !== second) return fail("The two passwords differ. Nothing was changed.");
     if (first.length < MIN_LENGTH) return fail(`Use at least ${MIN_LENGTH} characters. Nothing was changed.`);
+    // The login form refuses anything longer, so such a password could never be used.
+    if (first.length > MAX_PASSWORD_LENGTH) return fail(`Use at most ${MAX_PASSWORD_LENGTH} characters. Nothing was changed.`);
     password = first;
   } catch (error) {
     return fail(`${(error as Error).message} Nothing was changed.`);

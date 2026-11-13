@@ -23,9 +23,6 @@ export default function LoginPage() {
             Forgot your password? Ask the administrator to reset it.
           </p>
         </div>
-        <p className="mt-6 rounded-inner border-2 border-dashed border-ink bg-paper p-3 text-sm">
-          <strong>Preview:</strong> any email and password opens the dashboard. Real accounts arrive with the database.
-        </p>
         <p className="mt-6 text-center">
           <Link href="/" className="tap-target font-display text-sm font-extrabold underline underline-offset-4">
             ← Back to Side Notes

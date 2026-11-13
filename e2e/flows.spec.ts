@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { logIn } from "./auth";
 
 /**
  * Presses Ctrl+K until quick search opens. The shortcut listener is attached in an
@@ -154,13 +155,64 @@ test("the editor accepts formatted text", async ({ page }) => {
   await expect(page.getByRole("status")).toContainText("Sent to the editor");
 });
 
-test("log in opens the dashboard", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("rafi@herald.test");
-  await page.getByLabel("Password").fill("preview");
-  await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { level: 1, name: "My articles." })).toBeVisible();
+test.describe("log in", () => {
+  const FAILED = "That email and password do not match an active account.";
+  const sessionCookie = async (page: Page) =>
+    (await page.context().cookies()).find((cookie) => cookie.name === "side_notes_session");
+
+  test("an author lands on their articles, with an httpOnly session cookie", async ({ page }) => {
+    await logIn(page, "rafi@herald.test");
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("heading", { level: 1, name: "My articles." })).toBeVisible();
+    expect(await sessionCookie(page)).toMatchObject({ httpOnly: true, sameSite: "Lax", path: "/" });
+  });
+
+  test("the editor lands on the review queue", async ({ page }) => {
+    await logIn(page, "Dewi.Admin@herald.test");
+    await expect(page).toHaveURL(/\/dashboard\/review$/);
+  });
+
+  // The same message for each, so the form does not tell which emails have an account.
+  for (const [what, email, password] of [
+    ["a wrong password", "rafi@herald.test", "not the password"],
+    ["an unknown email", "nobody@herald.test", undefined],
+    ["a deactivated account", "laras@herald.test", undefined],
+  ] as const) {
+    test(`${what} is refused and keeps the email`, async ({ page }) => {
+      await logIn(page, email, password);
+      await expect(page.getByRole("main").getByRole("alert")).toHaveText(FAILED);
+      await expect(page).toHaveURL(/\/login$/);
+      await expect(page.getByLabel("Email")).toHaveValue(email);
+      await expect(page.getByLabel("Password")).toHaveValue("");
+      await expect(page.getByLabel("Password")).toBeFocused();
+      expect(await sessionCookie(page)).toBeUndefined();
+    });
+  }
+
+  test("empty fields are caught before anything is sent", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText("Enter your email and password.");
+  });
+
+  test("works without JavaScript", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await logIn(page, "rafi@herald.test", "not the password");
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(FAILED);
+    await logIn(page, "rafi@herald.test");
+    await expect(page).toHaveURL(/\/dashboard$/);
+    expect(await sessionCookie(page)).toBeDefined();
+    await context.close();
+  });
+
+  test("log out removes the session and opens the login page", async ({ page }) => {
+    await logIn(page, "rafi@herald.test");
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await page.getByRole("button", { name: "Log out" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    expect(await sessionCookie(page)).toBeUndefined();
+  });
 });
 
 // These read the database, which unit tests do not touch. A number too big for an integer

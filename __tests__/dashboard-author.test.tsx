@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MyArticles } from "../components/dashboard/my-articles";
-import { LoginForm, validateLogin } from "../components/dashboard/login-form";
+import { LoginForm } from "../components/dashboard/login-form";
+import { login } from "@/lib/auth/actions";
+import { LOGIN_FAILED, MAX_PASSWORD_LENGTH, homeFor, validateLogin } from "../lib/auth/login-rules";
 import { Sidebar } from "../components/dashboard/sidebar";
 import { ArticleEditor, isEditable, validateForSubmit } from "../components/editor/article-editor";
 import { getArticleById, getArticlesByAuthor } from "../lib/data/articles";
@@ -40,19 +42,34 @@ describe("rules", () => {
     expect(validateLogin("", "")).toMatch(/Enter your email/);
     expect(validateLogin("rafi", "x")).toMatch(/does not look right/);
     expect(validateLogin("rafi@herald.test", "x")).toBeNull();
+    // Too long to be anyone's password: refused before scrypt, with the usual message.
+    expect(validateLogin("rafi@herald.test", "x".repeat(MAX_PASSWORD_LENGTH + 1))).toBe(LOGIN_FAILED);
+    expect(validateLogin(`${"a".repeat(250)}@x.co`, "x")).toMatch(/does not look right/);
+  });
+
+  test("the editor lands on the review queue, authors on their articles", () => {
+    expect(homeFor("admin")).toBe("/dashboard/review");
+    expect(homeFor("author")).toBe("/dashboard");
   });
 });
 
 describe("LoginForm", () => {
-  test("shows an error, then opens the dashboard when valid", () => {
+  test("catches empty fields in the browser, then sends the rest to the Server Action", async () => {
+    vi.mocked(login).mockClear();
     render(<LoginForm />);
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
     expect(screen.getByRole("alert").textContent).toMatch(/Enter your email/);
+    expect(login).not.toHaveBeenCalled();
+
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "rafi@herald.test" } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "secret" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong password" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
-    // Typed as a page change, so the new page fades in (components/ui/link.tsx).
-    expect(push).toHaveBeenCalledWith("/dashboard", { transitionTypes: ["page"] });
+    expect(await screen.findByText(LOGIN_FAILED)).toBeDefined();
+    expect(login).toHaveBeenCalledTimes(1);
+    const sent = vi.mocked(login).mock.calls[0][1];
+    expect([sent.get("email"), sent.get("password")]).toEqual(["rafi@herald.test", "wrong password"]);
+    // The typed email stays after the failed attempt.
+    expect((screen.getByLabelText("Email") as HTMLInputElement).value).toBe("rafi@herald.test");
   });
 });
 

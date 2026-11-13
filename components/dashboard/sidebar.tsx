@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/layout/logo-mark";
 import { cx } from "@/lib/cx";
 import { Avatar } from "@/components/author/avatar";
+import { logout } from "@/lib/auth/actions";
 import { isAdminPath } from "@/lib/dashboard-paths";
 import type { User } from "@/lib/types";
 
@@ -18,6 +19,18 @@ interface NavItem {
   /** Matches the current path exactly instead of by prefix. */
   exact?: boolean;
   badge?: number;
+}
+
+/** Log out as a form POST to the Server Action, so no link or prefetch can trigger it. */
+function LogOutButton({ className }: { className: string }) {
+  return (
+    <form action={logout}>
+      <button type="submit" className={cx("flex min-h-11 cursor-pointer items-center font-display text-sm font-extrabold hover:underline", className)}>
+        <LogOut aria-hidden="true" className="size-4" strokeWidth={2.5} />
+        Log out
+      </button>
+    </form>
+  );
 }
 
 function isActive(pathname: string, item: NavItem) {
@@ -46,10 +59,7 @@ export function DashboardTopBar({ author, admin }: { author: User; admin: User }
           <span className="hidden rounded-full border-2 border-ink bg-cat-events px-1.5 text-meta sm:inline">{user.role}</span>
           <span className="sr-only sm:hidden">{user.role}</span>
         </span>
-        <Link href="/login" className="flex min-h-11 items-center gap-1.5 font-display text-sm font-extrabold whitespace-nowrap hover:underline">
-          <LogOut aria-hidden="true" className="size-4" strokeWidth={2.5} />
-          Log out
-        </Link>
+        <LogOutButton className="gap-1.5 whitespace-nowrap" />
       </div>
     </div>
   );
@@ -149,10 +159,7 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
               <span className="rounded-full border-2 border-ink bg-cat-events px-1.5 text-meta">{user.role}</span>
             </div>
           </div>
-          <Link href="/login" className="mt-3 flex min-h-11 items-center gap-2 font-display text-sm font-extrabold hover:underline">
-            <LogOut aria-hidden="true" className="size-4" strokeWidth={2.5} />
-            Log out
-          </Link>
+          <LogOutButton className="mt-3 gap-2" />
         </div>
       </aside>
 
