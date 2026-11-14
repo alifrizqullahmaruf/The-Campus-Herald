@@ -1,9 +1,11 @@
 import "server-only";
+import { io } from "next/cache";
 import { cookies } from "next/headers";
 import {
   passwordStamp,
   readSessionToken,
   sessionSecret,
+  SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
   signSession,
   type SessionClaims,
@@ -13,7 +15,7 @@ import {
 // lib/auth/session-token.ts. Who is logged in comes from getCurrentUser()
 // (lib/auth/current-user.ts), which also checks the account in the database.
 
-export const SESSION_COOKIE = "side_notes_session";
+export { SESSION_COOKIE };
 
 /**
  * Logs an account in: a new cookie every time, so a session from before the login is
@@ -47,5 +49,9 @@ export async function deleteSession(): Promise<void> {
  */
 export async function readSession(): Promise<SessionClaims | null> {
   const secret = sessionSecret();
-  return readSessionToken(secret, (await cookies()).get(SESSION_COOKIE)?.value);
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  // The expiry check reads the clock, which Cache Components allows only after io():
+  // during a prerender (a prefetch) this waits, so the check always runs on a real request.
+  await io();
+  return readSessionToken(secret, token);
 }

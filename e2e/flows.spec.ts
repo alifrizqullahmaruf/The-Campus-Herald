@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { logIn } from "./auth";
+import { logIn, NO_SESSION } from "./auth";
 
 /**
  * Presses Ctrl+K until quick search opens. The shortcut listener is attached in an
@@ -156,6 +156,7 @@ test("the editor accepts formatted text", async ({ page }) => {
 });
 
 test.describe("log in", () => {
+  test.use({ storageState: NO_SESSION });
   const FAILED = "That email and password do not match an active account.";
   const sessionCookie = async (page: Page) =>
     (await page.context().cookies()).find((cookie) => cookie.name === "side_notes_session");

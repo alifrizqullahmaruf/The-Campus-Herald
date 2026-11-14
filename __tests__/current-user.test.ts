@@ -20,6 +20,11 @@ vi.mock("next/headers", () => ({
     delete: (name: string) => void jar.delete(name),
   }),
 }));
+vi.mock("next/navigation", () => ({
+  redirect: (path: string) => {
+    throw new Error(`REDIRECT ${path}`);
+  },
+}));
 vi.mock("@/lib/data/auth", () => ({
   getAccountById: async (id: number) => structuredClone(accounts.get(id) ?? null),
 }));
@@ -146,5 +151,21 @@ describe("the session cookie", () => {
     vi.stubEnv("NODE_ENV", "production");
     await createSession({ id: 2, passwordHash: HASH });
     expect(options.get(SESSION_COOKIE)).toMatchObject({ secure: true });
+  });
+});
+
+describe("requireUser and requireAdmin", () => {
+  test("send visitors to the login page and authors away from admin pages", async () => {
+    const { requireAdmin, requireUser } = await import("../lib/auth/current-user");
+    await expect(requireUser()).rejects.toThrow("REDIRECT /login");
+    await expect(requireAdmin()).rejects.toThrow("REDIRECT /login");
+
+    addAccount();
+    await createSession({ id: 2, passwordHash: HASH });
+    expect(await requireUser()).toMatchObject({ id: 2 });
+    await expect(requireAdmin()).rejects.toThrow("REDIRECT /dashboard");
+
+    addAccount({ role: "admin" });
+    expect(await requireAdmin()).toMatchObject({ id: 2, role: "admin" });
   });
 });

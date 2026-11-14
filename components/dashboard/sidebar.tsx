@@ -7,7 +7,6 @@ import { LogoMark } from "@/components/layout/logo-mark";
 import { cx } from "@/lib/cx";
 import { Avatar } from "@/components/author/avatar";
 import { logout } from "@/lib/auth/actions";
-import { isAdminPath } from "@/lib/dashboard-paths";
 import type { User } from "@/lib/types";
 
 interface NavItem {
@@ -41,9 +40,7 @@ function isActive(pathname: string, item: NavItem) {
  * Phones and tablets (below lg): a small bar above the page with the logo, who is
  * signed in and Log out, which otherwise only the large-screen sidebar has.
  */
-export function DashboardTopBar({ author, admin }: { author: User; admin: User }) {
-  const pathname = usePathname();
-  const user = isAdminPath(pathname) ? admin : author;
+export function DashboardTopBar({ user }: { user: User }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b-3 border-ink bg-paper px-4 py-2 sm:px-6 lg:hidden">
       <Link href="/" className="logo-link flex min-h-11 items-center gap-2">
@@ -66,12 +63,12 @@ export function DashboardTopBar({ author, admin }: { author: User; admin: User }
 }
 
 /**
- * Dashboard navigation: sidebar on large screens, bottom tab bar on phones.
- * In the preview both sections are shown; from Phase 3 the Editor section is admin-only.
+ * Dashboard navigation: sidebar on large screens, bottom tab bar on phones. The Editor
+ * section is shown to the administrator only; the pages check the role themselves.
  */
-export function Sidebar({ author, admin, pendingCount }: { author: User; admin: User; pendingCount: number }) {
+export function Sidebar({ user, pendingCount }: { user: User; pendingCount: number }) {
   const pathname = usePathname();
-  const user = isAdminPath(pathname) ? admin : author;
+  const isAdmin = user.role === "admin";
 
   const writing: NavItem[] = [
     { href: "/dashboard", label: "My articles", short: "Mine", icon: FileText, exact: true },
@@ -145,10 +142,12 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
             <p className="px-3 text-meta text-ink-muted">Writing</p>
             <div className="mt-2 space-y-1">{writing.map((item) => link(item))}</div>
           </div>
-          <div>
-            <p className="px-3 text-meta text-ink-muted">Editor</p>
-            <div className="mt-2 space-y-1">{editor.map((item) => link(item))}</div>
-          </div>
+          {isAdmin && (
+            <div>
+              <p className="px-3 text-meta text-ink-muted">Editor</p>
+              <div className="mt-2 space-y-1">{editor.map((item) => link(item))}</div>
+            </div>
+          )}
         </nav>
 
         <div className="mt-6 rounded-card border-3 border-ink bg-surface p-3 shadow-hard">
@@ -166,9 +165,12 @@ export function Sidebar({ author, admin, pendingCount }: { author: User; admin: 
       {/* Phones and tablets: bottom tab bar */}
       <nav
         aria-label="Dashboard"
-        className="fixed inset-x-0 bottom-0 z-40 grid h-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] grid-cols-5 gap-1 border-t-3 border-ink bg-paper px-1.5 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] [view-transition-class:chrome] [view-transition-name:dashboard-tabbar] lg:hidden"
+        className={cx(
+          "fixed inset-x-0 bottom-0 z-40 grid h-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] gap-1 border-t-3 border-ink bg-paper px-1.5 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] [view-transition-class:chrome] [view-transition-name:dashboard-tabbar] lg:hidden",
+          isAdmin ? "grid-cols-5" : "grid-cols-2",
+        )}
       >
-        {[writing[0], writing[1], editor[0], editor[1], editor[2]].map((item) => link(item, true))}
+        {[...writing, ...(isAdmin ? editor : [])].map((item) => link(item, true))}
       </nav>
     </>
   );

@@ -12,6 +12,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { isValidId } from "../data/ids";
 
+/** The login cookie's name; proxy.ts checks only that it is there. */
+export const SESSION_COOKIE = "side_notes_session";
+
 /** Seven days, the session length chosen for Phase 3. */
 export const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 

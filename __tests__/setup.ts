@@ -4,7 +4,6 @@ import { vi } from "vitest";
 // by the E2E tests (docs/plans/2026-11-02-fase-2-database.md).
 vi.mock("@/lib/data/users", () => import("@/lib/mock/users-data"));
 vi.mock("@/lib/data/articles", () => import("@/lib/mock/articles-data"));
-vi.mock("@/lib/data/session", () => import("@/lib/mock/session-data"));
 // The login Server Actions need cookies and the database; components only see fakes.
 vi.mock("@/lib/auth/actions", () => ({
   login: vi.fn(async (_previous: unknown, formData: FormData) => ({
@@ -15,4 +14,4 @@ vi.mock("@/lib/auth/actions", () => ({
 }));
 
 // These only work inside a Next.js cache scope.
-vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {} }));
+vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {}, io: async () => {} }));

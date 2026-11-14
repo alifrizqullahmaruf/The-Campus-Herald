@@ -4,6 +4,12 @@ import type { Page } from "@playwright/test";
 // Their password is DEV_PASSWORD, loaded from .env.local by playwright.config.ts and never
 // printed. Run `npm run db:seed` first.
 
+/** Saved login sessions (e2e/auth.setup.ts); every project starts as the administrator. */
+export const ADMIN_STATE = "e2e/.auth/admin.json";
+export const AUTHOR_STATE = "e2e/.auth/author.json";
+/** For tests that start logged out. */
+export const NO_SESSION = { cookies: [], origins: [] };
+
 /** The sample accounts' password; throws with a hint when it is missing. */
 export function devPassword(): string {
   const password = process.env.DEV_PASSWORD;

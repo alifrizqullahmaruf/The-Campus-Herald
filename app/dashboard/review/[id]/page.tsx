@@ -5,30 +5,29 @@ import { ArticleBody } from "@/components/article/article-body";
 import { ArticleCover } from "@/components/article/article-cover";
 import { ReviewPanel } from "@/components/dashboard/review-panel";
 import { CategoryBadge } from "@/components/ui/category-badge";
-import { getAllArticles, getArticleById } from "@/lib/data/articles";
+import { requireAdmin } from "@/lib/auth/current-user";
+import { getArticleById } from "@/lib/data/articles";
+import { isValidId } from "@/lib/data/ids";
 import { formatDate } from "@/lib/format";
 
-// Allowed to wait for the server on a click: the page reads `params` at the top.
-// Revisit when Phase 3 rebuilds the dashboard behind login.
+// Behind the login: rendered for each request, waiting for the session on the server.
 export const instant = false;
-
-export async function generateStaticParams() {
-  const articles = await getAllArticles();
-  return articles.map((article) => ({ id: String(article.id) }));
-}
 
 async function load(params: PageProps<"/dashboard/review/[id]">["params"]) {
   const id = Number((await params).id);
-  return Number.isInteger(id) ? getArticleById(id) : null;
+  return isValidId(id) ? getArticleById(id) : null;
 }
 
 export async function generateMetadata({ params }: PageProps<"/dashboard/review/[id]">): Promise<Metadata> {
+  // The title names the article, so it is checked like the page.
+  await requireAdmin();
   const article = await load(params);
   return { title: article ? `Review: ${article.title}` : "Review" };
 }
 
 // Shows the article exactly as readers will see it, so the editor reviews the real thing.
 export default async function ReviewPage({ params }: PageProps<"/dashboard/review/[id]">) {
+  await requireAdmin();
   const article = await load(params);
   if (!article) notFound();
 

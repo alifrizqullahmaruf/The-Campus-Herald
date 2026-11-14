@@ -5,6 +5,7 @@ import { LoginForm } from "../components/dashboard/login-form";
 import { login } from "@/lib/auth/actions";
 import { LOGIN_FAILED, MAX_PASSWORD_LENGTH, homeFor, validateLogin } from "../lib/auth/login-rules";
 import { Sidebar } from "../components/dashboard/sidebar";
+import { isAdminPath } from "../lib/dashboard-paths";
 import { ArticleEditor, isEditable, validateForSubmit } from "../components/editor/article-editor";
 import { getArticleById, getArticlesByAuthor } from "../lib/data/articles";
 import { getAllUsers } from "../lib/data/users";
@@ -74,23 +75,35 @@ describe("LoginForm", () => {
 });
 
 describe("Sidebar", () => {
-  test("marks the current page and switches the preview user on editor pages", async () => {
+  test("marks the current page and shows who is logged in", async () => {
     const users = await getAllUsers();
-    const author = users.find((u) => u.id === 2)!;
-    const admin = users.find((u) => u.id === 1)!;
-
     pathname = "/dashboard";
-    const { unmount } = render(<Sidebar author={author} admin={admin} pendingCount={2} />);
+    render(<Sidebar user={users.find((u) => u.id === 2)!} pendingCount={0} />);
     const nav = screen.getAllByRole("navigation", { name: "Dashboard" })[0];
     expect(within(nav).getByRole("link", { name: /My articles/ }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByText("Rafi Pratama")).toBeDefined();
+  });
+
+  test("authors see no editor links; the administrator's editor links are all admin pages", async () => {
+    const users = await getAllUsers();
+    pathname = "/dashboard";
+    const { unmount } = render(<Sidebar user={users.find((u) => u.id === 2)!} pendingCount={0} />);
+    for (const nav of screen.getAllByRole("navigation", { name: "Dashboard" })) {
+      expect(within(nav).queryByRole("link", { name: /Review/ })).toBeNull();
+      for (const link of within(nav).getAllByRole("link")) expect(isAdminPath(link.getAttribute("href")!)).toBe(false);
+    }
     unmount();
 
     pathname = "/dashboard/review/20";
-    render(<Sidebar author={author} admin={admin} pendingCount={2} />);
-    const nav2 = screen.getAllByRole("navigation", { name: "Dashboard" })[0];
-    expect(within(nav2).getByRole("link", { name: /Review queue/ }).getAttribute("aria-current")).toBe("page");
+    render(<Sidebar user={users.find((u) => u.id === 1)!} pendingCount={2} />);
+    const nav = screen.getAllByRole("navigation", { name: "Dashboard" })[0];
+    expect(within(nav).getByRole("link", { name: /Review queue/ }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByText("Dewi Lestari")).toBeDefined();
+    const adminLinks = within(nav)
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href")!)
+      .filter(isAdminPath);
+    expect(adminLinks).toEqual(["/dashboard/review", "/dashboard/articles", "/dashboard/authors"]);
   });
 });
 

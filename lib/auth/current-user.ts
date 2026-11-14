@@ -1,4 +1,5 @@
 import "server-only";
+import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getAccountById } from "../data/auth";
 import type { User } from "../types";
@@ -24,3 +25,21 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   if (!stampMatches(secret, account.passwordHash, session.stamp)) return null;
   return account.user;
 });
+
+/**
+ * The logged-in user, or a redirect to the login page. Every dashboard page and layout
+ * calls this (or requireAdmin) itself: a layout is not rendered again when moving between
+ * the pages inside it, so a check in the layout alone would not cover them.
+ */
+export async function requireUser(): Promise<User> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
+}
+
+/** The logged-in administrator; an author is sent to their own articles instead. */
+export async function requireAdmin(): Promise<User> {
+  const user = await requireUser();
+  if (user.role !== "admin") redirect("/dashboard");
+  return user;
+}

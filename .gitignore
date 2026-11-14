@@ -49,3 +49,6 @@ next-env.d.ts
 
 # roadmap and daily schedule: kept on the user's machine only
 docs/plans/2026-10-15-roadmap.md
+
+# Playwright login sessions (e2e/auth.setup.ts); they hold valid session cookies
+/e2e/.auth/

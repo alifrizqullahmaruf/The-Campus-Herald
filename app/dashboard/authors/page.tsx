@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { AuthorManager, type ManagedAuthor } from "@/components/dashboard/author-manager";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { requireAdmin } from "@/lib/auth/current-user";
 import { getAllUsers, getAuthorProfile } from "@/lib/data/users";
 
 export const metadata: Metadata = { title: "Authors" };
 
+// Behind the login: rendered for each request, waiting for the session on the server.
+export const instant = false;
+
 export default async function ManageAuthorsPage() {
+  await requireAdmin();
   const users = (await getAllUsers()).filter((user) => user.role === "author");
   const authors: ManagedAuthor[] = await Promise.all(
     users.map(async (user) => ({

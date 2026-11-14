@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import Link from "@/components/ui/link";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CategoryBadge } from "@/components/ui/category-badge";
+import { requireAdmin } from "@/lib/auth/current-user";
 import { getPendingArticles } from "@/lib/data/articles";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Review queue" };
 
+// Behind the login: rendered for each request, waiting for the session on the server.
+export const instant = false;
+
 export default async function ReviewQueuePage() {
+  await requireAdmin();
   const queue = await getPendingArticles();
   return (
     <>
