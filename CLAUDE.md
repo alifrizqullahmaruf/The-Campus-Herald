@@ -43,7 +43,7 @@ The visual design system (colour tokens, category colours, typography, component
 
 `resource_private/` is git-ignored and holds the user's private reference material (e.g. a screen recording of the "Crumpet Riot" Framer template used as UI inspiration). It exists only on the user's machine.
 
-Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file** (git-ignored since 2026-10-21, so it is not on GitHub and may be missing in a fresh clone); it holds the phase plan, the daily schedule and the notes collected for later phases. Phase 1 (design with sample data) and Phase 2 (PostgreSQL, `docs/plans/2026-11-02-fase-2-database.md`) are done: every page reads the database. Phase 3 (login, `docs/plans/2026-11-10-fase-3-login.md`) is built: the dashboard is behind the login, but nothing is saved yet. Phases 3–5 (auth, workflow, release) are brainstormed with the user before work starts.
+Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file** (git-ignored since 2026-10-21, so it is not on GitHub and may be missing in a fresh clone); it holds the phase plan, the daily schedule and the notes collected for later phases. Phase 1 (design with sample data) and Phase 2 (PostgreSQL, `docs/plans/2026-11-02-fase-2-database.md`) are done: every page reads the database. Phase 3 (login, `docs/plans/2026-11-10-fase-3-login.md`) is done: the dashboard is behind the login, but nothing is saved yet. Phases 3–5 (auth, workflow, release) are brainstormed with the user before work starts.
 
 ## Architecture
 

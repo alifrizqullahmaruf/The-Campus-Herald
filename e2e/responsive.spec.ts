@@ -10,6 +10,7 @@ import {
   measureHeaderRow,
 } from "./layout";
 import { DASHBOARD_PAGES, NOT_FOUND_PAGES, PUBLIC_PAGES } from "./pages";
+import { waitForHydration } from "./quick-search";
 
 // Layout at every size project: phone-320, phone (375), tablet (768),
 // laptop (1024), desktop (1280) and wide (1440). See playwright.config.ts and
@@ -72,7 +73,7 @@ test.describe("public pages", () => {
   test("the header search icon opens the quick search palette on phones", async ({ page }) => {
     test.skip(width(page) >= 768, "the header has a search field from md up");
     await page.goto("/about");
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
     const banner = page.getByRole("banner");
     const icon = banner.getByRole("link", { name: "Search" }).or(banner.getByRole("button", { name: "Search", exact: true }));
     await expect(icon).toBeVisible();

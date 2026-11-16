@@ -1,21 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { logIn, NO_SESSION } from "./auth";
-
-/**
- * Presses Ctrl+K until quick search opens. The shortcut listener is attached in an
- * effect after hydration, and "networkidle" does not wait for that: on a busy machine
- * (full suite, server just started) it fires while the page is still hydrating, the
- * press is lost and the palette never opens (docs/plans/2026-11-02-persiapan-fase-2.md).
- * A key is pressed again only while the palette is not showing.
- */
-async function openQuickSearch(page: Page) {
-  const palette = page.getByRole("dialog", { name: "Quick search" });
-  await expect(async () => {
-    if (!(await palette.isVisible())) await page.keyboard.press("Control+K");
-    await expect(palette).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
-  return palette;
-}
+import { openQuickSearch, waitForHydration } from "./quick-search";
 
 test("Ctrl+K opens quick search; Enter opens the selected article", async ({ page }) => {
   await page.goto("/");
@@ -66,7 +51,8 @@ test(`"All results" resets the search page even when the URL matches how it was 
 
 test("Esc closes quick search and returns focus", async ({ page }) => {
   await page.goto("/categories");
-  await page.waitForLoadState("networkidle");
+  // The palette has opened once by now, so this covers a second opening, not the first.
+  await waitForHydration(page);
   const chip = page.getByRole("button", { name: "Open quick search" });
   await chip.click();
   await expect(page.getByRole("dialog", { name: "Quick search" })).toBeVisible();
@@ -79,13 +65,9 @@ test("Esc closes quick search and returns focus", async ({ page }) => {
 // the native <dialog> already restores focus in Edge, so this passes with or without it.
 test("a second Ctrl+K while quick search is open keeps where focus returns", async ({ page }) => {
   await page.goto("/categories");
-  await page.waitForLoadState("networkidle");
   const chip = page.getByRole("button", { name: "Open quick search" });
   const palette = page.getByRole("dialog", { name: "Quick search" });
-  // Hydration has finished once the shortcut works (see openQuickSearch).
-  await openQuickSearch(page);
-  await page.keyboard.press("Escape");
-  await expect(palette).toBeHidden();
+  await waitForHydration(page);
   await chip.click();
   await expect(palette).toBeVisible();
   // A second press must not make the palette's own input the place to return to.
