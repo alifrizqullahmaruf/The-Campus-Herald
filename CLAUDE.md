@@ -43,7 +43,7 @@ The visual design system (colour tokens, category colours, typography, component
 
 `resource_private/` is git-ignored and holds the user's private reference material (e.g. a screen recording of the "Crumpet Riot" Framer template used as UI inspiration). It exists only on the user's machine.
 
-Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file** (git-ignored since 2026-10-21, so it is not on GitHub and may be missing in a fresh clone); it holds the phase plan, the daily schedule and the notes collected for later phases. Phase 1 (design with sample data) and Phase 2 (PostgreSQL, `docs/plans/2026-11-02-fase-2-database.md`) are done: every page reads the database. Phase 3 (login, `docs/plans/2026-11-10-fase-3-login.md`) is done: the dashboard is behind the login, but nothing is saved yet. Phases 3–5 (auth, workflow, release) are brainstormed with the user before work starts.
+Progress is tracked in `docs/plans/2026-10-15-roadmap.md`, a **local-only file** (git-ignored since 2026-10-21, so it is not on GitHub and may be missing in a fresh clone); it holds the phase plan, the daily schedule and the notes collected for later phases. Phase 1 (design with sample data) and Phase 2 (PostgreSQL, `docs/plans/2026-11-02-fase-2-database.md`) are done: every page reads the database. Phase 3 (login, `docs/plans/2026-11-10-fase-3-login.md`) is done: the dashboard is behind the login, but nothing is saved yet. Phase 4 (workflow, `docs/plans/2026-11-17-fase-4-alur-kerja.md`) is in progress: article HTML sanitising is in place. Phases 3–5 (auth, workflow, release) are brainstormed with the user before work starts.
 
 ## Architecture
 
@@ -99,6 +99,6 @@ These rules shape the data model and access control:
 - Exactly five fixed categories: Academics, Organisations, Events, Opinion, Achievements (seeded, not user-editable).
 - The "most-read" sidebar widget is driven by `articles.view_count`, which goes up each time an article is viewed.
 - Author accounts are created by the admin only (no self-registration) and are deactivated with `is_active = false` rather than deleted, so old articles keep their author.
-- Article HTML is rendered with `dangerouslySetInnerHTML` (`components/article/article-body.tsx`). Today it is trusted sample data; from Phase 4, HTML written in the editor must be sanitised on the server before it is saved.
+- Article HTML is rendered with `dangerouslySetInnerHTML` (`components/article/article-body.tsx`), so it goes through `sanitizeArticleHtml` (`lib/sanitize-html.ts`, `sanitize-html` with the editor's tags only; images from https or a site path) on the server both before it is saved and in `ArticleBody` when it is rendered. A tag or attribute added to the editor must be added to that allowlist too, and `__tests__/sanitize-html.test.ts` holds the XSS cases.
 - Out of scope: comments, tags (the schema has tables for them, marked as future features), notifications, social auto-posting, multi-language, password-reset email (the admin resets passwords).
 - NFRs: pages load in under 3 s on mobile, mobile-first responsive layout, dashboard only reachable when logged in, passwords stored hashed.

@@ -13,5 +13,8 @@ vi.mock("@/lib/auth/actions", () => ({
   logout: vi.fn(async () => {}),
 }));
 
+// Throws outside a React Server Components bundle; tests import server modules directly.
+vi.mock("server-only", () => ({}));
+
 // These only work inside a Next.js cache scope.
 vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {}, io: async () => {} }));
