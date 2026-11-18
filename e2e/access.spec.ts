@@ -83,4 +83,15 @@ test.describe("after logging out", () => {
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login$/);
   });
+
+  test("nothing from the session is left in the page", async ({ page }) => {
+    // Next keeps visited pages in the document, hidden; logging out must not leave them there.
+    await logIn(page, "dewi.admin@herald.test");
+    await page.getByRole("link", { name: /Authors/ }).first().click();
+    await expect(page.getByRole("heading", { level: 1, name: /Authors/ })).toBeVisible();
+    await page.getByRole("button", { name: "Log out" }).first().click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Author log in." })).toBeVisible();
+    expect(await page.content()).not.toContain("@herald.test");
+  });
 });

@@ -23,7 +23,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | # | Hari | Tugas | Siapa | File (perkiraan) | Status |
 |---|------|-------|-------|------------------|--------|
 | 1 | Sel 17 Nov | Sanitasi HTML + test XSS | Claude | `lib/sanitize-html.ts` (baru), `components/article/article-body.tsx`, `__tests__/sanitize-html.test.ts` (baru), `package.json`, `package-lock.json`, `CLAUDE.md`, plan ini | ✅ |
-| 2 | Rab 18 Nov | Simpan draft (Server Action, `requireUser`, sanitasi, `updateTag`) | Claude | `lib/articles/actions.ts`, editor, `e2e/` | Belum |
+| 2 | Rab 18 Nov | Simpan draft (Server Action, `requireUser`, sanitasi, `updateTag`); kolom Summary; editor hanya-baca untuk selain penulis; logout memuat ulang halaman | Claude | `lib/articles/draft-rules.ts`, `lib/articles/actions.ts`, `lib/data/article-writes.ts` (baru), `components/editor/article-editor.tsx`, `components/dashboard/my-articles.tsx`, `components/dashboard/all-articles.tsx`, `components/dashboard/login-form.tsx`, `lib/auth/actions.ts`, `app/dashboard/articles/new/page.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/drafts.spec.ts`, `e2e/db.ts` (baru), `e2e/access.spec.ts`, `e2e/flows.spec.ts`, `e2e/responsive.spec.ts`, `CLAUDE.md` | ✅ |
 | 3 | Kam 19 Nov | Kirim ke editor (`draft`/`rejected` → `pending`; artikel terbit yang diubah → `pending`) | Claude | sama | Belum |
 | 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `app/dashboard/review/**` | Belum |
 | 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `app/dashboard/authors`, `db/migrations/003_*.sql` | Belum |
@@ -117,3 +117,78 @@ Setiap hari: verifikasi, `code-reviewer` sekali, update plan, lalu commit dan pu
 - **Next.js 16.4.3** terkena advisory GHSA-mfr8-8qww-v76h (moderate: kebocoran data antar root params lewat `unstable_cache()`). App ini tidak memakai `unstable_cache`, tapi `next build` kini menampilkan peringatan dan berhenti sekali. Perbaikannya `next@16.4.6`; perlu keputusan user (sekarang, atau di Fase 5 bersama `npm audit fix`).
 - Gambar yang disisipkan di editor saat ini memakai URL `blob:` lokal, yang akan dibuang saat simpan. Ini wajar sampai unggah gambar ada (hari 6).
 - Batas panjang isi dan cek "isi kosong" masuk ke Server Action simpan (hari 2).
+
+## Hari 2 (Rab 18 Nov): simpan draft
+
+**Keputusan user:**
+
+- Topic wajib dipilih untuk menyimpan draft (tanpa migration); judul, summary dan isi boleh kosong.
+- Excerpt diisi dari kolom **Summary** baru di editor (maks. 300 karakter), wajib saat submit.
+- Hanya penulisnya yang bisa menyimpan; admin melihat artikel orang lain hanya-baca.
+
+**Yang dibuat:**
+
+- **`lib/articles/draft-rules.ts`** (dipakai browser dan server):
+  - batas panjang: judul 200, summary 300, isi 100.000 karakter;
+  - `validateDraft`, `validateForSubmit` (dipindah dari editor, kini juga mewajibkan summary);
+  - `slugify` (diakritik dibuang, kosong → `untitled`);
+  - `displayTitle` ("Untitled draft" untuk judul kosong di daftar dan judul halaman).
+- **`lib/data/article-writes.ts`** (server-only, tanpa cache):
+  - `createDraft` dan `updateDraft` dalam transaksi;
+  - `updateDraft` mengecek pemilik dan status (`draft`/`rejected`) dengan `select … for update`; selain itu → `null`;
+  - status tidak berubah;
+  - slug mengikuti judul sampai artikel pernah terbit, dibuat unik dengan `-2`, `-3`…, dan dicoba ulang saat terjadi `23505`.
+- **`saveDraft`** (`lib/articles/actions.ts`):
+  - `requireUser`, cek tipe setiap field, id lewat `isValidId`;
+  - `validateDraft`, `sanitizeArticleHtml`, tulis, lalu `updateTag("articles")`;
+  - kesalahan database hanya dicatat di server; browser mendapat "Could not save. Try again.";
+  - artikel orang lain, pending, terbit, atau yang tidak ada mendapat satu jawaban yang sama.
+- **Editor:**
+  - kolom Summary;
+  - isi editor disimpan di ref;
+  - "Saving…" selama menyimpan;
+  - error per field dari browser maupun server;
+  - prop `canEdit`, dan catatan "Only the author can change this article.";
+  - di daftar dashboard, "Updated" diganti "Started", karena tanggal yang ditampilkan adalah `created_at`.
+- **Artikel baru** pindah ke halamannya sendiri setelah simpan pertama: `router.replace("/dashboard/articles/<id>?saved=1")`, lalu halaman itu menampilkan "Draft saved." satu kali dan membuang `?saved=1` dari alamat. Selama simpan pertama, field dikunci.
+
+**Perubahan dari rencana:**
+
+- **Bukan `history.replaceState`** (temuan Sedang dari review):
+  - Setelah alamat diganti, simpan berikutnya merender halaman `[id]` di tempat halaman `new`, sehingga editor di-mount ulang.
+  - Akibatnya pesan hilang, dan teks yang diketik selama menyimpan juga hilang.
+  - Sekarang pindahnya disengaja, sekali, tepat setelah simpan pertama.
+- **Halaman yang disimpan Next** (ditemukan saat E2E, `node_modules/next/dist/docs/01-app/02-guides/preserving-ui-state.md`): dengan Cache Components, halaman yang ditinggalkan disembunyikan, bukan dibuang, lengkap dengan state dan DOM-nya. Dua akibatnya diperbaiki:
+  - **"New article" masih berisi artikel yang baru disimpan,** dan simpan berikutnya akan membuat salinan. `NewArticleEditor` kini membuat editor baru saat halaman itu disembunyikan.
+  - **Setelah logout, halaman dashboard tetap ada tersembunyi di dokumen,** termasuk email penulis dari `/dashboard/authors` dan draft yang belum disimpan. Ini sudah terjadi sejak Fase 3. `logout` kini mengarah ke `/login?out=1`, lalu halaman login memuat ulang dirinya sepenuhnya. Test baru di `e2e/access.spec.ts` memastikan tidak ada `@herald.test` di halaman setelah logout.
+- **Test tata letak editor** (`e2e/responsive.spec.ts`) memakai `/dashboard/articles/new`, bukan artikel 22 milik orang lain yang kini hanya-baca bagi admin. Test urutan field sekarang juga mencakup Summary.
+
+**Hasil verifikasi:**
+
+| Cek | Hasil |
+|-----|-------|
+| `npm test -- --run` (3×) | ✅ 203/203 (17 test baru: aturan, action, editor) |
+| `npm run lint`, `npx tsc --noEmit` | ✅ |
+| `npm run build` | ✅ halaman publik, artikel dan `/login` tetap ○. Peringatan keamanan Next masih menghentikan run pertama; run ulang lolos |
+| `e2e/drafts.spec.ts` + `e2e/access.spec.ts`, `--repeat-each 3` | ✅ 65/65 |
+| `npm run test:e2e` penuh | ✅ 536 lolos, 0 gagal |
+| Database setelah E2E | ✅ 23 artikel, tidak ada baris `E2E draft` yang tersisa |
+
+**`code-reviewer`:** tidak ada temuan Kritis atau Tinggi.
+
+- **Sedang (diperbaiki):** `replaceState` membuat editor di-mount ulang pada simpan kedua (lihat di atas).
+- **Rendah, diperbaiki:**
+  - judul kosong membuat link tanpa nama dan judul halaman "Edit: " → `displayTitle`;
+  - label "Updated" memakai `created_at` → "Started";
+  - URL `jsdom` tidak dikembalikan antar-test.
+- **Rendah, untuk ditindaklanjuti:**
+  - `updateTag("articles")` di setiap simpan draft juga mengosongkan cache halaman publik, padahal draft tidak tampil di sana. Bisa dipersempit nanti dengan tag terpisah.
+  - Baris E2E dihapus langsung di database, sedangkan cache `next start` masih memuatnya sampai simpan berikutnya. Tidak ada test yang bergantung pada itu.
+- **Satu test unit** yang tampak flaky ternyata membandingkan isi yang sudah diubah Tiptap (`<li><p>`) setelah editornya selesai dimuat. Test-nya sekarang tidak membandingkan isi.
+
+**Tindak lanjut:**
+
+- Kolom `updated_at` (migration) supaya daftar bisa menampilkan kapan terakhir diubah.
+- Halaman edit yang disimpan Next tetap memakai state lama kalau datanya berubah di server, misalnya admin menolak artikel saat author sedang di halaman lain. Ini perlu dicek bersama alur submit dan review (hari 3–4).
+- Sesi yang kedaluwarsa tanpa logout (lewat proxy) tidak memuat ulang halaman, jadi halaman yang disembunyikan tetap ada sampai tab ditutup.
+- Upgrade Next ke 16.4.6 (advisory GHSA-mfr8-8qww-v76h), dari hari 1: masih menunggu keputusan user.

@@ -265,7 +265,8 @@ test.describe("public pages", () => {
 
 test.describe("dashboard", () => {
   for (const [path, label] of [
-    ["/dashboard/articles/22", "Submit for review"],
+    // A new article: the administrator's view of someone else's article is read-only.
+    ["/dashboard/articles/new", "Submit for review"],
     ["/dashboard/review/21", "Approve"],
   ] as const) {
     test(`${path}: the action bar is not covered by the tab bar`, async ({ page }) => {
@@ -377,7 +378,7 @@ test.describe("dashboard", () => {
   });
 
   test("the editor toolbar stays in view while writing", async ({ page }) => {
-    await page.goto("/dashboard/articles/22");
+    await page.goto("/dashboard/articles/new");
     const toolbar = page.getByRole("toolbar", { name: "Formatting" });
     await expect(toolbar).toBeVisible();
     // Write a long article, so the editor is taller than the screen.
@@ -399,7 +400,7 @@ test.describe("dashboard", () => {
 
   test("editor toolbar buttons are 44px on touch screens", async ({ page }) => {
     test.skip(width(page) >= 768, "phones only");
-    await page.goto("/dashboard/articles/22");
+    await page.goto("/dashboard/articles/new");
     const toolbar = page.getByRole("toolbar", { name: "Formatting" });
     await expect(toolbar).toBeVisible();
     const buttons = toolbar.getByRole("button");
@@ -410,18 +411,19 @@ test.describe("dashboard", () => {
     expect(small).toEqual([]);
   });
 
-  test("below xl the editor reads title, category, cover, then the article", async ({ page }) => {
+  test("below xl the editor reads title, summary, category, cover, then the article", async ({ page }) => {
     test.skip(width(page) >= 1280, "from xl the category and cover sit in a side column");
-    await page.goto("/dashboard/articles/22");
+    await page.goto("/dashboard/articles/new");
     await expect(page.getByRole("toolbar", { name: "Formatting" })).toBeVisible();
     const tops = await page.evaluate(() => {
       const top = (text: string) =>
         [...document.querySelectorAll("main label, main p")].find((el) => el.textContent?.trim() === text)?.getBoundingClientRect().top ?? null;
-      return { title: top("Title"), category: top("Category"), cover: top("Cover image"), article: top("Article") };
+      return { title: top("Title"), summary: top("Summary"), category: top("Category"), cover: top("Cover image"), article: top("Article") };
     });
     expect(Object.values(tops).every((t) => t !== null), `found every field label: ${JSON.stringify(tops)}`).toBe(true);
-    const { title, category, cover, article } = tops as Record<keyof typeof tops, number>;
-    expect(title).toBeLessThan(category);
+    const { title, summary, category, cover, article } = tops as Record<keyof typeof tops, number>;
+    expect(title).toBeLessThan(summary);
+    expect(summary).toBeLessThan(category);
     expect(category).toBeLessThan(cover);
     expect(cover).toBeLessThan(article);
   });

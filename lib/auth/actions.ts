@@ -38,8 +38,13 @@ export async function login(_previous: LoginState, formData: FormData): Promise<
   redirect(homeFor(account.user.role));
 }
 
-/** Logs out and goes to the login page. A form POST, so no link or prefetch can trigger it. */
+/**
+ * Logs out and goes to the login page. A form POST, so no link or prefetch can trigger it.
+ * `?out=1` makes the login page load itself again in full (components/dashboard/login-form.tsx):
+ * Next keeps the pages it navigated away from in the document, hidden, and the dashboard
+ * pages hold account data and unsaved drafts the next person on this browser must not see.
+ */
 export async function logout(): Promise<void> {
   await deleteSession();
-  redirect("/login");
+  redirect("/login?out=1");
 }

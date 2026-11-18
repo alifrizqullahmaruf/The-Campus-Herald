@@ -127,6 +127,7 @@ test("an empty article cannot be submitted", async ({ page }) => {
 test("the editor accepts formatted text", async ({ page }) => {
   await page.goto("/dashboard/articles/new");
   await page.getByLabel("Title").fill("Library opens a quiet room");
+  await page.getByLabel("Summary").fill("A new room for silent study opens on the second floor.");
   await page.getByLabel("Category").selectOption("academics");
   const body = page.getByRole("textbox", { name: "Article" });
   await body.click();

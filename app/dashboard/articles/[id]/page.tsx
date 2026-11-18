@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ArticleEditor } from "@/components/editor/article-editor";
 import { Button } from "@/components/ui/button";
+import { displayTitle } from "@/lib/articles/draft-rules";
 import { requireUser } from "@/lib/auth/current-user";
 import { getArticleById } from "@/lib/data/articles";
 import { isValidId } from "@/lib/data/ids";
@@ -20,18 +21,20 @@ async function load(params: PageProps<"/dashboard/articles/[id]">["params"], use
 
 export async function generateMetadata({ params }: PageProps<"/dashboard/articles/[id]">): Promise<Metadata> {
   const article = await load(params, await requireUser());
-  return { title: article ? `Edit: ${article.title}` : "Article" };
+  return { title: article ? `Edit: ${displayTitle(article.title)}` : "Article" };
 }
 
-export default async function EditArticlePage({ params }: PageProps<"/dashboard/articles/[id]">) {
-  const article = await load(params, await requireUser());
+export default async function EditArticlePage({ params, searchParams }: PageProps<"/dashboard/articles/[id]">) {
+  const user = await requireUser();
+  const { saved } = await searchParams;
+  const article = await load(params, user);
   if (!article) notFound();
 
   return (
     <>
       <PageHeader
         title="Edit article."
-        description={article.title}
+        description={displayTitle(article.title)}
         actions={
           article.status === "published" ? (
             <Button href={`/articles/${article.slug}`} variant="secondary" arrow>
@@ -40,7 +43,8 @@ export default async function EditArticlePage({ params }: PageProps<"/dashboard/
           ) : undefined
         }
       />
-      <ArticleEditor article={article} />
+      {/* Only the author saves; the administrator reviews someone else's article instead. */}
+      <ArticleEditor article={article} canEdit={article.authorId === user.id} justSaved={saved === "1"} />
     </>
   );
 }

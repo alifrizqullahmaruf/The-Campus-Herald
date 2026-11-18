@@ -8,6 +8,7 @@ import { STATUS_STYLES, StatusBadge } from "@/components/ui/status-badge";
 import { cx } from "@/lib/cx";
 import { formatDate } from "@/lib/format";
 import type { ArticleStatus, ArticleWithRelations } from "@/lib/types";
+import { displayTitle } from "@/lib/articles/draft-rules";
 
 const FILTERS: Array<ArticleStatus | "all"> = ["all", "draft", "pending", "rejected", "published"];
 
@@ -58,7 +59,7 @@ export function MyArticles({ articles }: { articles: ArticleWithRelations[] }) {
                 <div className="min-w-0">
                   <p className="font-display text-lg font-extrabold leading-tight">
                     <Link href={`/dashboard/articles/${article.id}`} className="after:absolute after:inset-0">
-                      {article.title}
+                      {displayTitle(article.title)}
                     </Link>
                   </p>
                   <p className="mt-2 flex flex-wrap items-center gap-2 text-meta text-ink-muted">
@@ -66,7 +67,7 @@ export function MyArticles({ articles }: { articles: ArticleWithRelations[] }) {
                     <span>
                       {article.status === "published"
                         ? `Published ${formatDate(article.publishedAt)}`
-                        : `Updated ${formatDate(article.createdAt)}`}
+                        : `Started ${formatDate(article.createdAt)}`}
                     </span>
                   </p>
                 </div>

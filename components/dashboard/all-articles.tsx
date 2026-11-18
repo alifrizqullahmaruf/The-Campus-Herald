@@ -6,6 +6,7 @@ import { CategoryBadge } from "@/components/ui/category-badge";
 import { STATUS_STYLES, StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/lib/format";
 import type { ArticleStatus, ArticleWithRelations } from "@/lib/types";
+import { displayTitle } from "@/lib/articles/draft-rules";
 
 const STATUSES: ArticleStatus[] = ["pending", "draft", "rejected", "published"];
 
@@ -83,7 +84,7 @@ export function AllArticles({ articles }: { articles: ArticleWithRelations[] }) 
               >
                 <td role="cell" className="px-4 py-3 font-display font-extrabold max-xl:basis-full max-xl:p-0">
                   <Link href={`/dashboard/review/${a.id}`} className="hover:underline">
-                    {a.title}
+                    {displayTitle(a.title)}
                   </Link>
                 </td>
                 <td role="cell" className="px-4 py-3 text-sm max-xl:p-0">{a.author.name}</td>

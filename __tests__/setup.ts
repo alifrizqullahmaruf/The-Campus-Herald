@@ -13,8 +13,17 @@ vi.mock("@/lib/auth/actions", () => ({
   logout: vi.fn(async () => {}),
 }));
 
+// Saving needs the database and a session; components only see a fake that "saves" as id 101.
+vi.mock("@/lib/articles/actions", () => ({
+  saveDraft: vi.fn(async (input: { id: number | null }) => ({
+    ok: true,
+    id: input.id ?? 101,
+    savedAt: "2026-11-18T10:00:00.000Z",
+  })),
+}));
+
 // Throws outside a React Server Components bundle; tests import server modules directly.
 vi.mock("server-only", () => ({}));
 
 // These only work inside a Next.js cache scope.
-vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {}, io: async () => {} }));
+vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {}, io: async () => {}, updateTag: vi.fn() }));

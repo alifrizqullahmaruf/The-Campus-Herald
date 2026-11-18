@@ -30,6 +30,12 @@ export function LoginForm() {
     if (state.error) passwordRef.current?.focus();
   }, [state]);
 
+  // Right after logging out (lib/auth/actions.ts): a full load clears the hidden dashboard
+  // pages Next kept from the session that just ended.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("out")) window.location.replace("/login");
+  }, []);
+
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     const data = new FormData(event.currentTarget);
     const problem = validateLogin(String(data.get("email") ?? ""), String(data.get("password") ?? ""));
