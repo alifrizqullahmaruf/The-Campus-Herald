@@ -9,6 +9,9 @@ const state = vi.hoisted(() => ({ user: null as User | null }));
 const writes = vi.hoisted(() => ({
   createDraft: vi.fn<(authorId: number, fields: unknown) => Promise<number>>(async () => 41),
   updateDraft: vi.fn<(authorId: number, id: number, fields: unknown) => Promise<number | null>>(async (...args) => args[1]),
+  submitArticle: vi.fn<(authorId: number, id: number | null, fields: unknown) => Promise<number | null>>(
+    async (...args) => args[1] ?? 42,
+  ),
 }));
 
 vi.mock("@/lib/auth/current-user", () => ({
@@ -19,7 +22,7 @@ vi.mock("@/lib/auth/current-user", () => ({
 }));
 vi.mock("@/lib/data/article-writes", () => writes);
 
-const { saveDraft } = await vi.importActual<typeof Actions>("../lib/articles/actions");
+const { saveDraft, submitForReview } = await vi.importActual<typeof Actions>("../lib/articles/actions");
 const { updateTag } = await import("next/cache");
 
 const RAFI: User = { id: 2, name: "Rafi Pratama", email: "rafi@herald.test", role: "author", isActive: true, bio: "", beat: "" };
@@ -30,6 +33,7 @@ beforeEach(() => {
   state.user = RAFI;
   writes.createDraft.mockClear();
   writes.updateDraft.mockClear();
+  writes.submitArticle.mockClear();
   vi.mocked(updateTag).mockClear();
 });
 
@@ -102,5 +106,61 @@ describe("saveDraft", () => {
     expect(result).toEqual({ ok: false, errors: {}, message: "Could not save. Try again." });
     expect(JSON.stringify(result)).not.toContain("duplicate");
     log.mockRestore();
+  });
+});
+
+describe("submitForReview", () => {
+  const complete: Input = { ...input, body: "<p>The first paragraph.</p>" };
+
+  test("needs a login", async () => {
+    state.user = null;
+    await expect(submitForReview(complete)).rejects.toThrow("REDIRECT /login");
+    expect(writes.submitArticle).not.toHaveBeenCalled();
+  });
+
+  test("a complete article goes to review for the logged-in author, and the cache expires", async () => {
+    expect(await submitForReview({ ...complete, id: 19 })).toEqual({ ok: true, id: 19, status: "pending" });
+    expect(writes.submitArticle).toHaveBeenCalledWith(2, 19, {
+      title: "Library opens late",
+      summary: "Open until midnight.",
+      categorySlug: "academics",
+      body: "<p>The first paragraph.</p>",
+    });
+    expect(updateTag).toHaveBeenCalledWith("articles");
+    expect(await submitForReview(complete)).toEqual({ ok: true, id: 42, status: "pending" });
+    expect(writes.submitArticle).toHaveBeenLastCalledWith(2, null, expect.any(Object));
+  });
+
+  test("a title, a summary, a topic and a body are required", async () => {
+    const result = await submitForReview({ id: 19, title: " ", summary: "", categorySlug: "academics", body: "<p></p>" });
+    expect(result).toMatchObject({
+      ok: false,
+      errors: {
+        title: "Give the article a title.",
+        summary: "Write a short summary.",
+        body: "Write the article before submitting it.",
+      },
+    });
+    expect(writes.submitArticle).not.toHaveBeenCalled();
+  });
+
+  test("a body that is only a script counts as empty, since it is checked after sanitising", async () => {
+    const result = await submitForReview({ ...complete, body: "<script>alert(1)</script><p> </p>" });
+    expect(result).toMatchObject({ ok: false, errors: { body: "Write the article before submitting it." } });
+    expect(writes.submitArticle).not.toHaveBeenCalled();
+  });
+
+  test("someone else's, a pending or a missing article gets one answer, and nothing expires", async () => {
+    writes.submitArticle.mockResolvedValueOnce(null);
+    const result = await submitForReview({ ...complete, id: 20 });
+    expect(result).toMatchObject({ ok: false, message: expect.stringMatching(/cannot be saved here/) });
+    expect(updateTag).not.toHaveBeenCalled();
+  });
+
+  test("input that is not the expected shape is refused without writing", async () => {
+    for (const bad of [null, { ...complete, body: 1 }, { ...complete, id: "19" }]) {
+      expect((await submitForReview(bad as unknown as Input)).ok).toBe(false);
+    }
+    expect(writes.submitArticle).not.toHaveBeenCalled();
   });
 });

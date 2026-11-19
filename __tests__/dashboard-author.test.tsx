@@ -9,7 +9,7 @@ import { isAdminPath } from "../lib/dashboard-paths";
 import { ArticleEditor, isEditable, validateForSubmit } from "../components/editor/article-editor";
 import { getArticleById, getArticlesByAuthor } from "../lib/data/articles";
 import { getAllUsers } from "../lib/data/users";
-import { saveDraft } from "@/lib/articles/actions";
+import { saveDraft, submitForReview } from "@/lib/articles/actions";
 
 const push = vi.fn();
 const replace = vi.fn();
@@ -24,6 +24,7 @@ afterEach(() => {
   push.mockReset();
   replace.mockReset();
   vi.mocked(saveDraft).mockClear();
+  vi.mocked(submitForReview).mockClear();
   window.history.replaceState(null, "", "/");
 });
 
@@ -38,11 +39,11 @@ describe("rules", () => {
     expect(validateForSubmit({ title: "Hi", summary: "S", categorySlug: "events", bodyEmpty: false })).toEqual({});
   });
 
-  test("only drafts and sent-back articles are editable", () => {
+  test("drafts, sent-back and published articles are editable; pending ones are not", () => {
     expect(isEditable("draft")).toBe(true);
     expect(isEditable("rejected")).toBe(true);
     expect(isEditable("pending")).toBe(false);
-    expect(isEditable("published")).toBe(false);
+    expect(isEditable("published")).toBe(true);
   });
 
   test("login validation", () => {
@@ -177,7 +178,7 @@ describe("ArticleEditor", () => {
     fireEvent.change(screen.getByLabelText("Summary"), { target: { value: "Open until midnight." } });
     fireEvent.change(screen.getByLabelText("Category"), { target: { value: "academics" } });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
-    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard/articles/101?saved=1", { scroll: false }));
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard/articles/101?notice=saved", { scroll: false }));
     expect(saveDraft).toHaveBeenCalledWith({
       id: null,
       title: "Library opens late",
@@ -189,10 +190,61 @@ describe("ArticleEditor", () => {
 
   test("the article's own page says it was just saved, once", async () => {
     const draft = (await getArticleById(19))!;
-    window.history.replaceState(null, "", "/dashboard/articles/19?saved=1");
-    render(<ArticleEditor article={draft} canEdit justSaved />);
+    window.history.replaceState(null, "", "/dashboard/articles/19?notice=saved");
+    render(<ArticleEditor article={draft} canEdit notice="saved" />);
     expect(screen.getByRole("status").textContent).toBe("Draft saved.");
     expect(window.location.search).toBe("");
+  });
+
+  test("submitting a complete draft sends it and locks the editor", async () => {
+    const draft = (await getArticleById(19))!;
+    render(<ArticleEditor article={draft} canEdit />);
+    fireEvent.change(screen.getByLabelText("Summary"), { target: { value: "Forty questions answered." } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+    expect(await screen.findByText("Sent to the editor for review.")).toBeDefined();
+    expect(submitForReview).toHaveBeenCalledWith(expect.objectContaining({ id: 19, summary: "Forty questions answered." }));
+    expect(screen.getByText(/Waiting for the editor/)).toBeDefined();
+    expect((screen.getByLabelText("Title") as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Save draft" })).toBeNull();
+  });
+
+  test("a new article without a body is stopped in the browser before it is sent", async () => {
+    render(<ArticleEditor article={null} canEdit />);
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Library opens late" } });
+    fireEvent.change(screen.getByLabelText("Summary"), { target: { value: "Open until midnight." } });
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "academics" } });
+    // The body counts as written once the editor reports it; the browser check uses Tiptap's.
+    const editor = await screen.findByRole("textbox", { name: "Article" });
+    editor.focus();
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+    // Tiptap in jsdom reports an empty body, so the browser check stops it here.
+    expect(screen.getByText("Write the article before submitting it.")).toBeDefined();
+    expect(submitForReview).not.toHaveBeenCalled();
+  });
+
+  test("a published article is changed only by submitting it again", async () => {
+    const published = (await getArticleById(1))!;
+    render(<ArticleEditor article={published} canEdit />);
+    expect((screen.getByLabelText("Title") as HTMLInputElement).disabled).toBe(false);
+    expect(screen.queryByRole("button", { name: "Save draft" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Submit changes for review" })).toBeDefined();
+    expect(screen.getByText(/takes this article off the site/)).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Submit changes for review" }));
+    expect(await screen.findByText("Sent to the editor for review.")).toBeDefined();
+    expect(submitForReview).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+  });
+
+  test("the server's answer to a submit is shown", async () => {
+    const draft = (await getArticleById(19))!;
+    vi.mocked(submitForReview).mockResolvedValueOnce({
+      ok: false,
+      errors: { body: "Write the article before submitting it." },
+      message: "Fix the highlighted fields, then submit again.",
+    });
+    render(<ArticleEditor article={{ ...draft, excerpt: "Summary." }} canEdit />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+    expect(await screen.findByText("Write the article before submitting it.")).toBeDefined();
+    expect(screen.getByRole("button", { name: "Save draft" })).toBeDefined();
   });
 
   test("an existing draft saves under its id and shows the server's errors", async () => {

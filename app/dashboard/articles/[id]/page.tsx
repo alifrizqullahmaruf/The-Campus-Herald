@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { ArticleEditor } from "@/components/editor/article-editor";
+import { ArticleEditor, type EditorNotice } from "@/components/editor/article-editor";
 import { Button } from "@/components/ui/button";
 import { displayTitle } from "@/lib/articles/draft-rules";
 import { requireUser } from "@/lib/auth/current-user";
@@ -26,7 +26,8 @@ export async function generateMetadata({ params }: PageProps<"/dashboard/article
 
 export default async function EditArticlePage({ params, searchParams }: PageProps<"/dashboard/articles/[id]">) {
   const user = await requireUser();
-  const { saved } = await searchParams;
+  const { notice } = await searchParams;
+  const shown: EditorNotice = notice === "saved" || notice === "submitted" ? notice : null;
   const article = await load(params, user);
   if (!article) notFound();
 
@@ -37,14 +38,17 @@ export default async function EditArticlePage({ params, searchParams }: PageProp
         description={displayTitle(article.title)}
         actions={
           article.status === "published" ? (
-            <Button href={`/articles/${article.slug}`} variant="secondary" arrow>
+            // No prefetch: a prefetch still rendering the public page when the author submits a
+            // change would store the old version after the cache was expired, and the article
+            // would stay on the site (docs/plans/2026-11-17-fase-4-alur-kerja.md, day 3).
+            <Button href={`/articles/${article.slug}`} variant="secondary" arrow prefetch={false}>
               View live
             </Button>
           ) : undefined
         }
       />
       {/* Only the author saves; the administrator reviews someone else's article instead. */}
-      <ArticleEditor article={article} canEdit={article.authorId === user.id} justSaved={saved === "1"} />
+      <ArticleEditor article={article} canEdit={article.authorId === user.id} notice={shown} />
     </>
   );
 }

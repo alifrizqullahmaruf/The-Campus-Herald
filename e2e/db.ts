@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { slugify } from "../lib/articles/draft-rules";
 
 // Direct database access for tests that write: they remove their own rows afterwards, so
 // the sample data stays as `npm run db:seed` made it. DATABASE_URL comes from .env.local,
@@ -12,15 +13,41 @@ export function uniqueTitle(): string {
   return `${E2E_TITLE} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Deletes the articles whose title starts with `prefix` (one test's own rows). */
-export async function deleteTestArticles(prefix: string): Promise<void> {
-  if (!prefix.startsWith(`${E2E_TITLE} `)) throw new Error("Only E2E rows may be deleted.");
+async function withSql<T>(run: (sql: postgres.Sql) => Promise<T>): Promise<T> {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set: run `npm run db:setup`.");
   const sql = postgres(url, { max: 1 });
   try {
-    await sql`delete from articles where starts_with(title, ${prefix})`;
+    return await run(sql);
   } finally {
     await sql.end();
   }
+}
+
+/** Deletes the articles whose title starts with `prefix` (one test's own rows). */
+export async function deleteTestArticles(prefix: string): Promise<void> {
+  if (!prefix.startsWith(`${E2E_TITLE} `)) throw new Error("Only E2E rows may be deleted.");
+  await withSql((sql) => sql`delete from articles where starts_with(title, ${prefix})`);
+}
+
+/**
+ * A published Opinion article by Rafi (id 2), dated in 2000 so it sorts after every sample
+ * article and does not move the front page. Returns its id and slug.
+ */
+export async function insertPublishedArticle(title: string): Promise<{ id: number; slug: string }> {
+  if (!title.startsWith(`${E2E_TITLE} `)) throw new Error("E2E rows need an E2E title.");
+  const slug = slugify(title);
+  return withSql(async (sql) => {
+    const [row] = await sql<{ id: number }[]>`
+      insert into articles (title, slug, body, excerpt, status, author_id, category_id, created_at, submitted_at, published_at)
+      values (${title}, ${slug}, '<p>Written by the end-to-end test.</p>', 'An article the end-to-end test published.',
+              'published', 2, 4, '2000-01-01', '2000-01-01', '2000-01-01')
+      returning id`;
+    return { id: row.id, slug };
+  });
+}
+
+/** The status of one article, read straight from the database. */
+export async function statusOf(id: number): Promise<string | undefined> {
+  return withSql(async (sql) => (await sql<{ status: string }[]>`select status from articles where id = ${id}`)[0]?.status);
 }

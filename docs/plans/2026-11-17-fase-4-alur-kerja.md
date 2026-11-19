@@ -24,7 +24,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 |---|------|-------|-------|------------------|--------|
 | 1 | Sel 17 Nov | Sanitasi HTML + test XSS | Claude | `lib/sanitize-html.ts` (baru), `components/article/article-body.tsx`, `__tests__/sanitize-html.test.ts` (baru), `package.json`, `package-lock.json`, `CLAUDE.md`, plan ini | ✅ |
 | 2 | Rab 18 Nov | Simpan draft (Server Action, `requireUser`, sanitasi, `updateTag`); kolom Summary; editor hanya-baca untuk selain penulis; logout memuat ulang halaman | Claude | `lib/articles/draft-rules.ts`, `lib/articles/actions.ts`, `lib/data/article-writes.ts` (baru), `components/editor/article-editor.tsx`, `components/dashboard/my-articles.tsx`, `components/dashboard/all-articles.tsx`, `components/dashboard/login-form.tsx`, `lib/auth/actions.ts`, `app/dashboard/articles/new/page.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/drafts.spec.ts`, `e2e/db.ts` (baru), `e2e/access.spec.ts`, `e2e/flows.spec.ts`, `e2e/responsive.spec.ts`, `CLAUDE.md` | ✅ |
-| 3 | Kam 19 Nov | Kirim ke editor (`draft`/`rejected` → `pending`; artikel terbit yang diubah → `pending`) | Claude | sama | Belum |
+| 3 | Kam 19 Nov | Kirim ke editor (`draft`/`rejected` → `pending`; artikel terbit yang diubah → `pending`) | Claude | `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `components/editor/article-editor.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/submit.spec.ts` (baru), `e2e/db.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
 | 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `app/dashboard/review/**` | Belum |
 | 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `app/dashboard/authors`, `db/migrations/003_*.sql` | Belum |
 | – | Min 22 Nov | Cadangan | – | – | – |
@@ -192,3 +192,70 @@ Setiap hari: verifikasi, `code-reviewer` sekali, update plan, lalu commit dan pu
 - Halaman edit yang disimpan Next tetap memakai state lama kalau datanya berubah di server, misalnya admin menolak artikel saat author sedang di halaman lain. Ini perlu dicek bersama alur submit dan review (hari 3–4).
 - Sesi yang kedaluwarsa tanpa logout (lewat proxy) tidak memuat ulang halaman, jadi halaman yang disembunyikan tetap ada sampai tab ditutup.
 - Upgrade Next ke 16.4.6 (advisory GHSA-mfr8-8qww-v76h), dari hari 1: masih menunggu keputusan user.
+
+## Hari 3 (Kam 19 Nov): kirim ke editor
+
+**Keputusan (sesuai brainstorm, tanpa pertanyaan baru):**
+
+- Submit juga menyimpan semua field.
+- Artikel terbit bisa diubah, tapi hanya lewat "Submit changes": tidak ada "Save draft", dan ada catatan bahwa artikel akan turun dari situs sampai disetujui lagi. Slug dan `published_at` tidak berubah.
+- `review_note` lama tetap tersimpan sampai review berikutnya.
+
+**Yang dibuat:**
+
+- **Aturan** (`lib/articles/draft-rules.ts`):
+  - `isBlankHtml`: cek isi kosong di server, tanpa teks dan tanpa gambar;
+  - `isEditable` (kini juga `published`) dan `canSaveDraft`.
+- **`submitArticle`** (`lib/data/article-writes.ts`):
+  - artikel baru → langsung `pending`; artikel lama → hanya `draft`, `rejected` atau `published` milik penulis ini (`for update`);
+  - `status = 'pending'` dan `submitted_at = now()`;
+  - kode bersama dengan `updateDraft` (`insertArticle`, `changeArticle`).
+- **`submitForReview`** (`lib/articles/actions.ts`):
+  - cek tipe lewat `readArticleInput`, helper yang dipakai bersama `saveDraft`;
+  - `validateForSubmit` dijalankan pada isi yang sudah dibersihkan, jadi isi yang hanya berisi `<script>` dianggap kosong;
+  - setelahnya `updateTag("articles")`.
+- **Editor:**
+  - Submit menyimpan; berhasil → status `pending`, editor terkunci, pesan "Sent to the editor for review.";
+  - artikel baru → `?notice=submitted` (dan `?saved=1` menjadi `?notice=saved`);
+  - artikel terbit → "Submit changes" beserta catatannya;
+  - selama mengirim, tombol menjadi "Saving…" atau "Sending…".
+
+**Perubahan dari rencana:**
+
+- **`prefetch={false}` pada "View live"** (`app/dashboard/articles/[id]/page.tsx`):
+  - E2E menemukan bahwa artikel terbit yang disubmit ulang masih tampil di situs pada 4 dari 8 run, bahkan setelah 15 detik.
+  - Penyebabnya prefetch halaman publik dari tombol "View live" yang masih dirender saat author menekan submit. Hasil render lama itu tersimpan setelah `updateTag` dan dianggap baru.
+  - Dengan menunggu `networkidle` sebelum submit: 8/8 lolos. Dengan prefetch dimatikan, tanpa menunggu: 10/10 lolos.
+- **`flows.spec.ts`** "the editor accepts formatted text" tidak lagi submit, karena submit kini menyimpan ke database. Alur submit ada di `e2e/submit.spec.ts`, yang membersihkan barisnya sendiri.
+
+**Hasil verifikasi:**
+
+| Cek | Hasil |
+|-----|-------|
+| `npm test -- --run` | ✅ 216/216 (13 test baru: aturan, action submit, editor) |
+| `npm run lint`, `npx tsc --noEmit` | ✅ |
+| `npm run build` | ✅ halaman publik dan `/login` tetap ○. Peringatan keamanan Next masih menghentikan run pertama; run ulang lolos |
+| Test artikel terbit, `--repeat-each 10` (tanpa prefetch) | ✅ 10/10 |
+| `e2e/submit.spec.ts` + `e2e/drafts.spec.ts`, `--repeat-each 3` | ✅ 23/23 |
+| `npm run test:e2e` penuh (sebelum dan sesudah perbaikan review) | ✅ 540 lolos, 0 gagal |
+| Database setelah E2E | ✅ 23 artikel, tidak ada sisa `E2E draft`, 2 pending (seperti data sampel) |
+
+**`code-reviewer`:** tidak ada temuan Kritis atau Tinggi. Otorisasi dinilai aman: artikel pending tidak bisa disubmit ulang, artikel orang lain ditolak (termasuk oleh admin), dan tidak ada jalur untuk langsung publish.
+
+- **Sedang, diperbaiki:**
+  - teks yang diketik selama submit hilang tanpa terlihat, karena form dikunci begitu jawaban datang. Kini field terkunci selama submit.
+- **Sedang, dicatat sebagai risiko:**
+  - Render `/articles/[slug]` oleh **pembaca** yang sedang berjalan tepat saat `updateTag` dipanggil bisa menyimpan versi lama, dan versi itu bertahan sampai penyimpanan berikutnya. Menurut reviewer, entri `"use cache"` memakai waktu mulai render, tapi entri halaman/shell tampaknya tidak. Docs bawaan tidak membahas hal ini.
+  - `prefetch={false}` hanya menutup kasus yang dipicu author sendiri; peluangnya sempit (hitungan milidetik).
+  - Pilihan perbaikan untuk nanti: halaman artikel membaca status di luar shell statis, atau melaporkannya ke Next.js. Mengirim feedback ke Next menunggu keputusan user, sama seperti blok `AGENTS.md`.
+- **Rendah, diperbaiki:**
+  - field artikel baru sempat bisa diketik antara jawaban server dan pindah halaman. `router.replace` kini berjalan dalam transition yang sama;
+  - tombol sesaat kembali bertuliskan "Submit" sebelum transition selesai;
+  - pesan gagal jaringan kini "Could not submit" untuk submit.
+- **Rendah, dicatat di komentar `e2e/submit.spec.ts`:** baris terbit buatan test bisa sempat masuk ke cache daftar publik kalau test lain menyimpan bersamaan. Kalau test gagal sebelum submit, salinan itu bertahan sampai penyimpanan berikutnya.
+
+**Tindak lanjut:**
+
+- Race render pembaca dan `updateTag` (lihat di atas).
+- Halaman yang disimpan Next (Activity) masih memegang status lama setelah admin memutuskan; cek saat review dibuat besok.
+- Belum ada cara bagi author untuk menarik kembali artikel yang sedang pending (di luar spesifikasi).

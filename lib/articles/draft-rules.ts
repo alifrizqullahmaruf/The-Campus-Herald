@@ -1,4 +1,5 @@
 import { isCategorySlug } from "../categories";
+import type { ArticleStatus } from "../types";
 
 // Editor rules shared by the browser (an early hint) and the Server Actions (the real
 // check), Phase 4 (docs/plans/2026-11-17-fase-4-alur-kerja.md, day 2). No server code here.
@@ -51,6 +52,32 @@ export function validateForSubmit(fields: {
   if (!fields.categorySlug) errors.category = "Choose a category.";
   if (fields.bodyEmpty) errors.body = "Write the article before submitting it.";
   return errors;
+}
+
+/**
+ * Whether the author may still change the article: drafts, articles sent back, and published
+ * ones (a change to those goes back to the editor). Not while it waits for review.
+ */
+export function isEditable(status: ArticleStatus): boolean {
+  return status === "draft" || status === "rejected" || status === "published";
+}
+
+/** "Save draft" is for unpublished work only: a published article's change is submitted. */
+export function canSaveDraft(status: ArticleStatus): boolean {
+  return status === "draft" || status === "rejected";
+}
+
+/**
+ * True when HTML holds nothing a reader would see: no text (spaces and &nbsp; do not
+ * count) and no image. The server's check before submitting; the editor uses Tiptap's own.
+ */
+export function isBlankHtml(html: string): boolean {
+  if (/<img\b/i.test(html)) return false;
+  const text = html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, " ")
+    .replace(/[\s\u00a0]+/g, "");
+  return text.length === 0;
 }
 
 /** A draft may be saved without a title; lists and page titles still need a name for it. */

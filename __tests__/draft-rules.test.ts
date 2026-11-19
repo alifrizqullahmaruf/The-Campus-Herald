@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, expect, test } from "vitest";
 import {
+  canSaveDraft,
+  isBlankHtml,
   MAX_BODY_LENGTH,
   MAX_SUMMARY_LENGTH,
   MAX_TITLE_LENGTH,
@@ -27,6 +29,29 @@ describe("validateDraft", () => {
     expect(validateDraft({ ...ok, body: "a".repeat(MAX_BODY_LENGTH + 1) }).body).toMatch(/too long/);
     // Spaces around the title do not count; they are trimmed before saving.
     expect(validateDraft({ ...ok, title: ` ${"a".repeat(MAX_TITLE_LENGTH)} ` })).toEqual({});
+  });
+});
+
+describe("isBlankHtml", () => {
+  test("no text and no image is blank", () => {
+    for (const html of ["", "<p></p>", "<p>&nbsp; </p>", "<p><br /></p>", "<ul><li><p> </p></li></ul>", "<p>\u00a0</p>"]) {
+      expect(isBlankHtml(html), html).toBe(true);
+    }
+  });
+
+  test("any text or an image is not", () => {
+    expect(isBlankHtml("<p>a</p>")).toBe(false);
+    expect(isBlankHtml('<img src="https://img.test/a.jpg" />')).toBe(false);
+    expect(isBlankHtml("<p>&amp;</p>")).toBe(false);
+  });
+});
+
+describe("canSaveDraft", () => {
+  test("only unpublished work is saved as a draft", () => {
+    expect(canSaveDraft("draft")).toBe(true);
+    expect(canSaveDraft("rejected")).toBe(true);
+    expect(canSaveDraft("published")).toBe(false);
+    expect(canSaveDraft("pending")).toBe(false);
   });
 });
 

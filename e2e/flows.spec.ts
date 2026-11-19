@@ -134,8 +134,7 @@ test("the editor accepts formatted text", async ({ page }) => {
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   await page.keyboard.type("Where it is");
   await expect(body.locator("h2")).toHaveText("Where it is");
-  await page.getByRole("button", { name: "Submit for review" }).click();
-  await expect(page.getByRole("status")).toContainText("Sent to the editor");
+  // Submitting now stores the article: that is e2e/submit.spec.ts, which cleans up after itself.
 });
 
 test.describe("log in", () => {

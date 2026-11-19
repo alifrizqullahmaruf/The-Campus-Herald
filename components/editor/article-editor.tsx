@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { saveDraft } from "@/lib/articles/actions";
+import { saveDraft, submitForReview } from "@/lib/articles/actions";
 import {
+  canSaveDraft,
+  isEditable,
   MAX_SUMMARY_LENGTH,
   MAX_TITLE_LENGTH,
   validateDraft,
@@ -24,7 +26,12 @@ const RichTextEditor = dynamic(() => import("./rich-text-editor").then((m) => m.
   loading: () => <div className="min-h-80 animate-pulse rounded-card border-3 border-ink bg-surface" />,
 });
 
-export { validateForSubmit, type EditorErrors };
+export { isEditable, validateForSubmit, type EditorErrors };
+
+/** What the page says on arrival, after a new article was saved or submitted (`?notice=`). */
+export type EditorNotice = "saved" | "submitted" | null;
+
+const NOTICES = { saved: "Draft saved.", submitted: "Sent to the editor for review." } as const;
 
 /**
  * The editor for a new article. Next keeps a page it navigates away from (hidden, with its
@@ -47,26 +54,22 @@ export function NewArticleEditor() {
   return <ArticleEditor key={generation} article={null} canEdit onCreated={() => (shouldReset.current = true)} />;
 }
 
-/** Authors can edit drafts and articles sent back to them; the rest is read-only. */
-export function isEditable(status: ArticleStatus): boolean {
-  return status === "draft" || status === "rejected";
-}
-
 /**
- * Write or edit an article (docs/design.md 4, Editor). "Save draft" stores it (Phase 4,
- * day 2); submitting is still a preview until day 3. Only the author may change an
- * article (`canEdit`): to the administrator someone else's article is read-only.
+ * Write or edit an article (docs/design.md 4, Editor). "Save draft" stores it and "Submit"
+ * sends it to the editor (Phase 4, days 2 and 3). A published article can be changed too,
+ * but only by submitting it again. Only the author may change an article (`canEdit`): to
+ * the administrator someone else's article is read-only.
  */
 export function ArticleEditor({
   article,
   canEdit,
-  justSaved = false,
+  notice = null,
   onCreated,
 }: {
   article: ArticleWithRelations | null;
   canEdit: boolean;
-  /** The page opened right after this article's first save (`?saved=1`). */
-  justSaved?: boolean;
+  /** The page opened right after this article was first saved or submitted. */
+  notice?: EditorNotice;
   /** A new article was saved for the first time (see NewArticleEditor). */
   onCreated?: () => void;
 }) {
@@ -81,75 +84,95 @@ export function ArticleEditor({
   const [cover, setCover] = useState<string | null>(null);
   const [alt, setAlt] = useState("");
   const [errors, setErrors] = useState<EditorErrors>({});
-  const [message, setMessage] = useState(justSaved ? "Draft saved." : "");
-  const [saving, startSaving] = useTransition();
+  const [message, setMessage] = useState<string>(notice ? NOTICES[notice] : "");
+  const [busy, startBusy] = useTransition();
+  const [sending, setSending] = useState<"save" | "submit" | null>(null);
 
   const isNew = article === null;
-  // A new article moves to its own page once saved, which mounts the editor again: nothing
-  // may be typed in the meantime, or it would be lost.
-  const editable = canEdit && isEditable(status) && !(isNew && saving);
+  const changeable = canEdit && isEditable(status);
+  // Nothing may be typed while it could be lost: a new article moves to its own page once
+  // saved (the editor is mounted again), and a submitted one is locked when the answer comes.
+  const editable = changeable && !(busy && (isNew || sending === "submit"));
+  const wasPublished = status === "published";
 
   // The notice came in the address; take it out so a reload does not show it again.
   useEffect(() => {
-    if (justSaved) window.history.replaceState(null, "", window.location.pathname);
-  }, [justSaved]);
+    if (notice) window.history.replaceState(null, "", window.location.pathname);
+  }, [notice]);
 
-  function save() {
+  /** Sends the fields to `action`; on success a new article moves to its own page. */
+  function send(kind: "save" | "submit", onDone: (id: number) => void) {
     const fields = { title, summary, categorySlug, body: bodyHtml.current };
-    const found = validateDraft(fields);
-    setErrors(found);
-    if (Object.keys(found).length > 0) {
-      setMessage("Fix the highlighted fields, then save again.");
-      return;
-    }
     setMessage("");
-    startSaving(async () => {
-      const result = await saveDraft({ id: article?.id ?? null, ...fields }).catch(() => null);
-      if (!result) {
-        setMessage("Could not save. Check your connection and try again.");
-        return;
-      }
-      if (!result.ok) {
-        setErrors(result.errors);
-        setMessage(result.message);
+    setSending(kind);
+    startBusy(async () => {
+      const action = kind === "save" ? saveDraft : submitForReview;
+      const result = await action({ id: article?.id ?? null, ...fields }).catch(() => null);
+      if (!result || !result.ok) {
+        setSending(null);
+        if (result) setErrors(result.errors);
+        setMessage(
+          result?.message ??
+            `Could not ${kind === "save" ? "save" : "submit"}. Check your connection and try again.`,
+        );
         return;
       }
       if (isNew) {
         // The new article has a page of its own now. Changing only the address would not do:
         // the next save would render that page in place of this one and mount the editor
-        // again anyway (docs/plans/2026-11-17-fase-4-alur-kerja.md, day 2 review).
+        // again anyway (docs/plans/2026-11-17-fase-4-alur-kerja.md, day 2 review). The move
+        // runs in this transition, so the fields stay locked until the new page is shown.
         onCreated?.();
-        router.replace(`/dashboard/articles/${result.id}?saved=1`, { scroll: false });
+        startBusy(() =>
+          router.replace(`/dashboard/articles/${result.id}?notice=${kind === "save" ? "saved" : "submitted"}`, {
+            scroll: false,
+          }),
+        );
         return;
       }
-      setMessage("Draft saved.");
+      setSending(null);
+      onDone(result.id);
     });
+  }
+
+  function save() {
+    const found = validateDraft({ title, summary, categorySlug, body: bodyHtml.current });
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      setMessage("Fix the highlighted fields, then save again.");
+      return;
+    }
+    send("save", () => setMessage(NOTICES.saved));
   }
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const found = validateForSubmit({ title, summary, categorySlug, bodyEmpty });
+    if (busy) return;
+    const found = {
+      ...validateDraft({ title, summary, categorySlug, body: bodyHtml.current }),
+      ...validateForSubmit({ title, summary, categorySlug, bodyEmpty }),
+    };
     setErrors(found);
     if (Object.keys(found).length > 0) {
       setMessage("Fix the highlighted fields, then submit again.");
       return;
     }
-    setStatus("pending");
-    setMessage("Sent to the editor for review (preview only: nothing is stored yet).");
+    send("submit", () => {
+      setStatus("pending");
+      setMessage(NOTICES.submitted);
+    });
   }
 
   return (
     <form onSubmit={submit} noValidate className="mt-6 pb-36 lg:pb-28">
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <StatusBadge status={status} />
-        {!editable && (
+        {!changeable && (
           <span className="inline-flex items-center gap-1.5 text-sm text-ink-muted">
             <Lock aria-hidden="true" className="size-4" />
             {!canEdit
               ? "Only the author can change this article."
-              : status === "pending"
-                ? "Waiting for the editor. You can edit again if it is sent back."
-                : "Published articles can no longer be edited."}
+              : "Waiting for the editor. You can edit again if it is sent back."}
           </span>
         )}
       </div>
@@ -278,15 +301,32 @@ export function ArticleEditor({
         {message}
       </p>
 
-      {editable && (
+      {changeable && (
         <div className="fixed inset-x-0 bottom-[calc(var(--tabbar-h)+env(safe-area-inset-bottom))] z-30 border-t-3 border-ink bg-paper/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:left-64">
-          <div className="flex flex-wrap justify-end gap-3">
-            <Button type="button" variant="secondary" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save draft"}
-            </Button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {wasPublished && (
+              <p role="note" className="mr-auto text-sm">
+                Submitting takes this article off the site until the editor approves it again.
+              </p>
+            )}
+            {canSaveDraft(status) && (
+              <Button type="button" variant="secondary" onClick={save} disabled={busy}>
+                {sending === "save" ? "Saving…" : "Save draft"}
+              </Button>
+            )}
             {/* "Submit" on phones keeps both buttons on one row; the name stays complete. */}
-            <Button type="submit" aria-label="Submit for review">
-              Submit<span className="max-sm:hidden">&nbsp;for review</span>
+            <Button
+              type="submit"
+              disabled={busy}
+              aria-label={wasPublished ? "Submit changes for review" : "Submit for review"}
+            >
+              {sending === "submit" ? (
+                "Sending…"
+              ) : (
+                <>
+                  Submit<span className="max-sm:hidden">&nbsp;{wasPublished ? "changes" : "for review"}</span>
+                </>
+              )}
             </Button>
           </div>
         </div>

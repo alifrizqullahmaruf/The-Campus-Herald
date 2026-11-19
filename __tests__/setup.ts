@@ -20,6 +20,7 @@ vi.mock("@/lib/articles/actions", () => ({
     id: input.id ?? 101,
     savedAt: "2026-11-18T10:00:00.000Z",
   })),
+  submitForReview: vi.fn(async (input: { id: number | null }) => ({ ok: true, id: input.id ?? 101, status: "pending" })),
 }));
 
 // Throws outside a React Server Components bundle; tests import server modules directly.

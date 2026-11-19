@@ -19,8 +19,9 @@ export interface DraftWrite {
 
 type Tx = TransactionSql;
 
-/** The statuses an author may still change. */
-const EDITABLE = ["draft", "rejected"];
+/** The statuses a draft save may change, and those an author may submit from. */
+const DRAFT_STATUSES = ["draft", "rejected"] as const;
+const SUBMIT_STATUSES = ["draft", "rejected", "published"] as const;
 const UNIQUE_VIOLATION = "23505";
 
 function categoryId(slug: string): number {
@@ -55,14 +56,17 @@ async function retryOnSlugClash<T>(write: () => Promise<T>): Promise<T> {
   }
 }
 
-/** A new draft by this author. Returns its id. */
-export async function createDraft(authorId: number, fields: DraftWrite): Promise<number> {
+type Current = { author_id: number; status: string; published_at: Date | null; slug: string };
+
+/** A new article by this author, as a draft or straight to review. Returns its id. */
+async function insertArticle(authorId: number, fields: DraftWrite, submit: boolean): Promise<number> {
   return retryOnSlugClash(() =>
     sql.begin(async (tx) => {
       const slug = await freeSlug(tx, fields.title, null);
       const [row] = await tx<{ id: number }[]>`
-        insert into articles (title, slug, body, excerpt, status, author_id, category_id)
-        values (${fields.title}, ${slug}, ${fields.body}, ${fields.summary}, 'draft', ${authorId},
+        insert into articles (title, slug, body, excerpt, status, submitted_at, author_id, category_id)
+        values (${fields.title}, ${slug}, ${fields.body}, ${fields.summary},
+                ${submit ? "pending" : "draft"}, ${submit ? tx`now()` : null}, ${authorId},
                 ${categoryId(fields.categorySlug)})
         returning id`;
       return row.id;
@@ -71,24 +75,50 @@ export async function createDraft(authorId: number, fields: DraftWrite): Promise
 }
 
 /**
- * Saves an article its author may still change (a draft, or one sent back), keeping its
- * status. Returns null when the article does not exist, is someone else's, or is pending
- * or published: the caller answers all of these the same way.
+ * Changes an article if it is this author's and in one of `allowed`; with `submit` it goes
+ * to review. Returns null when the article does not exist, is someone else's, or is in
+ * another status: the caller answers all of these the same way.
  */
-export async function updateDraft(authorId: number, id: number, fields: DraftWrite): Promise<number | null> {
+async function changeArticle(
+  authorId: number,
+  id: number,
+  fields: DraftWrite,
+  allowed: readonly string[],
+  submit: boolean,
+): Promise<number | null> {
   return retryOnSlugClash(() =>
     sql.begin(async (tx) => {
-      const [current] = await tx<{ author_id: number; status: string; published_at: Date | null; slug: string }[]>`
+      const [current] = await tx<Current[]>`
         select author_id, status, published_at, slug from articles where id = ${id} for update`;
-      if (!current || current.author_id !== authorId || !EDITABLE.includes(current.status)) return null;
+      if (!current || current.author_id !== authorId || !allowed.includes(current.status)) return null;
       // Once an article has been public, its address stays the same.
       const slug = current.published_at === null ? await freeSlug(tx, fields.title, id) : current.slug;
       await tx`
         update articles
         set title = ${fields.title}, slug = ${slug}, body = ${fields.body}, excerpt = ${fields.summary},
             category_id = ${categoryId(fields.categorySlug)}
+            ${submit ? tx`, status = 'pending', submitted_at = now()` : tx``}
         where id = ${id}`;
       return id;
     }),
   );
+}
+
+/** A new draft by this author. Returns its id. */
+export async function createDraft(authorId: number, fields: DraftWrite): Promise<number> {
+  return insertArticle(authorId, fields, false);
+}
+
+/** Saves the author's own draft or article sent back, keeping its status (null: see changeArticle). */
+export async function updateDraft(authorId: number, id: number, fields: DraftWrite): Promise<number | null> {
+  return changeArticle(authorId, id, fields, DRAFT_STATUSES, false);
+}
+
+/**
+ * Sends an article to the editor: a new one (`id` null), or the author's own draft, article
+ * sent back, or published article, which leaves the site until it is approved again. Its
+ * slug and first publication date stay. Returns null as changeArticle does.
+ */
+export async function submitArticle(authorId: number, id: number | null, fields: DraftWrite): Promise<number | null> {
+  return id === null ? insertArticle(authorId, fields, true) : changeArticle(authorId, id, fields, SUBMIT_STATUSES, true);
 }
