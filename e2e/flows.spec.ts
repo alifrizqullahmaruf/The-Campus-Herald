@@ -108,13 +108,7 @@ test("author card links to the author page", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Sekar Ayu" })).toBeVisible();
 });
 
-test("editor approves a pending article in two steps", async ({ page }) => {
-  await page.goto("/dashboard/review");
-  await page.getByRole("link", { name: "Sports day schedule and where to watch" }).click();
-  await page.getByRole("button", { name: "Approve" }).click();
-  await page.getByRole("button", { name: "Yes, publish" }).click();
-  await expect(page.getByRole("status")).toContainText("Approved and published");
-});
+// Approving and sending back now store the decision: e2e/review.spec.ts, on its own rows.
 
 test("an empty article cannot be submitted", async ({ page }) => {
   await page.goto("/dashboard/articles/new");

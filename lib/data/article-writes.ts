@@ -122,3 +122,31 @@ export async function updateDraft(authorId: number, id: number, fields: DraftWri
 export async function submitArticle(authorId: number, id: number | null, fields: DraftWrite): Promise<number | null> {
   return id === null ? insertArticle(authorId, fields, true) : changeArticle(authorId, id, fields, SUBMIT_STATUSES, true);
 }
+
+export type ReviewDecision = { approve: true } | { approve: false; note: string };
+
+/**
+ * The administrator's decision on an article waiting for review. Approving publishes it:
+ * the first publication date stays (a changed published article keeps its place), and a
+ * new article is dated now. Sending it back stores the note. The reviewer is recorded
+ * either way. Returns null when the article does not exist or is not waiting for review.
+ */
+export async function reviewArticle(reviewerId: number, id: number, decision: ReviewDecision): Promise<number | null> {
+  return sql.begin(async (tx) => {
+    const [current] = await tx<{ status: string }[]>`select status from articles where id = ${id} for update`;
+    if (!current || current.status !== "pending") return null;
+    if (decision.approve) {
+      await tx`
+        update articles
+        set status = 'published', review_note = null, reviewer_id = ${reviewerId},
+            published_at = coalesce(published_at, now())
+        where id = ${id}`;
+    } else {
+      await tx`
+        update articles
+        set status = 'rejected', review_note = ${decision.note}, reviewer_id = ${reviewerId}
+        where id = ${id}`;
+    }
+    return id;
+  });
+}

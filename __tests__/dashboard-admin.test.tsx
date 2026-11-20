@@ -1,9 +1,10 @@
-import { afterEach, beforeAll, describe, expect, test } from "vitest";
+import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { AllArticles } from "../components/dashboard/all-articles";
 import { AuthorManager, validateNewAuthor, type ManagedAuthor } from "../components/dashboard/author-manager";
 import { ReviewPanel, validateReviewNote } from "../components/dashboard/review-panel";
 import { getAllArticles } from "../lib/data/articles";
+import { approveArticle, rejectArticle } from "@/lib/articles/review-actions";
 
 beforeAll(() => {
   // jsdom has no <dialog> modal support.
@@ -16,33 +17,56 @@ beforeAll(() => {
   };
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.mocked(approveArticle).mockClear();
+  vi.mocked(rejectArticle).mockClear();
+});
 
 describe("ReviewPanel", () => {
-  test("approving takes a confirmation step", () => {
-    render(<ReviewPanel initialStatus="pending" />);
+  test("approving takes a confirmation step, then stores the decision", async () => {
+    render(<ReviewPanel articleId={20} initialStatus="pending" />);
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
     expect(screen.getByText("Publish this article now?")).toBeDefined();
+    expect(approveArticle).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Yes, publish" }));
+    expect(await screen.findByText("Approved and published.")).toBeDefined();
+    expect(approveArticle).toHaveBeenCalledWith(20);
     expect(screen.getByText("Published")).toBeDefined();
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
   });
 
-  test("sending back requires a note", () => {
-    render(<ReviewPanel initialStatus="pending" />);
+  test("sending back requires a note, which goes with the decision", async () => {
+    render(<ReviewPanel articleId={21} initialStatus="pending" />);
     fireEvent.click(screen.getByRole("button", { name: "Send back" }));
     const note = screen.getByLabelText("Note for the author");
     fireEvent.click(screen.getAllByRole("button", { name: "Send back" }).at(-1)!);
     expect(note.getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByText(/Tell the author what to change/)).toBeDefined();
+    expect(rejectArticle).not.toHaveBeenCalled();
 
     fireEvent.change(note, { target: { value: "Please add a source for the figures." } });
     fireEvent.click(screen.getAllByRole("button", { name: "Send back" }).at(-1)!);
+    expect(await screen.findByText("Sent back to the author with your note.")).toBeDefined();
+    expect(rejectArticle).toHaveBeenCalledWith(21, "Please add a source for the figures.");
     expect(screen.getByText("Needs changes")).toBeDefined();
   });
 
+  test("the server's refusal is shown and the article stays pending", async () => {
+    vi.mocked(approveArticle).mockResolvedValueOnce({
+      ok: false,
+      error: "gone",
+      message: "This article is no longer waiting for review. Reload the page to see where it is.",
+    });
+    render(<ReviewPanel articleId={20} initialStatus="pending" />);
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, publish" }));
+    expect(await screen.findByText(/no longer waiting for review/)).toBeDefined();
+    expect(screen.getByText("Waiting for review")).toBeDefined();
+  });
+
   test("articles that are not pending cannot be decided again", () => {
-    render(<ReviewPanel initialStatus="published" />);
+    render(<ReviewPanel articleId={1} initialStatus="published" />);
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Send back" })).toBeNull();
   });
@@ -50,6 +74,7 @@ describe("ReviewPanel", () => {
   test("note rule", () => {
     expect(validateReviewNote("  fix  ")).not.toBeNull();
     expect(validateReviewNote("Add the vote counts.")).toBeNull();
+    expect(validateReviewNote("a".repeat(2001))).toMatch(/under 2000/);
   });
 });
 

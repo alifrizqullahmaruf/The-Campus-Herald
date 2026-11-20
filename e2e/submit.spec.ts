@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN_STATE, AUTHOR_STATE } from "./auth";
-import { deleteTestArticles, insertPublishedArticle, statusOf, uniqueTitle } from "./db";
+import { deleteTestArticles, insertArticle, statusOf, uniqueTitle } from "./db";
 
 // Sending an article to the editor (Phase 4, day 3, docs/plans/2026-11-17-fase-4-alur-kerja.md).
 // These tests write to the database: desktop project only, and each deletes its own rows
@@ -70,7 +70,7 @@ test("a draft is submitted from its own page", async ({ page }) => {
 });
 
 test("a changed published article leaves the site until it is approved again", async ({ page }) => {
-  const { id, slug } = await insertPublishedArticle(title);
+  const { id, slug } = await insertArticle(title);
   await page.goto(`/articles/${slug}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
 

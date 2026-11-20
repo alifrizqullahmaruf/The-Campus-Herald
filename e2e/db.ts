@@ -31,20 +31,37 @@ export async function deleteTestArticles(prefix: string): Promise<void> {
 }
 
 /**
- * A published Opinion article by Rafi (id 2), dated in 2000 so it sorts after every sample
- * article and does not move the front page. Returns its id and slug.
+ * An Opinion article by Rafi (id 2) that has been public before, dated in 2000 so it sorts
+ * after every sample article and does not move the front page, even once approved.
+ * `pending` makes it a changed published article waiting for review. Returns its id and slug.
  */
-export async function insertPublishedArticle(title: string): Promise<{ id: number; slug: string }> {
+export async function insertArticle(
+  title: string,
+  status: "published" | "pending" = "published",
+): Promise<{ id: number; slug: string }> {
   if (!title.startsWith(`${E2E_TITLE} `)) throw new Error("E2E rows need an E2E title.");
   const slug = slugify(title);
   return withSql(async (sql) => {
     const [row] = await sql<{ id: number }[]>`
       insert into articles (title, slug, body, excerpt, status, author_id, category_id, created_at, submitted_at, published_at)
-      values (${title}, ${slug}, '<p>Written by the end-to-end test.</p>', 'An article the end-to-end test published.',
-              'published', 2, 4, '2000-01-01', '2000-01-01', '2000-01-01')
+      values (${title}, ${slug}, '<p>Written by the end-to-end test.</p>', 'An article the end-to-end test wrote.',
+              ${status}, 2, 4, '2000-06-01T00:00:00Z', '2000-06-01T00:00:00Z', '2000-06-01T00:00:00Z')
       returning id`;
     return { id: row.id, slug };
   });
+}
+
+/** The fields a review sets, read straight from the database. */
+export async function reviewOf(
+  id: number,
+): Promise<{ status: string; review_note: string | null; reviewer_id: number | null; published_at: Date | null } | undefined> {
+  return withSql(
+    async (sql) =>
+      (
+        await sql<{ status: string; review_note: string | null; reviewer_id: number | null; published_at: Date | null }[]>`
+          select status, review_note, reviewer_id, published_at from articles where id = ${id}`
+      )[0],
+  );
 }
 
 /** The status of one article, read straight from the database. */

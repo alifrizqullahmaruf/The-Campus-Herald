@@ -25,7 +25,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | 1 | Sel 17 Nov | Sanitasi HTML + test XSS | Claude | `lib/sanitize-html.ts` (baru), `components/article/article-body.tsx`, `__tests__/sanitize-html.test.ts` (baru), `package.json`, `package-lock.json`, `CLAUDE.md`, plan ini | ✅ |
 | 2 | Rab 18 Nov | Simpan draft (Server Action, `requireUser`, sanitasi, `updateTag`); kolom Summary; editor hanya-baca untuk selain penulis; logout memuat ulang halaman | Claude | `lib/articles/draft-rules.ts`, `lib/articles/actions.ts`, `lib/data/article-writes.ts` (baru), `components/editor/article-editor.tsx`, `components/dashboard/my-articles.tsx`, `components/dashboard/all-articles.tsx`, `components/dashboard/login-form.tsx`, `lib/auth/actions.ts`, `app/dashboard/articles/new/page.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/drafts.spec.ts`, `e2e/db.ts` (baru), `e2e/access.spec.ts`, `e2e/flows.spec.ts`, `e2e/responsive.spec.ts`, `CLAUDE.md` | ✅ |
 | 3 | Kam 19 Nov | Kirim ke editor (`draft`/`rejected` → `pending`; artikel terbit yang diubah → `pending`) | Claude | `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `components/editor/article-editor.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/submit.spec.ts` (baru), `e2e/db.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
-| 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `app/dashboard/review/**` | Belum |
+| 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `lib/articles/review-actions.ts`, `lib/articles/review-rules.ts` (baru), `lib/data/article-writes.ts`, `components/dashboard/review-panel.tsx`, `components/editor/article-editor.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/review.spec.ts` (baru), `e2e/db.ts`, `e2e/submit.spec.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
 | 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `app/dashboard/authors`, `db/migrations/003_*.sql` | Belum |
 | – | Min 22 Nov | Cadangan | – | – | – |
 | 6 | Sen 23 Nov | Unggah sampul ke folder lokal + teks alt (`cover_alt`) | Claude | modul penyimpanan, editor | Belum |
@@ -259,3 +259,55 @@ Setiap hari: verifikasi, `code-reviewer` sekali, update plan, lalu commit dan pu
 - Race render pembaca dan `updateTag` (lihat di atas).
 - Halaman yang disimpan Next (Activity) masih memegang status lama setelah admin memutuskan; cek saat review dibuat besok.
 - Belum ada cara bagi author untuk menarik kembali artikel yang sedang pending (di luar spesifikasi).
+
+## Hari 4 (Jum 20 Nov): review admin
+
+**Yang dibuat:**
+
+- **`lib/articles/review-rules.ts`:** catatan untuk author 10–2000 karakter. Aturan ini dipakai bersama oleh panel review dan server.
+- **`reviewArticle`** (`lib/data/article-writes.ts`):
+  - hanya untuk artikel `pending` (dicek dengan `for update`, jadi dua admin tidak bisa memutuskan artikel yang sama);
+  - **approve:** status `published`, `review_note` dikosongkan, `reviewer_id` diisi, dan `published_at = coalesce(published_at, now())`. Artikel terbit yang diubah tetap memakai tanggal terbit pertamanya, artikel baru mendapat tanggal hari ini;
+  - **send back:** status `rejected`, catatan disimpan, `reviewer_id` diisi.
+- **`approveArticle` / `rejectArticle`** (`lib/articles/review-actions.ts`):
+  - `requireAdmin()` dijalankan lebih dulu, baru id (`isValidId`) dan catatan yang di-trim;
+  - lalu `updateTag("articles")`, sehingga artikel yang disetujui langsung tampil di situs;
+  - artikel yang sudah tidak pending mendapat satu jawaban yang sama;
+  - kesalahan database tetap di server.
+- **Panel review:**
+  - approve tetap dua langkah, sekarang menyimpan;
+  - selama menyimpan, tombol menjadi "Publishing…" atau "Sending…";
+  - error catatan dan jawaban server ditampilkan.
+- **Halaman review** menampilkan "Your earlier note" pada artikel yang disubmit ulang.
+
+**Perubahan dari rencana:**
+
+- **`e2e/flows.spec.ts`:** test approve versi preview dihapus, karena kini benar-benar akan menerbitkan artikel sampel. Alurnya ada di `e2e/review.spec.ts` dan memakai baris buatan test sendiri.
+- **Baris E2E dimasukkan langsung ke database,** lewat `e2e/db.ts` `insertArticle` dengan tanggal pertengahan 2000 (UTC), supaya tidak bergeser oleh zona waktu. Baris itu tidak masuk antrean yang di-cache sampai app menyimpan sesuatu, jadi halaman review dibuka lewat id.
+
+**Hasil verifikasi:**
+
+| Cek | Hasil |
+|-----|-------|
+| `npm test -- --run` | ✅ 224/224 (8 test baru untuk action review, panel diperbarui) |
+| `npm run lint`, `npx tsc --noEmit` | ✅ |
+| `npm run build` | ✅ halaman publik dan `/login` tetap ○. Peringatan keamanan Next masih menghentikan run pertama; run ulang lolos |
+| `e2e/review.spec.ts` + `submit` + `drafts`, `--repeat-each 3` | ✅ 35/35 |
+| `npm run test:e2e` penuh (sebelum dan sesudah perbaikan review) | ✅ 543 lolos, 0 gagal |
+| Database setelah E2E | ✅ 23 artikel, tidak ada sisa `E2E draft`, 2 pending, 18 published (sama dengan data sampel) |
+
+**`code-reviewer`:** tidak ada temuan Kritis atau Tinggi. Otorisasi dan race antar-admin dinilai aman, dan admin yang memutuskan artikelnya sendiri sesuai spesifikasi.
+
+- **Sedang, diperbaiki:**
+  - Panel review menyimpan status lama di halaman yang disimpan Next (Activity). Artikel yang disubmit ulang lalu dibuka lagi bisa tampil "Published" tanpa tombol.
+  - Sekarang panel di-`key` dengan id, status dan `submitted_at`.
+- **Rendah, diperbaiki:**
+  - Saat sesi habis, action melakukan redirect dan tidak mengembalikan hasil. Panel dan editor sekilas menampilkan "Could not save…"; sekarang hasil kosong itu diabaikan.
+  - Komentar isolasi cache di `e2e/review.spec.ts`.
+- **Rendah, tindak lanjut:**
+  - Kebalikan race kemarin: render `/articles/[slug]` yang sudah menyimpan "tidak ditemukan" tepat saat approve. Artikel tetap tersembunyi sampai penyimpanan berikutnya. Arahnya aman (tidak ada yang bocor), dan peluangnya kecil.
+
+**Tindak lanjut:**
+
+- Race render dan `updateTag`, ke dua arah (hari 3 dan 4).
+- Halaman edit author yang disimpan Next masih memegang status lama setelah admin memutuskan, sampai halaman dimuat ulang. Status dan catatannya baru muncul setelah reload atau navigasi baru. Bisa diperbaiki dengan pola `key` yang sama di editor.

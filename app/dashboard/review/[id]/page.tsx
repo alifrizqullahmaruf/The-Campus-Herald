@@ -42,6 +42,14 @@ export default async function ReviewPage({ params }: PageProps<"/dashboard/revie
         {article.submittedAt && ` · ${formatDate(article.submittedAt)}`}
       </p>
 
+      {/* A resubmitted article keeps the last note until this review (Phase 4 day 3). */}
+      {article.status === "pending" && article.reviewNote && (
+        <div role="note" className="mt-6 rounded-card border-3 border-ink bg-surface p-4">
+          <p className="font-display font-extrabold">Your earlier note</p>
+          <p className="mt-1">{article.reviewNote}</p>
+        </div>
+      )}
+
       <article className="mt-6 rounded-card border-3 border-ink bg-paper p-5 md:p-8">
         <CategoryBadge name={article.category.name} />
         <h1 className="mt-4 max-w-3xl font-display text-[clamp(32px,5vw,56px)] font-black leading-[0.95]">
@@ -54,7 +62,13 @@ export default async function ReviewPage({ params }: PageProps<"/dashboard/revie
         </div>
       </article>
 
-      <ReviewPanel initialStatus={article.status} />
+      {/* Keyed by what was decided on: Next keeps this page (hidden, with its state) when the
+          admin moves on, and a resubmitted article must not show the old decision. */}
+      <ReviewPanel
+        key={`${article.id}:${article.status}:${article.submittedAt}`}
+        articleId={article.id}
+        initialStatus={article.status}
+      />
     </div>
   );
 }

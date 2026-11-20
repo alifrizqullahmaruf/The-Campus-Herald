@@ -1,23 +1,23 @@
 "use client";
 
 import { AlertTriangle, Check, Undo2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { approveArticle, rejectArticle } from "@/lib/articles/review-actions";
+import { MAX_REVIEW_NOTE_LENGTH, validateReviewNote } from "@/lib/articles/review-rules";
 import type { ArticleStatus } from "@/lib/types";
 
-/** A rejection must explain what to change (spec: "send it back with notes"). */
-export function validateReviewNote(note: string): string | null {
-  return note.trim().length < 10 ? "Tell the author what to change (at least 10 characters)." : null;
-}
+export { validateReviewNote };
 
 type Step = "idle" | "confirm-approve" | "rejecting";
 
 /**
- * Approve or send back an article. Approving takes two clicks instead of a
- * browser confirm dialog. Preview only: the decision is shown, not stored.
+ * Approve or send back an article (Phase 4 day 4). Approving takes two clicks instead of a
+ * browser confirm dialog; sending back needs a note for the author. The decision is
+ * stored by a Server Action, which checks the role and the status again.
  */
-export function ReviewPanel({ initialStatus }: { initialStatus: ArticleStatus }) {
+export function ReviewPanel({ articleId, initialStatus }: { articleId: number; initialStatus: ArticleStatus }) {
   const noteId = useId();
   const errorId = useId();
   const [status, setStatus] = useState(initialStatus);
@@ -25,20 +25,39 @@ export function ReviewPanel({ initialStatus }: { initialStatus: ArticleStatus })
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [busy, startBusy] = useTransition();
+
+  function run(action: () => Promise<Awaited<ReturnType<typeof approveArticle>>>, done: string) {
+    setMessage("");
+    startBusy(async () => {
+      const result = await action().catch(() => null);
+      // Nothing at all: the session ended and the action redirected to the login page.
+      if (result === undefined) return;
+      if (result === null) {
+        setMessage("Could not save the decision. Check your connection and try again.");
+        return;
+      }
+      if (!result.ok) {
+        if (result.error === "note") setError(result.message);
+        else setMessage(result.message);
+        return;
+      }
+      setStatus(result.status);
+      setStep("idle");
+      setNote("");
+      setMessage(done);
+    });
+  }
 
   function approve() {
-    setStatus("published");
-    setStep("idle");
-    setMessage("Approved and published (preview only: nothing is stored yet).");
+    run(() => approveArticle(articleId), "Approved and published.");
   }
 
   function reject() {
     const problem = validateReviewNote(note);
     setError(problem);
     if (problem) return;
-    setStatus("rejected");
-    setStep("idle");
-    setMessage("Sent back to the author with your note (preview only: nothing is stored yet).");
+    run(() => rejectArticle(articleId, note), "Sent back to the author with your note.");
   }
 
   return (
@@ -68,11 +87,11 @@ export function ReviewPanel({ initialStatus }: { initialStatus: ArticleStatus })
           {status === "pending" && step === "confirm-approve" && (
             <div className="flex flex-wrap items-center gap-3">
               <span className="font-semibold">Publish this article now?</span>
-              <Button variant="secondary" onClick={() => setStep("idle")}>
+              <Button variant="secondary" onClick={() => setStep("idle")} disabled={busy}>
                 Cancel
               </Button>
-              <Button className="bg-cat-organisations" onClick={approve}>
-                Yes, publish
+              <Button className="bg-cat-organisations" onClick={approve} disabled={busy}>
+                {busy ? "Publishing…" : "Yes, publish"}
               </Button>
             </div>
           )}
@@ -89,6 +108,8 @@ export function ReviewPanel({ initialStatus }: { initialStatus: ArticleStatus })
                 rows={2}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
+                disabled={busy}
+                maxLength={MAX_REVIEW_NOTE_LENGTH}
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? errorId : undefined}
                 placeholder="What should they change before resubmitting?"
@@ -102,11 +123,18 @@ export function ReviewPanel({ initialStatus }: { initialStatus: ArticleStatus })
               )}
             </div>
             <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => { setStep("idle"); setError(null); }}>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  setStep("idle");
+                  setError(null);
+                }}
+              >
                 Cancel
               </Button>
-              <Button variant="danger" onClick={reject}>
-                Send back
+              <Button variant="danger" onClick={reject} disabled={busy}>
+                {busy ? "Sending…" : "Send back"}
               </Button>
             </div>
           </div>

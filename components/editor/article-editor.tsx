@@ -108,6 +108,8 @@ export function ArticleEditor({
     startBusy(async () => {
       const action = kind === "save" ? saveDraft : submitForReview;
       const result = await action({ id: article?.id ?? null, ...fields }).catch(() => null);
+      // Nothing at all: the session ended and the action redirected to the login page.
+      if (result === undefined) return;
       if (!result || !result.ok) {
         setSending(null);
         if (result) setErrors(result.errors);

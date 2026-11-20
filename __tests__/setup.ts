@@ -23,6 +23,12 @@ vi.mock("@/lib/articles/actions", () => ({
   submitForReview: vi.fn(async (input: { id: number | null }) => ({ ok: true, id: input.id ?? 101, status: "pending" })),
 }));
 
+// The review decisions need the database and the administrator's session.
+vi.mock("@/lib/articles/review-actions", () => ({
+  approveArticle: vi.fn(async () => ({ ok: true, status: "published" })),
+  rejectArticle: vi.fn(async () => ({ ok: true, status: "rejected" })),
+}));
+
 // Throws outside a React Server Components bundle; tests import server modules directly.
 vi.mock("server-only", () => ({}));
 
