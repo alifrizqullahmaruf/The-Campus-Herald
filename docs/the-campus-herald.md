@@ -658,6 +658,9 @@ CREATE TABLE article_tags (
 
 CREATE INDEX idx_articles_list ON articles (status, category_id, published_at DESC);
 CREATE INDEX idx_articles_most_read ON articles (status, view_count DESC);
+
+-- Migration 003: satu akun per email, tanpa membedakan huruf besar/kecil.
+CREATE UNIQUE INDEX users_email_lower_key ON users (lower(email));
 ```
 
 ### Data awal: lima kategori tetap

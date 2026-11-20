@@ -29,6 +29,18 @@ vi.mock("@/lib/articles/review-actions", () => ({
   rejectArticle: vi.fn(async () => ({ ok: true, status: "rejected" })),
 }));
 
+// Managing authors needs the database and the administrator's session.
+vi.mock("@/lib/auth/author-actions", () => ({
+  createAuthor: vi.fn(async (input: { email: string }) => ({
+    ok: true,
+    id: 101,
+    email: input.email.trim().toLowerCase(),
+    temporaryPassword: "abcd-efgh-jkmn-pqrs",
+  })),
+  setAuthorActive: vi.fn(async (_id: number, active: boolean) => ({ ok: true, isActive: active })),
+  resetAuthorPassword: vi.fn(async () => ({ ok: true, temporaryPassword: "wxyz-2345-6789-abcd" })),
+}));
+
 // Throws outside a React Server Components bundle; tests import server modules directly.
 vi.mock("server-only", () => ({}));
 

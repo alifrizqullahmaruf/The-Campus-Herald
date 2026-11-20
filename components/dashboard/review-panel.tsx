@@ -27,6 +27,21 @@ export function ReviewPanel({ articleId, initialStatus }: { articleId: number; i
   const [message, setMessage] = useState("");
   const [busy, startBusy] = useTransition();
 
+  // Next keeps this page (hidden, with its state) when the admin moves on, and renders it
+  // again with the stored status: after this panel's own decision (same status, so the
+  // message stays) and on a later visit, when the article may have been resubmitted.
+  const [stored, setStored] = useState(initialStatus);
+  if (stored !== initialStatus) {
+    setStored(initialStatus);
+    if (initialStatus !== status) {
+      setStatus(initialStatus);
+      setStep("idle");
+      setNote("");
+      setError(null);
+      setMessage("");
+    }
+  }
+
   function run(action: () => Promise<Awaited<ReturnType<typeof approveArticle>>>, done: string) {
     setMessage("");
     startBusy(async () => {

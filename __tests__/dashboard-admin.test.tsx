@@ -5,6 +5,7 @@ import { AuthorManager, validateNewAuthor, type ManagedAuthor } from "../compone
 import { ReviewPanel, validateReviewNote } from "../components/dashboard/review-panel";
 import { getAllArticles } from "../lib/data/articles";
 import { approveArticle, rejectArticle } from "@/lib/articles/review-actions";
+import { createAuthor, resetAuthorPassword, setAuthorActive } from "@/lib/auth/author-actions";
 
 beforeAll(() => {
   // jsdom has no <dialog> modal support.
@@ -21,6 +22,9 @@ afterEach(() => {
   cleanup();
   vi.mocked(approveArticle).mockClear();
   vi.mocked(rejectArticle).mockClear();
+  vi.mocked(createAuthor).mockClear();
+  vi.mocked(setAuthorActive).mockClear();
+  vi.mocked(resetAuthorPassword).mockClear();
 });
 
 describe("ReviewPanel", () => {
@@ -96,42 +100,74 @@ describe("AllArticles", () => {
 
 describe("AuthorManager", () => {
   const authors: ManagedAuthor[] = [
-    { id: 2, name: "Rafi Pratama", email: "rafi@herald.test", isActive: true, articleCount: 4, hasAvatar: true },
-    { id: 7, name: "Laras Wibowo", email: "laras@herald.test", isActive: false, articleCount: 1, hasAvatar: true },
+    { id: 2, name: "Rafi Pratama", email: "rafi@herald.test", isActive: true, articleCount: 4 },
+    { id: 7, name: "Laras Wibowo", email: "laras@herald.test", isActive: false, articleCount: 1 },
   ];
 
   test("new author rules, including unique email", () => {
-    expect(validateNewAuthor({ name: "", email: "x", password: "short" }, [])).toEqual({
+    expect(validateNewAuthor({ name: "", email: "x" }, [])).toEqual({
       name: "Enter the author's name.",
       email: "Enter a valid email address.",
-      password: "Use at least 8 characters.",
     });
-    expect(validateNewAuthor({ name: "A", email: "RAFI@herald.test", password: "longenough" }, ["rafi@herald.test"]).email).toMatch(
-      /already exists/,
-    );
-    expect(validateNewAuthor({ name: "A", email: "new@herald.test", password: "longenough" }, [])).toEqual({});
+    expect(validateNewAuthor({ name: "A", email: " RAFI@herald.test " }, ["rafi@herald.test"]).email).toMatch(/already exists/);
+    expect(validateNewAuthor({ name: "a".repeat(101), email: "new@herald.test" }, []).name).toMatch(/under 100/);
+    expect(validateNewAuthor({ name: "A", email: `${"a".repeat(140)}@herald.test` }, []).email).toMatch(/valid email/);
+    expect(validateNewAuthor({ name: "A", email: "new@herald.test" }, [])).toEqual({});
   });
 
-  test("deactivates and reactivates; there is no delete", () => {
+  test("deactivates and reactivates through the server; there is no delete", async () => {
     render(<AuthorManager initialAuthors={authors} />);
     expect(screen.queryByRole("button", { name: /delete/i })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Deactivate Rafi Pratama" }));
-    expect(screen.getByRole("status").textContent).toMatch(/Rafi Pratama is now deactivated/);
-    expect(screen.getByRole("button", { name: "Reactivate Rafi Pratama" })).toBeDefined();
+    expect(await screen.findByText("Rafi Pratama can no longer log in.")).toBeDefined();
+    expect(setAuthorActive).toHaveBeenCalledWith(2, false);
+    fireEvent.click(screen.getByRole("button", { name: "Reactivate Rafi Pratama" }));
+    expect(await screen.findByText("Rafi Pratama can log in again.")).toBeDefined();
+    expect(setAuthorActive).toHaveBeenLastCalledWith(2, true);
   });
 
-  test("adds an author through the dialog", () => {
+  test("adds an author and shows the temporary password once", async () => {
     render(<AuthorManager initialAuthors={authors} />);
     fireEvent.click(screen.getByRole("button", { name: "Add author" }));
     const dialog = screen.getByRole("dialog", { name: "Add an author." });
+    expect(within(dialog).queryByLabelText(/password/i)).toBeNull();
     fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Dina Kusuma" } });
-    fireEvent.change(within(dialog).getByLabelText("Email"), { target: { value: "dina@herald.test" } });
-    fireEvent.change(within(dialog).getByLabelText("Temporary password"), { target: { value: "campus-2026" } });
+    fireEvent.change(within(dialog).getByLabelText("Email"), { target: { value: "Dina@herald.test" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Add author" }));
+    const handover = await screen.findByRole("region", { name: "Temporary password" });
+    expect(within(handover).getByText("abcd-efgh-jkmn-pqrs")).toBeDefined();
+    expect(createAuthor).toHaveBeenCalledWith({ name: "Dina Kusuma", email: "Dina@herald.test" });
     const list = screen.getByRole("list");
     expect(within(list).getAllByRole("listitem")).toHaveLength(3);
-    expect(within(list).getByText("Dina Kusuma")).toBeDefined();
     expect(within(list).getByText("dina@herald.test")).toBeDefined();
     expect((dialog as HTMLDialogElement).open).toBe(false);
+    fireEvent.click(within(handover).getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("region", { name: "Temporary password" })).toBeNull();
+  });
+
+  test("an email the server already has is shown in the form", async () => {
+    vi.mocked(createAuthor).mockResolvedValueOnce({
+      ok: false,
+      errors: { email: "An account with this email already exists." },
+      message: "Fix the highlighted fields.",
+    });
+    render(<AuthorManager initialAuthors={authors} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add author" }));
+    const dialog = screen.getByRole("dialog", { name: "Add an author." });
+    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Someone" } });
+    fireEvent.change(within(dialog).getByLabelText("Email"), { target: { value: "taken@herald.test" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add author" }));
+    expect(await within(dialog).findByText("An account with this email already exists.")).toBeDefined();
+    expect((dialog as HTMLDialogElement).open).toBe(true);
+  });
+
+  test("resetting a password takes a confirmation, then shows the new one", async () => {
+    render(<AuthorManager initialAuthors={authors} />);
+    fireEvent.click(screen.getByRole("button", { name: "Reset password for Rafi Pratama" }));
+    expect(resetAuthorPassword).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Yes, reset" }));
+    const handover = await screen.findByRole("region", { name: "Temporary password" });
+    expect(within(handover).getByText("wxyz-2345-6789-abcd")).toBeDefined();
+    expect(resetAuthorPassword).toHaveBeenCalledWith(2);
   });
 });

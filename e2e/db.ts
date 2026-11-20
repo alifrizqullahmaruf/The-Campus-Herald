@@ -24,6 +24,17 @@ async function withSql<T>(run: (sql: postgres.Sql) => Promise<T>): Promise<T> {
   }
 }
 
+/** An email for an account no other test uses: `e2e-…@herald.test`. */
+export function uniqueEmail(): string {
+  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@herald.test`;
+}
+
+/** Deletes one test's author account (it has no articles), by its e2e email. */
+export async function deleteTestUser(email: string): Promise<void> {
+  if (!/^e2e-[a-z0-9-]+@herald\.test$/.test(email)) throw new Error("Only E2E accounts may be deleted.");
+  await withSql((sql) => sql`delete from users where email = ${email} and role = 'author'`);
+}
+
 /** Deletes the articles whose title starts with `prefix` (one test's own rows). */
 export async function deleteTestArticles(prefix: string): Promise<void> {
   if (!prefix.startsWith(`${E2E_TITLE} `)) throw new Error("Only E2E rows may be deleted.");

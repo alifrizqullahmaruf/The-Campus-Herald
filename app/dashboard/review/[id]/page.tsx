@@ -62,13 +62,7 @@ export default async function ReviewPage({ params }: PageProps<"/dashboard/revie
         </div>
       </article>
 
-      {/* Keyed by what was decided on: Next keeps this page (hidden, with its state) when the
-          admin moves on, and a resubmitted article must not show the old decision. */}
-      <ReviewPanel
-        key={`${article.id}:${article.status}:${article.submittedAt}`}
-        articleId={article.id}
-        initialStatus={article.status}
-      />
+      <ReviewPanel articleId={article.id} initialStatus={article.status} />
     </div>
   );
 }

@@ -26,7 +26,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | 2 | Rab 18 Nov | Simpan draft (Server Action, `requireUser`, sanitasi, `updateTag`); kolom Summary; editor hanya-baca untuk selain penulis; logout memuat ulang halaman | Claude | `lib/articles/draft-rules.ts`, `lib/articles/actions.ts`, `lib/data/article-writes.ts` (baru), `components/editor/article-editor.tsx`, `components/dashboard/my-articles.tsx`, `components/dashboard/all-articles.tsx`, `components/dashboard/login-form.tsx`, `lib/auth/actions.ts`, `app/dashboard/articles/new/page.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/drafts.spec.ts`, `e2e/db.ts` (baru), `e2e/access.spec.ts`, `e2e/flows.spec.ts`, `e2e/responsive.spec.ts`, `CLAUDE.md` | ✅ |
 | 3 | Kam 19 Nov | Kirim ke editor (`draft`/`rejected` → `pending`; artikel terbit yang diubah → `pending`) | Claude | `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `components/editor/article-editor.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/submit.spec.ts` (baru), `e2e/db.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
 | 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `lib/articles/review-actions.ts`, `lib/articles/review-rules.ts` (baru), `lib/data/article-writes.ts`, `components/dashboard/review-panel.tsx`, `components/editor/article-editor.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/review.spec.ts` (baru), `e2e/db.ts`, `e2e/submit.spec.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
-| 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `app/dashboard/authors`, `db/migrations/003_*.sql` | Belum |
+| 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `db/migrations/003_users_email_lower.sql`, `docs/the-campus-herald.md`, `lib/auth/author-rules.ts`, `lib/auth/temporary-password.ts`, `lib/auth/author-actions.ts`, `lib/data/user-writes.ts` (baru), `lib/data/auth.ts`, `components/dashboard/author-manager.tsx`, `components/dashboard/review-panel.tsx`, `app/dashboard/authors/page.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/authors.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
 | – | Min 22 Nov | Cadangan | – | – | – |
 | 6 | Sen 23 Nov | Unggah sampul ke folder lokal + teks alt (`cover_alt`) | Claude | modul penyimpanan, editor | Belum |
 | 7 | Sel 24 Nov | `view_count` sekali per browser per hari | Claude | route handler, halaman artikel | Belum |
@@ -311,3 +311,64 @@ Setiap hari: verifikasi, `code-reviewer` sekali, update plan, lalu commit dan pu
 
 - Race render dan `updateTag`, ke dua arah (hari 3 dan 4).
 - Halaman edit author yang disimpan Next masih memegang status lama setelah admin memutuskan, sampai halaman dimuat ulang. Status dan catatannya baru muncul setelah reload atau navigasi baru. Bisa diperbaiki dengan pola `key` yang sama di editor.
+
+## Hari 5 (Sab 21 Nov): kelola penulis
+
+**Keputusan user:**
+
+- Password sementara dibuat server dan ditampilkan sekali kepada admin, yang lalu memberikannya langsung ke penulis. Form "Add author" tidak lagi punya kolom password.
+- Author belum bisa mengganti password sendiri; ini dicatat untuk Fase 5.
+
+**Yang dibuat:**
+
+- **Migration `003_users_email_lower.sql`:** unique index `lower(email)`, beserta SQL-nya di `docs/the-campus-herald.md`. `db:migrate` sudah dijalankan dua kali; run kedua: "No new migrations".
+- **`lib/auth/author-rules.ts`:** nama ≤ 100 karakter, email valid dan ≤ 150 karakter, `normalizeEmail` (huruf kecil).
+- **`lib/auth/temporary-password.ts`:** 16 karakter acak (`randomInt`) dari 31 huruf dan angka yang tidak mirip satu sama lain, dalam empat kelompok (sekitar 79 bit). Yang disimpan hanya hash scrypt-nya.
+- **`lib/data/user-writes.ts`:** `insertAuthor` (`23505` → "taken"), `setActive`, `setPasswordHash`. Semua hanya berlaku untuk `role = 'author'`, jadi akun admin tidak bisa dinonaktifkan atau direset lewat sini.
+- **`lib/auth/author-actions.ts`:** `requireAdmin()` lebih dulu, lalu cek tipe dan id. `updateTag("users")` dipanggil saat membuat dan saat mengaktifkan/menonaktifkan akun, tapi tidak saat reset, karena tidak ada data cache yang berubah. Kesalahan database tetap di server.
+- **Halaman Authors:**
+  - dialog hanya berisi nama dan email;
+  - panel "Temporary password" langsung mendapat fokus, dan disebut juga di pesan status;
+  - panel dikosongkan saat Next menyembunyikan halaman;
+  - reset dua langkah;
+  - status "busy" dicatat per akun;
+  - tombol tetap 44 px.
+
+**Perubahan dari rencana:**
+
+- **Tanpa `key` yang ikut berubah dengan data.**
+  - Rencananya daftar penulis diberi `key` yang berubah mengikuti data. Ternyata `key` itu membuat komponen di-mount ulang setelah action-nya sendiri, karena `updateTag` merender ulang halaman. Panel password pun hilang sebelum sempat dibaca.
+  - Masalah yang sama terjadi pada `key` panel review kemarin: pesan "Sent back…" hilang. Test review gagal setelah pemuatan ulang terjadi lebih cepat.
+  - Keduanya kini membandingkan props yang terakhir dilihat ("derive state from props"), tanpa remount. `AuthorManager` mengambil daftar dari server. `ReviewPanel` mengambil status dari server hanya kalau statusnya berbeda dari keputusannya sendiri.
+- **Bug tata letak yang ditemukan E2E:** email panjang tanpa spasi (akun test) melebarkan kolom kartu penulis sampai 453 px di layar 320 px. Perbaikannya `grid-cols-1` (`minmax(0, 1fr)`) dan `overflow-wrap:anywhere` pada nama dan panel password.
+
+**Hasil verifikasi:**
+
+| Cek | Hasil |
+|-----|-------|
+| `npm run db:migrate` (2×) | ✅ 003 dijalankan sekali; `users_email_lower_key` ada di `pg_indexes` |
+| `npm test -- --run` | ✅ 234/234 (aturan, password sementara, 7 test action, komponen) |
+| `npm run lint`, `npx tsc --noEmit` | ✅ |
+| `npm run build` | ✅ halaman publik dan `/login` tetap ○. Peringatan keamanan Next masih menghentikan run pertama; run ulang lolos |
+| `e2e/authors.spec.ts` + `review.spec.ts`, `--repeat-each 3` | ✅ 29/29 |
+| `npm run test:e2e` penuh (sebelum dan sesudah perbaikan review) | ✅ 548 lolos, 0 gagal |
+| Database setelah E2E | ✅ 7 user (1 nonaktif, seperti sampel), tidak ada sisa `e2e-…`; 23 artikel, 2 pending |
+
+**`code-reviewer`:** tidak ada temuan Kritis atau Tinggi. Otorisasi, penanganan password (tidak masuk cache, log, atau payload RSC) dan email ganda dinilai aman.
+
+- **Sedang, diperbaiki:**
+  - kartu penulis baru bisa muncul dua kali, kalau daftar dari server datang sebelum `onAdded`;
+  - akun E2E tampil di daftar penulis publik selama run dan tertinggal di cache setelah dihapus. Sekarang akun dinonaktifkan lewat app dulu, lalu dihapus;
+  - tombol baru setinggi 36 px; sekarang 44 px.
+- **Rendah, diperbaiki:**
+  - status "busy" kini per akun;
+  - panel password diumumkan dan mendapat fokus;
+  - test "password hilang" memakai `toHaveCount(0)`;
+  - komentar `getAccountByEmail` yang usang;
+  - `updateTag` yang tidak perlu saat reset.
+- **Rendah, tindak lanjut:**
+  - Artikel `pending` milik penulis yang dinonaktifkan tetap ada di antrean review. Admin masih bisa menyetujuinya, atau mengembalikannya ke orang yang tidak bisa login lagi. Perlu diputuskan, misalnya dengan tanda "akun nonaktif" di antrean.
+  - `ReviewPanel` tidak me-reset catatan yang sedang diketik, kalau artikel ditarik lalu dikirim ulang dengan status yang sama (`pending` → `pending`).
+  - Migration 003 akan gagal di database yang sudah berisi email yang hanya beda huruf besar/kecil. Data seed aman; database lain perlu dicek dulu.
+
+**Tindak lanjut (Fase 5):** author bisa mengganti password sendiri, termasuk setelah menerima password sementara.

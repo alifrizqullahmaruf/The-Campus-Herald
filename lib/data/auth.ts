@@ -27,9 +27,9 @@ export async function getAccountById(id: number): Promise<AccountRecord | null> 
 }
 
 /**
- * The account with this email, ignoring case, or null. Emails are unique only as typed
- * (db/migrations/001), so "Rafi@x" and "rafi@x" could both exist: then neither logs in,
- * the same rule as `npm run db:set-password`.
+ * The account with this email, ignoring case, or null. Since db/migrations/003 the
+ * database allows one account per email whatever the case; the `limit 2` check below
+ * still refuses an ambiguous match, the same rule as `npm run db:set-password`.
  */
 export async function getAccountByEmail(email: string): Promise<AccountRecord | null> {
   const rows = await sql<AccountRow[]>`
