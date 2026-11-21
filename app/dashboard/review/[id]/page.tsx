@@ -56,7 +56,7 @@ export default async function ReviewPage({ params }: PageProps<"/dashboard/revie
           {article.title}
         </h1>
         <p className="mt-4 max-w-3xl text-xl leading-relaxed text-ink-muted">{article.excerpt}</p>
-        <ArticleCover article={article} className="mt-6 aspect-16/9 max-w-3xl" sizes="(min-width: 1024px) 768px, 100vw" />
+        <ArticleCover article={article} describe className="mt-6 aspect-16/9 max-w-3xl" sizes="(min-width: 1024px) 768px, 100vw" />
         <div className="mt-8">
           <ArticleBody article={article} />
         </div>

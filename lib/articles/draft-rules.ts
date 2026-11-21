@@ -10,6 +10,12 @@ export const MAX_TITLE_LENGTH = 200;
 export const MAX_SUMMARY_LENGTH = 300;
 /** Measured before sanitising: far above any article (the longest sample is ~4,000). */
 export const MAX_BODY_LENGTH = 100_000;
+/** cover_alt is VARCHAR(255). */
+export const MAX_COVER_ALT_LENGTH = 255;
+/** An uploaded cover, after the editor made it smaller; under the 1 MB Server Action limit. */
+export const MAX_COVER_BYTES = 950_000;
+/** A cover address is a short path or URL; anything longer is not one of ours. */
+const MAX_COVER_SRC_LENGTH = 500;
 /** Slugs are VARCHAR(220); a number suffix ("-12") needs the rest. */
 const MAX_SLUG_LENGTH = 200;
 
@@ -18,6 +24,8 @@ export interface EditorErrors {
   summary?: string;
   category?: string;
   body?: string;
+  cover?: string;
+  coverAlt?: string;
 }
 
 export interface DraftFields {
@@ -25,6 +33,8 @@ export interface DraftFields {
   summary: string;
   categorySlug: string;
   body: string;
+  coverImage?: string | null;
+  coverAlt?: string;
 }
 
 /** What a draft needs before it can be saved: a topic, and nothing too long. */
@@ -36,6 +46,10 @@ export function validateDraft(fields: DraftFields): EditorErrors {
   }
   if (!isCategorySlug(fields.categorySlug)) errors.category = "Choose a category.";
   if (fields.body.length > MAX_BODY_LENGTH) errors.body = "The article is too long to save.";
+  if ((fields.coverImage ?? "").length > MAX_COVER_SRC_LENGTH) errors.cover = "That cover cannot be used.";
+  if ((fields.coverAlt ?? "").trim().length > MAX_COVER_ALT_LENGTH) {
+    errors.coverAlt = `Keep the description under ${MAX_COVER_ALT_LENGTH} characters.`;
+  }
   return errors;
 }
 
@@ -45,12 +59,16 @@ export function validateForSubmit(fields: {
   summary: string;
   categorySlug: string;
   bodyEmpty: boolean;
+  coverImage?: string | null;
+  coverAlt?: string;
 }): EditorErrors {
   const errors: EditorErrors = {};
   if (!fields.title.trim()) errors.title = "Give the article a title.";
   if (!fields.summary.trim()) errors.summary = "Write a short summary.";
   if (!fields.categorySlug) errors.category = "Choose a category.";
   if (fields.bodyEmpty) errors.body = "Write the article before submitting it.";
+  // Read aloud on the article page to people who cannot see the photo.
+  if (fields.coverImage && !(fields.coverAlt ?? "").trim()) errors.coverAlt = "Describe the cover image.";
   return errors;
 }
 

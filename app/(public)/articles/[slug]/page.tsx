@@ -70,6 +70,7 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
         </header>
 
         <ArticleCover
+          describe
           article={article}
           priority
           sizes="(min-width: 1120px) 1056px, 100vw"

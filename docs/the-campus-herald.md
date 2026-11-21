@@ -661,6 +661,14 @@ CREATE INDEX idx_articles_most_read ON articles (status, view_count DESC);
 
 -- Migration 003: satu akun per email, tanpa membedakan huruf besar/kecil.
 CREATE UNIQUE INDEX users_email_lower_key ON users (lower(email));
+
+-- Migration 004: file sampul yang diunggah dan pemiliknya.
+CREATE TABLE uploads (
+    path       VARCHAR(80) PRIMARY KEY,
+    owner_id   INTEGER     NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_uploads_owner ON uploads (owner_id, created_at);
 ```
 
 ### Data awal: lima kategori tetap

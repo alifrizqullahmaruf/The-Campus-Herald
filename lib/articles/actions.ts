@@ -17,6 +17,9 @@ export interface ArticleInput {
   summary: string;
   categorySlug: string;
   body: string;
+  /** An uploaded cover ("/uploads/…"), the cover the article already has, or null for none. */
+  coverImage: string | null;
+  coverAlt: string;
 }
 
 type Failure = { ok: false; errors: EditorErrors; message: string };
@@ -40,16 +43,31 @@ function readArticleInput(input: unknown): { id: number | null; fields: DraftWri
   const summary = asString(raw?.summary);
   const categorySlug = asString(raw?.categorySlug);
   const body = asString(raw?.body);
+  const coverAlt = asString(raw?.coverAlt);
+  const coverImage = raw?.coverImage ?? null;
   const id = raw?.id ?? null;
-  if (title === null || summary === null || categorySlug === null || body === null) {
+  if (title === null || summary === null || categorySlug === null || body === null || coverAlt === null) {
     return { ok: false, errors: {}, message: NOT_SAVED };
   }
+  if (coverImage !== null && typeof coverImage !== "string") return { ok: false, errors: {}, message: NOT_SAVED };
   if (id !== null && !(typeof id === "number" && isValidId(id))) return { ok: false, errors: {}, message: GONE };
-  const errors = validateDraft({ title, summary, categorySlug, body });
+  const errors = validateDraft({ title, summary, categorySlug, body, coverImage, coverAlt });
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors, message: "Fix the highlighted fields, then try again." };
   }
-  return { id, fields: { title: title.trim(), summary: summary.trim(), categorySlug, body: sanitizeArticleHtml(body) } };
+  // A cover that is neither an upload nor the article's own stored one is dropped by the
+  // write (lib/data/article-writes.ts), which can see what is stored.
+  return {
+    id,
+    fields: {
+      title: title.trim(),
+      summary: summary.trim(),
+      categorySlug,
+      body: sanitizeArticleHtml(body),
+      coverImage: coverImage || null,
+      coverAlt: coverAlt.trim(),
+    },
+  };
 }
 
 /** Runs a write, keeping database errors on the server. */

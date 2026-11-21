@@ -7,9 +7,12 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, useTransition, typ
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { saveDraft, submitForReview } from "@/lib/articles/actions";
+import { uploadCover } from "@/lib/articles/cover-actions";
+import { shrinkImage } from "@/lib/images-client";
 import {
   canSaveDraft,
   isEditable,
+  MAX_COVER_ALT_LENGTH,
   MAX_SUMMARY_LENGTH,
   MAX_TITLE_LENGTH,
   validateDraft,
@@ -81,8 +84,9 @@ export function ArticleEditor({
   const bodyHtml = useRef(article?.body ?? "");
   const [categorySlug, setCategorySlug] = useState<string>(article?.category.slug ?? "");
   const [bodyEmpty, setBodyEmpty] = useState(!article?.body);
-  const [cover, setCover] = useState<string | null>(null);
-  const [alt, setAlt] = useState("");
+  const [cover, setCover] = useState<string | null>(article?.coverImage ?? null);
+  const [alt, setAlt] = useState(article?.coverAlt ?? "");
+  const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<EditorErrors>({});
   const [message, setMessage] = useState<string>(notice ? NOTICES[notice] : "");
   const [busy, startBusy] = useTransition();
@@ -102,7 +106,7 @@ export function ArticleEditor({
 
   /** Sends the fields to `action`; on success a new article moves to its own page. */
   function send(kind: "save" | "submit", onDone: (id: number) => void) {
-    const fields = { title, summary, categorySlug, body: bodyHtml.current };
+    const fields = { title, summary, categorySlug, body: bodyHtml.current, coverImage: cover, coverAlt: alt };
     setMessage("");
     setSending(kind);
     startBusy(async () => {
@@ -137,8 +141,34 @@ export function ArticleEditor({
     });
   }
 
+  /** Makes the chosen photo smaller, uploads it, and shows it once the server has it. */
+  async function chooseCover(file: File | undefined) {
+    if (!file) return;
+    setErrors((e) => ({ ...e, cover: undefined }));
+    setUploading(true);
+    try {
+      const small = await shrinkImage(file);
+      if (!small) {
+        setErrors((e) => ({ ...e, cover: "Choose a JPEG, PNG or WebP photo." }));
+        return;
+      }
+      const form = new FormData();
+      form.set("cover", small);
+      const result = await uploadCover(form).catch(() => null);
+      if (result === undefined) return; // The session ended: the action went to the login page.
+      if (!result?.ok) {
+        setErrors((e) => ({ ...e, cover: result?.message ?? "Could not upload the photo. Check your connection and try again." }));
+        return;
+      }
+      setCover(result.src);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function save() {
-    const found = validateDraft({ title, summary, categorySlug, body: bodyHtml.current });
+    if (uploading) return;
+    const found = validateDraft({ title, summary, categorySlug, body: bodyHtml.current, coverImage: cover, coverAlt: alt });
     setErrors(found);
     if (Object.keys(found).length > 0) {
       setMessage("Fix the highlighted fields, then save again.");
@@ -149,10 +179,10 @@ export function ArticleEditor({
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || uploading) return;
     const found = {
-      ...validateDraft({ title, summary, categorySlug, body: bodyHtml.current }),
-      ...validateForSubmit({ title, summary, categorySlug, bodyEmpty }),
+      ...validateDraft({ title, summary, categorySlug, body: bodyHtml.current, coverImage: cover, coverAlt: alt }),
+      ...validateForSubmit({ title, summary, categorySlug, bodyEmpty, coverImage: cover, coverAlt: alt }),
     };
     setErrors(found);
     if (Object.keys(found).length > 0) {
@@ -252,20 +282,45 @@ export function ArticleEditor({
               Cover image
             </label>
             {cover && (
-              // eslint-disable-next-line @next/next/no-img-element -- local object URL preview, not an optimisable asset
-              <img src={cover} alt={alt} className="mt-3 aspect-4/3 w-full rounded-inner border-2 border-ink object-cover" />
+              // eslint-disable-next-line @next/next/no-img-element -- a preview at one size; the site shows it through the optimiser
+              <img
+                src={cover}
+                alt={alt ? `Cover: ${alt}` : "Cover preview"}
+                className="mt-3 aspect-4/3 w-full rounded-inner border-2 border-ink object-cover"
+              />
             )}
             <input
               id={ids.cover}
               type="file"
-              accept="image/*"
-              disabled={!editable}
+              accept="image/jpeg,image/png,image/webp"
+              disabled={!editable || uploading}
+              aria-invalid={Boolean(errors.cover)}
+              aria-describedby={errors.cover ? `${ids.cover}-error` : undefined}
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                setCover(file ? URL.createObjectURL(file) : null);
+                const input = e.currentTarget;
+                void chooseCover(input.files?.[0]).finally(() => {
+                  // The same photo can be chosen again after an error.
+                  input.value = "";
+                });
               }}
               className="mt-3 block w-full text-sm file:mr-3 file:rounded-full file:border-2 file:border-ink file:bg-cat-events file:px-3 file:py-2.5 file:font-semibold"
             />
+            {/* aria-live, not role="status": the page has one status line, the editor's message. */}
+            <p aria-live="polite" className="mt-1 min-h-4 text-xs text-ink-muted">
+              {uploading ? "Uploading…" : ""}
+            </p>
+            {errors.cover && <FieldError id={`${ids.cover}-error`}>{errors.cover}</FieldError>}
+            {cover && editable && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="mt-2 px-3 text-sm"
+                disabled={uploading}
+                onClick={() => setCover(null)}
+              >
+                Remove cover
+              </Button>
+            )}
             <label htmlFor={ids.alt} className="mt-4 block text-sm font-semibold">
               Describe the image
             </label>
@@ -274,10 +329,16 @@ export function ArticleEditor({
               value={alt}
               onChange={(e) => setAlt(e.target.value)}
               disabled={!editable}
+              maxLength={MAX_COVER_ALT_LENGTH}
+              aria-invalid={Boolean(errors.coverAlt)}
+              aria-describedby={`${ids.alt}-hint${errors.coverAlt ? ` ${ids.alt}-error` : ""}`}
               placeholder="e.g. Students queueing at the canteen"
-              className={inputClass(false, "mt-1 h-12 text-sm")}
+              className={inputClass(Boolean(errors.coverAlt), "mt-1 h-12 text-sm")}
             />
-            <p className="mt-1 text-xs text-ink-muted">Read aloud to people who cannot see the image.</p>
+            {errors.coverAlt && <FieldError id={`${ids.alt}-error`}>{errors.coverAlt}</FieldError>}
+            <p id={`${ids.alt}-hint`} className="mt-1 text-xs text-ink-muted">
+              Read aloud to people who cannot see the image.
+            </p>
           </div>
         </div>
 
@@ -312,14 +373,14 @@ export function ArticleEditor({
               </p>
             )}
             {canSaveDraft(status) && (
-              <Button type="button" variant="secondary" onClick={save} disabled={busy}>
+              <Button type="button" variant="secondary" onClick={save} disabled={busy || uploading}>
                 {sending === "save" ? "Saving…" : "Save draft"}
               </Button>
             )}
             {/* "Submit" on phones keeps both buttons on one row; the name stays complete. */}
             <Button
               type="submit"
-              disabled={busy}
+              disabled={busy || uploading}
               aria-label={wasPublished ? "Submit changes for review" : "Submit for review"}
             >
               {sending === "submit" ? (

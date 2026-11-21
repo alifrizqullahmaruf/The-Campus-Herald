@@ -28,7 +28,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `lib/articles/review-actions.ts`, `lib/articles/review-rules.ts` (baru), `lib/data/article-writes.ts`, `components/dashboard/review-panel.tsx`, `components/editor/article-editor.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/review.spec.ts` (baru), `e2e/db.ts`, `e2e/submit.spec.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
 | 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `db/migrations/003_users_email_lower.sql`, `docs/the-campus-herald.md`, `lib/auth/author-rules.ts`, `lib/auth/temporary-password.ts`, `lib/auth/author-actions.ts`, `lib/data/user-writes.ts` (baru), `lib/data/auth.ts`, `components/dashboard/author-manager.tsx`, `components/dashboard/review-panel.tsx`, `app/dashboard/authors/page.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/authors.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
 | – | Min 22 Nov | Cadangan | – | – | – |
-| 6 | Sen 23 Nov | Unggah sampul ke folder lokal + teks alt (`cover_alt`) | Claude | modul penyimpanan, editor | Belum |
+| 6 | Sen 23 Nov (dikerjakan 21–22 Nov) | Unggah sampul ke folder lokal + teks alt (`cover_alt`) | Claude | `lib/uploads/paths.ts`, `lib/uploads/storage.ts`, `app/uploads/[file]/route.ts`, `lib/articles/cover-actions.ts`, `lib/data/upload-writes.ts`, `lib/images-client.ts` (baru), `db/migrations/004_uploads.sql` (baru), `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `lib/data/articles.ts`, `lib/types.ts`, `lib/mock/articles.ts`, `components/editor/article-editor.tsx`, `components/article/article-cover.tsx`, halaman artikel dan review, `next.config.ts`, `.gitignore`, `.env.example`, `docs/the-campus-herald.md`, `__tests__/`, `e2e/covers.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
 | 7 | Sel 24 Nov | `view_count` sekali per browser per hari | Claude | route handler, halaman artikel | Belum |
 | – | Rab 25 Nov | Cadangan (full-text dilewati) | – | – | – |
 | 8 | Kam 26 Nov | Fase 4 selesai (`qa-tester`) + brainstorm Fase 5 | User / Claude | – | Belum |
@@ -372,3 +372,78 @@ Setiap hari: verifikasi, `code-reviewer` sekali, update plan, lalu commit dan pu
   - Migration 003 akan gagal di database yang sudah berisi email yang hanya beda huruf besar/kecil. Data seed aman; database lain perlu dicek dulu.
 
 **Tindak lanjut (Fase 5):** author bisa mengganti password sendiri, termasuk setelah menerima password sementara.
+
+## Hari 6 (dimajukan, Sab 21 – Min 22 Nov): unggah sampul dan teks alt
+
+Langkah hari 5 sudah selesai pada hari yang sama, jadi user memilih memajukan langkah Senin.
+
+**Yang dibuat:**
+
+- **Foto diperkecil di browser** (`lib/images-client.ts`): paling besar 1600×1200, WebP (atau JPEG), di bawah 950 KB.
+  - Hasilnya muat dalam batas 1 MB Server Action, jadi `bodySizeLimit` tidak dinaikkan untuk action lain, termasuk login.
+  - Data EXIF, termasuk lokasi GPS, ikut hilang.
+- **`uploadCover`** (`lib/articles/cover-actions.ts`):
+  - `requireUser()`;
+  - file 1 byte–950 KB, jenisnya dicek dari byte (WebP, JPEG atau PNG), dan SVG ditolak;
+  - maksimal 30 unggahan per jam per akun;
+  - unggahan yang ditinggalkan lebih dari sehari dibersihkan;
+  - kalau pencatatan ke database gagal, file yang sudah tersimpan dihapus lagi.
+- **Penyimpanan** (`lib/uploads/storage.ts`, satu-satunya modul yang menyentuh file; diganti ke Blob/S3 di Fase 5):
+  - `UPLOADS_DIR`, bawaannya `.data/uploads` (git-ignored, di luar `public/`);
+  - nama file `/<uuid>.<ext>` dibuat server;
+  - panggilan file memakai `turbopackIgnore`, supaya build tidak men-trace seluruh proyek.
+- **`GET /uploads/[file]`:** hanya nama UUID yang dilayani, dengan `nosniff` dan cache immutable 1 tahun. Path lain → 404. Rute ini ƒ.
+- **Tabel `uploads`** (migration `004`): path, pemilik, dan waktu unggah.
+  - Artikel hanya boleh memakai unggahan penulisnya sendiri yang masih tercatat; baris itu dikunci dengan `for update`.
+  - Sampul lain yang dikirim (alamat luar, file milik orang lain, atau file yang sudah dihapus dari tab lain) tidak mengubah sampul yang tersimpan.
+  - Unggahan yang diganti dan tidak dipakai artikel lain dihapus dari tabel di dalam transaksi, lalu filenya dihapus setelah commit.
+  - Kredit Unsplash dikosongkan kalau sampul berubah.
+- **Teks alt:**
+  - wajib diisi saat submit kalau ada sampul ("Describe the cover image."), maksimal 255 karakter;
+  - dibacakan di halaman artikel dan review (`ArticleCover describe`), tapi tidak di kartu.
+- **Editor:**
+  - pratinjau sampul yang tersimpan;
+  - status "Uploading…";
+  - error di kolom sampul;
+  - tombol "Remove cover";
+  - Save, Submit dan Remove dinonaktifkan selama unggahan berjalan.
+
+**Perubahan dari rencana (dari review):**
+
+- **Tabel `uploads` dan migration `004`** tidak ada di rencana. Ditambahkan karena reviewer menemukan dua masalah:
+  - path `/uploads/<uuid>` apa pun diterima, termasuk milik orang lain atau yang sudah dihapus. Dengan dua tab, artikel bisa kehilangan sampulnya;
+  - tidak ada batas jumlah unggahan dan pembersihan file.
+- **Sampul tak dikenal tidak lagi menjadi `null`;** sampul yang tersimpan dipertahankan.
+
+**Hasil verifikasi:**
+
+| Cek | Hasil |
+|-----|-------|
+| `npm run db:migrate` | ✅ 004 dijalankan; tabel `uploads` ada |
+| `npm test -- --run` | ✅ 249/249 (tipe file, path, penyimpanan di folder sementara, `uploadCover` termasuk batas per jam dan rollback, field sampul di save/submit, editor) |
+| `npm run lint`, `npx tsc --noEmit` | ✅ |
+| `npm run build` | ✅ tanpa warning; halaman publik dan `/login` tetap ○, `/uploads/[file]` ƒ. Peringatan keamanan Next masih menghentikan run pertama; run ulang lolos |
+| `e2e/covers.spec.ts`, `--repeat-each 3` | ✅ 14/14 |
+| `npm run test:e2e` penuh, sebelum perbaikan review | ✅ 551 lolos, 0 gagal |
+| `npm run test:e2e` penuh, sesudah perbaikan review | 551 lolos, 1 gagal. Yang gagal "Ctrl+K opens quick search", dan gagal juga di commit terakhir (`f34fe0d`): 5 dari 8 run (lihat tindak lanjut) |
+| Database dan folder setelah E2E | ✅ 23 artikel, tidak ada sisa `E2E draft`, tabel `uploads` kosong, tidak ada file baru. Ada 5 file sisa run sebelum perbaikan di `.data/uploads`; menghapusnya diblokir pemeriksaan keamanan, jadi harus dihapus user |
+
+**`code-reviewer`:** tidak ada temuan Kritis atau Tinggi. Path traversal, polyglot, SSRF lewat optimiser, dan batas body dinilai aman.
+
+- **Sedang, diperbaiki:**
+  - kepemilikan dan keberadaan unggahan (tabel `uploads`);
+  - Save dan Submit masih bisa ditekan saat unggahan berjalan;
+  - unggahan tanpa batas jumlah dan tanpa pembersihan.
+- **Rendah, diperbaiki:**
+  - file test yang tidak disimpan kini ikut dihapus (`deleteTestUploads`, dari respons POST);
+  - "Remove cover" dinonaktifkan selama unggahan.
+- **Rendah, tindak lanjut:**
+  - Server menyimpan byte apa adanya. Kalau action dipanggil langsung tanpa lewat editor, EXIF tetap ada, dan ukuran piksel tidak dibatasi (risiko decompression bomb di optimiser). Encode ulang dengan `sharp` di Fase 5.
+  - Salinan di cache optimiser (31 hari) dan cache browser tetap ada setelah file dihapus.
+  - Sampul draft bisa dibuka siapa pun yang tahu UUID-nya. UUID tidak bisa ditebak, jadi ini diterima.
+
+**Tindak lanjut:**
+
+- Test E2E "Ctrl+K opens quick search" kini sering gagal, juga di `f34fe0d`. Ctrl+K kedua setelah Esc di beranda tidak membuka palet. Sebelumnya selalu lolos, jadi perlu diselidiki tersendiri (mungkin perubahan perilaku Edge atau hydrate beranda).
+- Gambar di dalam isi artikel (tombol "Insert image") belum memakai unggahan ini.
+- Pindah penyimpanan ke Blob/S3 dan encode ulang di server (Fase 5).

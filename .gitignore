@@ -23,6 +23,9 @@
 # production
 /build
 
+# uploaded cover photos and other local data (UPLOADS_DIR, Phase 4)
+/.data/
+
 # misc
 .DS_Store
 *.pem

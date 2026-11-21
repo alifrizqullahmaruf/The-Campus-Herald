@@ -23,6 +23,11 @@ vi.mock("@/lib/articles/actions", () => ({
   submitForReview: vi.fn(async (input: { id: number | null }) => ({ ok: true, id: input.id ?? 101, status: "pending" })),
 }));
 
+// Uploading a cover needs the session and the upload folder.
+vi.mock("@/lib/articles/cover-actions", () => ({
+  uploadCover: vi.fn(async () => ({ ok: true, src: "/uploads/0f8e3c2a-1b4d-4e5f-9a6b-7c8d9e0f1a2b.webp" })),
+}));
+
 // The review decisions need the database and the administrator's session.
 vi.mock("@/lib/articles/review-actions", () => ({
   approveArticle: vi.fn(async () => ({ ok: true, status: "published" })),

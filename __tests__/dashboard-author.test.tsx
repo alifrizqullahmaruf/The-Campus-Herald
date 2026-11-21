@@ -185,7 +185,30 @@ describe("ArticleEditor", () => {
       summary: "Open until midnight.",
       categorySlug: "academics",
       body: "",
+      coverImage: null,
+      coverAlt: "",
     });
+  });
+
+  test("a stored cover is shown and can be removed; its description is sent with the article", async () => {
+    const withCover = { ...(await getArticleById(19))!, coverImage: "/covers/sample.webp", coverAlt: "A lecture hall" };
+    render(<ArticleEditor article={withCover} canEdit />);
+    expect(screen.getByRole("img", { name: "Cover: A lecture hall" })).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(await screen.findByText("Draft saved.")).toBeDefined();
+    expect(saveDraft).toHaveBeenLastCalledWith(expect.objectContaining({ coverImage: "/covers/sample.webp", coverAlt: "A lecture hall" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove cover" }));
+    expect(screen.queryByRole("img", { name: /Cover/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+    await vi.waitFor(() => expect(saveDraft).toHaveBeenLastCalledWith(expect.objectContaining({ coverImage: null })));
+  });
+
+  test("a cover without a description cannot be submitted", async () => {
+    const withCover = { ...(await getArticleById(19))!, excerpt: "Summary.", coverImage: "/covers/sample.webp", coverAlt: null };
+    render(<ArticleEditor article={withCover} canEdit />);
+    fireEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+    expect(screen.getByText("Describe the cover image.")).toBeDefined();
+    expect(submitForReview).not.toHaveBeenCalled();
   });
 
   test("the article's own page says it was just saved, once", async () => {
@@ -223,7 +246,8 @@ describe("ArticleEditor", () => {
   });
 
   test("a published article is changed only by submitting it again", async () => {
-    const published = (await getArticleById(1))!;
+    // A sample cover has no description yet; submitting a cover needs one.
+    const published = { ...(await getArticleById(1))!, coverAlt: "Students at their desks" };
     render(<ArticleEditor article={published} canEdit />);
     expect((screen.getByLabelText("Title") as HTMLInputElement).disabled).toBe(false);
     expect(screen.queryByRole("button", { name: "Save draft" })).toBeNull();

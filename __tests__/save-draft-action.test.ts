@@ -27,7 +27,16 @@ const { updateTag } = await import("next/cache");
 
 const RAFI: User = { id: 2, name: "Rafi Pratama", email: "rafi@herald.test", role: "author", isActive: true, bio: "", beat: "" };
 type Input = Parameters<typeof saveDraft>[0];
-const input: Input = { id: null, title: "  Library opens late ", summary: " Open until midnight. ", categorySlug: "academics", body: "<p>Hi</p>" };
+const input: Input = {
+  id: null,
+  title: "  Library opens late ",
+  summary: " Open until midnight. ",
+  categorySlug: "academics",
+  body: "<p>Hi</p>",
+  coverImage: null,
+  coverAlt: "",
+};
+const UPLOAD = "/uploads/0f8e3c2a-1b4d-4e5f-9a6b-7c8d9e0f1a2b.webp";
 
 beforeEach(() => {
   state.user = RAFI;
@@ -52,6 +61,8 @@ describe("saveDraft", () => {
       summary: "Open until midnight.",
       categorySlug: "academics",
       body: "<p>Hi</p>",
+      coverImage: null,
+      coverAlt: "",
     });
     expect(updateTag).toHaveBeenCalledWith("articles");
   });
@@ -125,6 +136,8 @@ describe("submitForReview", () => {
       summary: "Open until midnight.",
       categorySlug: "academics",
       body: "<p>The first paragraph.</p>",
+      coverImage: null,
+      coverAlt: "",
     });
     expect(updateTag).toHaveBeenCalledWith("articles");
     expect(await submitForReview(complete)).toEqual({ ok: true, id: 42, status: "pending" });
@@ -132,7 +145,7 @@ describe("submitForReview", () => {
   });
 
   test("a title, a summary, a topic and a body are required", async () => {
-    const result = await submitForReview({ id: 19, title: " ", summary: "", categorySlug: "academics", body: "<p></p>" });
+    const result = await submitForReview({ ...complete, id: 19, title: " ", summary: "", body: "<p></p>" });
     expect(result).toMatchObject({
       ok: false,
       errors: {
@@ -161,6 +174,31 @@ describe("submitForReview", () => {
     for (const bad of [null, { ...complete, body: 1 }, { ...complete, id: "19" }]) {
       expect((await submitForReview(bad as unknown as Input)).ok).toBe(false);
     }
+    expect(writes.submitArticle).not.toHaveBeenCalled();
+  });
+});
+
+describe("cover fields", () => {
+  test("an uploaded cover and its description travel with the article, trimmed", async () => {
+    await saveDraft({ ...input, coverImage: UPLOAD, coverAlt: "  Students at the library  " });
+    expect(writes.createDraft).toHaveBeenCalledWith(2, expect.objectContaining({ coverImage: UPLOAD, coverAlt: "Students at the library" }));
+  });
+
+  test("a cover that is not text, too long, or a description over 255 characters is refused", async () => {
+    for (const bad of [
+      { ...input, coverImage: 5 },
+      { ...input, coverAlt: null },
+      { ...input, coverImage: `/uploads/${"a".repeat(600)}` },
+      { ...input, coverImage: UPLOAD, coverAlt: "a".repeat(256) },
+    ]) {
+      expect((await saveDraft(bad as unknown as Input)).ok).toBe(false);
+    }
+    expect(writes.createDraft).not.toHaveBeenCalled();
+  });
+
+  test("submitting with a cover needs a description of it", async () => {
+    const result = await submitForReview({ ...input, body: "<p>Text.</p>", coverImage: UPLOAD, coverAlt: " " });
+    expect(result).toMatchObject({ ok: false, errors: { coverAlt: "Describe the cover image." } });
     expect(writes.submitArticle).not.toHaveBeenCalled();
   });
 });

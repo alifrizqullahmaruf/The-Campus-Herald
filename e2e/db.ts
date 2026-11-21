@@ -1,5 +1,8 @@
+import { unlink } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import postgres from "postgres";
 import { slugify } from "../lib/articles/draft-rules";
+import { isUploadPath } from "../lib/uploads/paths";
 
 // Direct database access for tests that write: they remove their own rows afterwards, so
 // the sample data stays as `npm run db:seed` made it. DATABASE_URL comes from .env.local,
@@ -35,10 +38,22 @@ export async function deleteTestUser(email: string): Promise<void> {
   await withSql((sql) => sql`delete from users where email = ${email} and role = 'author'`);
 }
 
+/** Deletes uploaded covers a test made (saved with an article or not) and their records. */
+export async function deleteTestUploads(paths: string[]): Promise<void> {
+  const own = paths.filter(isUploadPath);
+  if (own.length === 0) return;
+  await withSql((sql) => sql`delete from uploads where path in ${sql(own)}`);
+  const folder = resolve(process.env.UPLOADS_DIR || join(process.cwd(), ".data", "uploads"));
+  for (const src of own) await unlink(join(folder, src.slice("/uploads/".length))).catch(() => {});
+}
+
 /** Deletes the articles whose title starts with `prefix` (one test's own rows). */
 export async function deleteTestArticles(prefix: string): Promise<void> {
   if (!prefix.startsWith(`${E2E_TITLE} `)) throw new Error("Only E2E rows may be deleted.");
-  await withSql((sql) => sql`delete from articles where starts_with(title, ${prefix})`);
+  const rows = await withSql((sql) => sql<{ cover_image: string | null }[]>`
+    delete from articles where starts_with(title, ${prefix}) returning cover_image`);
+  // Their uploaded covers too (lib/uploads/storage.ts keeps them in UPLOADS_DIR).
+  await deleteTestUploads(rows.flatMap((row) => (row.cover_image ? [row.cover_image] : [])));
 }
 
 /**

@@ -23,6 +23,7 @@ interface ArticleRow {
   body: string;
   excerpt: string;
   cover_image: string | null;
+  cover_alt: string | null;
   cover_credit_name: string | null;
   cover_credit_profile_url: string | null;
   cover_credit_photo_url: string | null;
@@ -43,7 +44,7 @@ interface ArticleRow {
 
 // The author's public fields only: never email, role or password_hash.
 const columns = sql`
-  a.id, a.title, a.slug, a.body, a.excerpt, a.cover_image,
+  a.id, a.title, a.slug, a.body, a.excerpt, a.cover_image, a.cover_alt,
   a.cover_credit_name, a.cover_credit_profile_url, a.cover_credit_photo_url, a.cover_credit_source,
   a.status, a.review_note, a.view_count, a.author_id, a.reviewer_id, a.category_id,
   a.created_at, a.submitted_at, a.published_at,
@@ -67,6 +68,7 @@ function toArticle(row: ArticleRow): ArticleWithRelations {
     body: row.body,
     excerpt: row.excerpt,
     coverImage: row.cover_image,
+    coverAlt: row.cover_alt,
     coverCredit:
       row.cover_credit_name === null
         ? null

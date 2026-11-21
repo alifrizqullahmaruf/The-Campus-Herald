@@ -9,8 +9,11 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   images: {
-    // Only the sample covers go through the optimiser; add the upload folder in Phase 4.
-    localPatterns: [{ pathname: "/covers/**", search: "" }],
+    // The sample covers and uploaded ones (app/uploads/[file]/route.ts) go through the optimiser.
+    localPatterns: [
+      { pathname: "/covers/**", search: "" },
+      { pathname: "/uploads/**", search: "" },
+    ],
     // Cover file names change with the photo, so resized copies can be kept a month.
     minimumCacheTTL: 2678400,
   },

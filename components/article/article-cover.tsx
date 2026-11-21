@@ -14,16 +14,26 @@ export function ArticleCover({
   className,
   sizes = "(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw",
   priority,
+  describe = false,
 }: {
   article: ArticleWithRelations;
   className?: string;
   sizes?: string;
   priority?: boolean;
+  /** Read the author's alt text aloud: on the article and review pages, not on cards, where the title sits next to it. */
+  describe?: boolean;
 }) {
   const { coverImage, coverCredit } = article;
   return (
     <div className={cx("relative overflow-hidden rounded-inner border-2 border-ink bg-paper", className)}>
-      <CoverImage src={coverImage} seed={article.id} category={article.category.slug} sizes={sizes} priority={priority} />
+      <CoverImage
+        src={coverImage}
+        alt={describe ? (article.coverAlt ?? "") : ""}
+        seed={article.id}
+        category={article.category.slug}
+        sizes={sizes}
+        priority={priority}
+      />
       {coverImage && coverCredit && (
         // relative z-10 keeps the credit links clickable above a card's stretched link.
         <p className="absolute bottom-1.5 left-1.5 z-10 max-w-[calc(100%-12px)] truncate rounded-full border border-ink bg-surface/90 px-2 py-0.5 text-[11px] text-ink">
@@ -44,20 +54,22 @@ export function ArticleCover({
  */
 export function CoverImage({
   src,
+  alt = "",
   seed,
   category,
   sizes,
   priority,
 }: {
   src: string | null;
+  alt?: string;
   seed: number;
   category: CategorySlug;
   sizes: string;
   priority?: boolean;
 }) {
   if (!src) return <CoverArt seed={seed} category={category} />;
-  if (isUnsplash(src)) return <UnsplashImage src={src} alt="" sizes={sizes} priority={priority} />;
-  return <Image src={src} alt="" fill sizes={sizes} priority={priority} className="object-cover" />;
+  if (isUnsplash(src)) return <UnsplashImage src={src} alt={alt} sizes={sizes} priority={priority} />;
+  return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className="object-cover" />;
 }
 
 function CreditLink({ href, children }: { href: string; children: string }) {

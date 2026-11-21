@@ -48,6 +48,7 @@ function toArticle(seed: Seed): Article {
     body: bodyOf(seed.id),
     excerpt: seed.excerpt,
     coverImage: covers[seed.id]?.url ?? null,
+    coverAlt: null,
     coverCredit: covers[seed.id]?.credit ?? null,
     status,
     reviewNote: seed.reviewNote ?? null,

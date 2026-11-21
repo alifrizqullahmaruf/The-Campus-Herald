@@ -49,6 +49,8 @@ export interface Article {
   /** One- or two-sentence summary for cards. */
   excerpt: string;
   coverImage: string | null;
+  /** Read aloud on the article page; set by the author with an uploaded cover. */
+  coverAlt: string | null;
   /** Credit for a stock cover photo (Unsplash requires it); null for author uploads. */
   coverCredit: CoverCredit | null;
   status: ArticleStatus;
