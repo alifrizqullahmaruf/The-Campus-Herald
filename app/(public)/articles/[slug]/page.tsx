@@ -6,6 +6,7 @@ import { ArticleCard } from "@/components/article/article-card";
 import { ArticleCover } from "@/components/article/article-cover";
 import { AuthorBox } from "@/components/article/author-box";
 import { FiledUnder } from "@/components/article/filed-under";
+import { ViewCounter } from "@/components/article/view-counter";
 import { Container } from "@/components/layout/container";
 import { CategoryBadge } from "@/components/ui/category-badge";
 import { RiseText } from "@/components/ui/rise-text";
@@ -48,6 +49,7 @@ export default async function ArticlePage({ params }: PageProps<"/articles/[slug
 
   return (
     <article>
+      <ViewCounter articleId={article.id} />
       <Container className="py-12 md:py-16">
         <header className="max-w-3xl">
           <Link href={`/categories/${article.category.slug}`}>

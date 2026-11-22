@@ -123,10 +123,14 @@ export async function getArticleBySlug(slug: string): Promise<ArticleWithRelatio
   return row ? toArticle(row) : null;
 }
 
-/** Published articles ordered by view count, for the Most read widget. */
+/**
+ * Published articles ordered by view count, for the Most read widget. Counting a read does
+ * not expire the "articles" tag (lib/data/view-writes.ts), so this list is kept for an hour
+ * at most; the pages showing it stay static and are refreshed in the background.
+ */
 export async function getMostRead(limit = 5): Promise<ArticleWithRelations[]> {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
   cacheTag("articles", "users");
   const rows = await sql<ArticleRow[]>`
     select ${columns} from ${from} where a.status = 'published'

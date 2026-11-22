@@ -94,3 +94,8 @@ export async function reviewOf(
 export async function statusOf(id: number): Promise<string | undefined> {
   return withSql(async (sql) => (await sql<{ status: string }[]>`select status from articles where id = ${id}`)[0]?.status);
 }
+
+/** One article's view count, read straight from the database. */
+export async function viewCountOf(id: number): Promise<number | undefined> {
+  return withSql(async (sql) => (await sql<{ view_count: number }[]>`select view_count from articles where id = ${id}`)[0]?.view_count);
+}

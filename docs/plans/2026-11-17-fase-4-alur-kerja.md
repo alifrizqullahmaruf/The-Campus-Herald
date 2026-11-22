@@ -27,9 +27,9 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | 3 | Kam 19 Nov | Kirim ke editor (`draft`/`rejected` → `pending`; artikel terbit yang diubah → `pending`) | Claude | `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `components/editor/article-editor.tsx`, `app/dashboard/articles/[id]/page.tsx`, `__tests__/`, `e2e/submit.spec.ts` (baru), `e2e/db.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
 | 4 | Jum 20 Nov | Review admin: approve / reject + catatan | Claude | `lib/articles/review-actions.ts`, `lib/articles/review-rules.ts` (baru), `lib/data/article-writes.ts`, `components/dashboard/review-panel.tsx`, `components/editor/article-editor.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/review.spec.ts` (baru), `e2e/db.ts`, `e2e/submit.spec.ts`, `e2e/flows.spec.ts`, `CLAUDE.md` | ✅ |
 | 5 | Sab 21 Nov | Kelola penulis: buat, nonaktifkan, reset password; migration unique index `lower(email)` | Claude | `db/migrations/003_users_email_lower.sql`, `docs/the-campus-herald.md`, `lib/auth/author-rules.ts`, `lib/auth/temporary-password.ts`, `lib/auth/author-actions.ts`, `lib/data/user-writes.ts` (baru), `lib/data/auth.ts`, `components/dashboard/author-manager.tsx`, `components/dashboard/review-panel.tsx`, `app/dashboard/authors/page.tsx`, `app/dashboard/review/[id]/page.tsx`, `__tests__/`, `e2e/authors.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
-| – | Min 22 Nov | Cadangan | – | – | – |
+| – | Min 22 Nov | Cadangan (dipakai untuk hari 7) | – | – | – |
 | 6 | Sen 23 Nov (dikerjakan 21–22 Nov) | Unggah sampul ke folder lokal + teks alt (`cover_alt`) | Claude | `lib/uploads/paths.ts`, `lib/uploads/storage.ts`, `app/uploads/[file]/route.ts`, `lib/articles/cover-actions.ts`, `lib/data/upload-writes.ts`, `lib/images-client.ts` (baru), `db/migrations/004_uploads.sql` (baru), `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `lib/data/articles.ts`, `lib/types.ts`, `lib/mock/articles.ts`, `components/editor/article-editor.tsx`, `components/article/article-cover.tsx`, halaman artikel dan review, `next.config.ts`, `.gitignore`, `.env.example`, `docs/the-campus-herald.md`, `__tests__/`, `e2e/covers.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
-| 7 | Sel 24 Nov | `view_count` sekali per browser per hari | Claude | route handler, halaman artikel | Belum |
+| 7 | Sel 24 Nov (dikerjakan Min 22 Nov) | `view_count` sekali per browser per hari | Claude | `lib/data/view-writes.ts`, `app/api/views/[id]/route.ts`, `components/article/view-counter.tsx` (baru), `app/(public)/articles/[slug]/page.tsx`, `lib/data/articles.ts`, `__tests__/views.test.ts`, `__tests__/view-counter.test.tsx`, `e2e/views.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
 | – | Rab 25 Nov | Cadangan (full-text dilewati) | – | – | – |
 | 8 | Kam 26 Nov | Fase 4 selesai (`qa-tester`) + brainstorm Fase 5 | User / Claude | – | Belum |
 
@@ -447,3 +447,41 @@ Langkah hari 5 sudah selesai pada hari yang sama, jadi user memilih memajukan la
 - Test E2E "Ctrl+K opens quick search" kini sering gagal, juga di `f34fe0d`. Ctrl+K kedua setelah Esc di beranda tidak membuka palet. Sebelumnya selalu lolos, jadi perlu diselidiki tersendiri (mungkin perubahan perilaku Edge atau hydrate beranda).
 - Gambar di dalam isi artikel (tombol "Insert image") belum memakai unggahan ini.
 - Pindah penyimpanan ke Blob/S3 dan encode ulang di server (Fase 5).
+
+## Hari 7 (dimajukan, Min 22 Nov): `view_count` sekali per browser per hari
+
+Hari ini hari cadangan; user memilih memajukan langkah Selasa. Sel 24 Nov kini menjadi cadangan.
+
+**Yang dibuat:**
+
+- **Hitungan dikirim dari browser** (`components/article/view-counter.tsx`): satu `POST /api/views/<id>` setelah artikel tampil. Halaman artikel tetap ○, dan prefetch serta pengunjung tanpa JavaScript tidak terhitung.
+- **`POST /api/views/[id]`** (`app/api/views/[id]/route.ts`, ƒ):
+  - id hanya angka 1–2147483647, selain itu 404 tanpa query;
+  - `Sec-Fetch-Site` selain `same-origin` → 403;
+  - sudah ada cookie `viewed` → 204 tanpa tulis;
+  - kalau belum: `countView` (`lib/data/view-writes.ts`, hanya artikel `published`), lalu cookie `viewed` dengan `Path=/api/views/<id>`, 24 jam, httpOnly, `SameSite=Strict`, `secure` di production. Artikel yang tidak terbit → 404 tanpa cookie;
+  - error database → 500 tanpa detail.
+- **Cache:** tidak ada `updateTag`. `getMostRead` memakai `cacheLife("hours")`, jadi beranda, `/categories` dan halaman topik di-revalidate per jam (tetap ○).
+
+**Perubahan dari rencana:** tidak ada.
+
+**Hasil verifikasi:**
+
+| Cek | Hasil |
+|-----|-------|
+| `npm test -- --run` | ✅ 256/256 (route: cookie dan atributnya, lintas situs, id tidak valid, artikel tidak terbit, error database; komponen mengirim satu POST) |
+| `npm run lint`, `npx tsc --noEmit` | ✅ |
+| `npm run build` | ✅ halaman artikel tetap ○; beranda, `/categories` dan topik ○ dengan revalidate 1 jam; `/api/views/[id]` ƒ. Peringatan keamanan Next masih menghentikan run pertama; run ulang lolos |
+| `e2e/views.spec.ts`, `--repeat-each 3` | ✅ 14/14 |
+| `npm run test:e2e` penuh | 555 lolos, 1 gagal: "Ctrl+K opens quick search", yang sudah diketahui gagal sejak `f34fe0d` (lihat hari 6) |
+
+**`code-reviewer`:** tidak ada temuan Kritis, Tinggi atau Sedang. Rendah, jadi tindak lanjut:
+
+- Di `next dev` (StrictMode), dua POST bisa berangkat sebelum cookie pertama tiba, jadi satu kunjungan terhitung dua kali; hal yang sama terjadi kalau dua tab dibuka bersamaan.
+- Artikel unggulan beranda memilih dari `viewCount` di daftar `cacheLife("max")`, jadi bisa tidak sejalan dengan Most read yang diperbarui per jam.
+- E2E yang membuka artikel menaikkan angka seed; `npm run db:seed` mengembalikannya (dicatat di `CLAUDE.md`).
+- Cookie `secure` lewat http di `APIRequestContext`: sudah dicek lolos.
+
+**Tindak lanjut:**
+
+- Rate limit untuk panggilan tanpa cookie (curl) di Fase 5.
