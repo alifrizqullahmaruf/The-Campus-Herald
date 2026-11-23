@@ -30,6 +30,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | – | Min 22 Nov | Cadangan (dipakai untuk hari 7) | – | – | – |
 | 6 | Sen 23 Nov (dikerjakan 21–22 Nov) | Unggah sampul ke folder lokal + teks alt (`cover_alt`) | Claude | `lib/uploads/paths.ts`, `lib/uploads/storage.ts`, `app/uploads/[file]/route.ts`, `lib/articles/cover-actions.ts`, `lib/data/upload-writes.ts`, `lib/images-client.ts` (baru), `db/migrations/004_uploads.sql` (baru), `lib/articles/actions.ts`, `lib/articles/draft-rules.ts`, `lib/data/article-writes.ts`, `lib/data/articles.ts`, `lib/types.ts`, `lib/mock/articles.ts`, `components/editor/article-editor.tsx`, `components/article/article-cover.tsx`, halaman artikel dan review, `next.config.ts`, `.gitignore`, `.env.example`, `docs/the-campus-herald.md`, `__tests__/`, `e2e/covers.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
 | 7 | Sel 24 Nov (dikerjakan Min 22 Nov) | `view_count` sekali per browser per hari | Claude | `lib/data/view-writes.ts`, `app/api/views/[id]/route.ts`, `components/article/view-counter.tsx` (baru), `app/(public)/articles/[slug]/page.tsx`, `lib/data/articles.ts`, `__tests__/views.test.ts`, `__tests__/view-counter.test.tsx`, `e2e/views.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
+| – | Sel 24 Nov | Cadangan (dipakai untuk upgrade Next 16.4.6, `docs/plans/2026-11-24-upgrade-next.md`) | Claude | `package.json`, `package-lock.json` | ✅ |
 | – | Rab 25 Nov | Cadangan (full-text dilewati) | – | – | – |
 | 8 | Kam 26 Nov | Fase 4 selesai (`qa-tester`) + brainstorm Fase 5 | User / Claude | – | Belum |
 
@@ -485,3 +486,7 @@ Hari ini hari cadangan; user memilih memajukan langkah Selasa. Sel 24 Nov kini m
 **Tindak lanjut:**
 
 - Rate limit untuk panggilan tanpa cookie (curl) di Fase 5.
+
+## Sel 24 Nov (cadangan): upgrade Next 16.4.6
+
+User memilih memakai hari cadangan untuk upgrade keamanan `next` dan `eslint-config-next` 16.4.3 → 16.4.6. Rincian dan hasil verifikasi ada di `docs/plans/2026-11-24-upgrade-next.md`; build kini lolos pada run pertama tanpa peringatan keamanan.
