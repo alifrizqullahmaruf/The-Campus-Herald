@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { GET } from "../app/api/search/route";
 import CommandPalette from "../components/search/command-palette";
+import { CommandPaletteTrigger } from "../components/search/command-palette-trigger";
 import { SearchExplorer } from "../components/search/search-explorer";
 import { getPublishedArticles } from "../lib/data/articles";
 import { matchesQuery, type SearchResult } from "../lib/search";
@@ -23,6 +24,7 @@ beforeAll(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   push.mockReset();
 });
 
@@ -124,5 +126,71 @@ describe("CommandPalette", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "music" } });
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith("/api/search?q=music&category=events", expect.anything()));
     await waitFor(() => expect(screen.getByText("No articles match.")).toBeDefined());
+  });
+});
+
+describe("CommandPaletteTrigger", () => {
+  // Browsers hide the dialog at once but fire its `close` event later; until then a
+  // Ctrl+K was ignored (docs/plans/2026-11-24-ctrl-k-setelah-esc.md).
+  function closeLate() {
+    const late: HTMLDialogElement[] = [];
+    vi.spyOn(HTMLDialogElement.prototype, "close").mockImplementation(function (this: HTMLDialogElement) {
+      this.open = false;
+      late.push(this);
+    });
+    return () => late.splice(0).forEach((dialog) => dialog.dispatchEvent(new Event("close")));
+  }
+
+  async function pressCtrlK() {
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    });
+  }
+
+  const openDialog = () => document.querySelector<HTMLDialogElement>("dialog[open]");
+
+  test.each([
+    ["Esc", (dialog: HTMLDialogElement) => {
+      // Esc fires `cancel`, then the browser closes the dialog itself.
+      fireEvent(dialog, new Event("cancel"));
+      dialog.close();
+    }],
+    ["the close button", () => fireEvent.click(screen.getByRole("button", { name: "Close search" }))],
+  ])("Ctrl+K right after closing with %s opens it again", async (_, closeIt) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ results: [] }) }));
+    const fireLateClose = closeLate();
+    render(<CommandPaletteTrigger />);
+
+    await pressCtrlK();
+    await waitFor(() => expect(openDialog()).not.toBeNull());
+    const first = openDialog()!;
+    await act(async () => closeIt(first));
+    expect(openDialog()).toBeNull();
+
+    await pressCtrlK();
+    await waitFor(() => expect(openDialog()).not.toBeNull());
+    // The first dialog's late `close` event does not close the new one.
+    await act(async () => fireLateClose());
+    expect(openDialog()).not.toBeNull();
+  });
+
+  test("Esc returns focus to where it was before opening", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ results: [] }) }));
+    closeLate();
+    render(
+      <>
+        <button type="button">Before</button>
+        <CommandPaletteTrigger />
+      </>,
+    );
+    const before = screen.getByRole("button", { name: "Before" });
+    before.focus();
+    await pressCtrlK();
+    await waitFor(() => expect(openDialog()).not.toBeNull());
+    expect(document.activeElement).not.toBe(before);
+    await act(async () => {
+      fireEvent(openDialog()!, new Event("cancel"));
+    });
+    expect(document.activeElement).toBe(before);
   });
 });

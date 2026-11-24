@@ -15,24 +15,39 @@ export function openSearchPalette() {
 
 /** Global ⌘K / Ctrl+K listener. Mount once in the public layout. */
 export function CommandPaletteTrigger() {
-  const [open, setOpen] = useState(false);
+  // A new number for each opening: the palette is keyed by it, so closing and opening again
+  // within one render still mounts a fresh dialog. null while closed.
+  const [session, setSession] = useState<number | null>(null);
+  const open = session !== null;
   const returnFocus = useRef<HTMLElement | null>(null);
   const isOpen = useRef(false);
+  const sessions = useRef(0);
 
   const show = useCallback(() => {
     // Remember where focus was only when opening: with the palette already open, the
     // active element is the palette's own input, which is gone once it closes. (The
     // native <dialog> restores focus by itself in current browsers; this is the fallback.)
-    if (!isOpen.current) returnFocus.current = document.activeElement as HTMLElement | null;
+    if (isOpen.current) return;
+    returnFocus.current = document.activeElement as HTMLElement | null;
     isOpen.current = true;
-    setOpen(true);
+    sessions.current += 1;
+    setSession(sessions.current);
   }, []);
 
+  // Called as soon as the palette closes and again by the dialog's late `close` event.
   const close = useCallback(() => {
+    if (!isOpen.current) return;
     isOpen.current = false;
-    setOpen(false);
-    returnFocus.current?.focus();
+    setSession(null);
   }, []);
+
+  // Focus goes back once the palette is gone: while the modal dialog is still open, the
+  // rest of the page is inert and cannot take focus.
+  useEffect(() => {
+    if (open || !returnFocus.current) return;
+    returnFocus.current.focus();
+    returnFocus.current = null;
+  }, [open]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -52,7 +67,7 @@ export function CommandPaletteTrigger() {
   if (!open) return null;
   return (
     <Suspense fallback={null}>
-      <CommandPalette onClose={close} />
+      <CommandPalette key={session} onClose={close} />
     </Suspense>
   );
 }

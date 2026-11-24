@@ -60,8 +60,16 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
     };
   }, [query, category]);
 
-  function openResult(result: SearchResult) {
+  // The dialog hides at once but its `close` event arrives later (100 ms or more on a busy
+  // page), so the trigger is told here: until then it would think the palette is still
+  // open and ignore a Ctrl+K pressed right after closing.
+  function close() {
     dialogRef.current?.close();
+    onClose();
+  }
+
+  function openResult(result: SearchResult) {
+    close();
     router.push(`/articles/${result.slug}`, { transitionTypes: PAGE_TRANSITION });
   }
 
@@ -84,9 +92,11 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
     <dialog
       ref={dialogRef}
       aria-label="Quick search"
+      // Esc fires `cancel` first; `close` stays for any other way the browser closes it.
+      onCancel={onClose}
       onClose={onClose}
       // A click on the backdrop lands on the dialog element itself.
-      onClick={(event) => event.target === dialogRef.current && dialogRef.current?.close()}
+      onClick={(event) => event.target === dialogRef.current && close()}
       className="m-auto mt-[10vh] w-[min(640px,calc(100vw-32px))] overflow-hidden rounded-card border-3 border-ink bg-surface p-0 text-ink shadow-hard-lift backdrop:bg-paper/80 backdrop:bg-[radial-gradient(var(--color-ink)_1px,transparent_1px)] backdrop:bg-size-[24px_24px]"
     >
       <div className="flex items-center gap-3 border-b-3 border-ink bg-cat-events px-4 py-3">
@@ -109,7 +119,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           aria-label="Close search"
-          onClick={() => dialogRef.current?.close()}
+          onClick={close}
           className="tap-target rounded-md border-2 border-ink bg-surface px-1.5 py-0.5 text-meta"
         >
           Esc
@@ -191,7 +201,7 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
             event.preventDefault();
             const href = event.currentTarget.getAttribute("href") ?? "/search";
-            dialogRef.current?.close();
+            close();
             // Already on /search: its explorer keeps its own state (the URL it writes with
             // replaceState never reaches the server), so load the page fresh from the URL.
             if (window.location.pathname === "/search") window.location.assign(href);
