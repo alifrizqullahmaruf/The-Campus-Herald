@@ -62,6 +62,11 @@ export async function getMostRead(limit = 5): Promise<ArticleWithRelations[]> {
     .map(withRelations);
 }
 
+/** Read counts of published articles by id. */
+export async function getViewCounts(): Promise<Record<number, number>> {
+  return Object.fromEntries(published().map((article) => [article.id, article.viewCount]));
+}
+
 /** Case-insensitive search over title and excerpt of published articles. */
 export async function searchArticles(
   query: string,

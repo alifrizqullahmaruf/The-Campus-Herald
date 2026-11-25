@@ -13,8 +13,9 @@ import { SearchBox } from "@/components/search/search-box";
 import { Button } from "@/components/ui/button";
 import { CategoryPill } from "@/components/ui/category-pill";
 import { CATEGORIES } from "@/lib/categories";
-import { getCategoryCounts, getPublishedArticles } from "@/lib/data/articles";
+import { getCategoryCounts, getPublishedArticles, getViewCounts } from "@/lib/data/articles";
 import { cx } from "@/lib/cx";
+import { pickFeature } from "@/lib/feature";
 import { pileStyle, seeded } from "@/lib/motion";
 
 // Where hero items rest before (or without) physics: spread across the space
@@ -33,10 +34,14 @@ const HERO_REST = [
 const HEADLINE = ["The campus,", "written in the"];
 
 export default async function Home() {
-  const [latest, counts] = await Promise.all([getPublishedArticles({ limit: 10 }), getCategoryCounts()]);
-  // Cover story: the most-read of the recent articles.
-  const feature = [...latest.slice(0, 5)].sort((a, b) => b.viewCount - a.viewCount)[0];
-  const fresh = latest.filter((article) => article.id !== feature.id).slice(0, 6);
+  const [latest, counts, views] = await Promise.all([
+    getPublishedArticles({ limit: 10 }),
+    getCategoryCounts(),
+    getViewCounts(),
+  ]);
+  // Cover story: the most-read of the recent articles, by the same hourly counts as Most read.
+  const feature = pickFeature(latest, views);
+  const fresh = latest.filter((article) => article.id !== feature?.id).slice(0, 6);
 
   const heroItems: PileItem[] = [
     // Below lg the headline spans the page and the cards land in the space above
@@ -115,13 +120,15 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Cover story */}
-      <SectionBand className="bg-cat-events">
-        <Container>
-          <h2 className="sr-only">Cover story</h2>
-          <FeatureCard article={feature} />
-        </Container>
-      </SectionBand>
+      {/* Cover story (none only while nothing is published yet) */}
+      {feature && (
+        <SectionBand className="bg-cat-events">
+          <Container>
+            <h2 className="sr-only">Cover story</h2>
+            <FeatureCard article={feature} />
+          </Container>
+        </SectionBand>
+      )}
 
       {/* Latest: starts as a tilted pile and settles into the grid on scroll. */}
       <Container className="py-16 md:py-24">

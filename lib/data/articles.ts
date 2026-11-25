@@ -138,6 +138,19 @@ export async function getMostRead(limit = 5): Promise<ArticleWithRelations[]> {
   return rows.map(toArticle);
 }
 
+/**
+ * Read counts of published articles by id, kept for an hour like getMostRead, for anything
+ * that ranks by reads outside the Most read widget (the home page's cover story).
+ */
+export async function getViewCounts(): Promise<Record<number, number>> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("articles");
+  const rows = await sql<{ id: number; view_count: number }[]>`
+    select id, view_count from articles where status = 'published'`;
+  return Object.fromEntries(rows.map((row) => [row.id, row.view_count]));
+}
+
 /** Case-insensitive search over title and excerpt of published articles. */
 export async function searchArticles(
   query: string,
