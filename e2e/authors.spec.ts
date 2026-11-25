@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { logIn, NO_SESSION } from "./auth";
+import { axeViolations } from "./axe";
 import { deleteTestUser, uniqueEmail } from "./db";
 
 // Managing author accounts (Phase 4, day 5, docs/plans/2026-11-17-fase-4-alur-kerja.md).
@@ -131,4 +132,59 @@ test("the temporary password is gone once the administrator moves on", async ({ 
   await expect(page.getByRole("heading", { level: 1, name: "Review queue." })).toBeVisible();
   // Next keeps the authors page in the document, hidden; the password must leave it.
   await expect(page.locator("code")).toHaveCount(0);
+});
+
+test("the public author list drops a deactivated author and shows them again once reactivated", async ({ page, browser }) => {
+  await addAuthor(page);
+  await page.getByRole("button", { name: "Done" }).click();
+  const reader = await browser.newContext({ storageState: NO_SESSION });
+  try {
+    const list = await reader.newPage();
+    const card = list.getByRole("region", { name: "Authors" }).getByRole("link", { name: new RegExp(name) });
+    await list.goto("/authors");
+    await expect(card).toHaveCount(1);
+
+    await page.getByRole("button", { name: `Deactivate ${name}` }).click();
+    await expect(page.getByRole("button", { name: `Reactivate ${name}` })).toBeVisible();
+    await list.goto("/authors");
+    await expect(card).toHaveCount(0);
+
+    await page.getByRole("button", { name: `Reactivate ${name}` }).click();
+    await expect(page.getByRole("button", { name: `Deactivate ${name}` })).toBeVisible();
+    await list.goto("/authors");
+    await expect(card).toHaveCount(1);
+  } finally {
+    await reader.close();
+  }
+});
+
+test("the Add author form explains empty or wrong fields, and Esc closes it", async ({ page }) => {
+  await page.goto("/dashboard/authors");
+  const open = page.getByRole("button", { name: "Add author" });
+  await open.click();
+  const dialog = page.getByRole("dialog", { name: "Add an author." });
+  await expect(dialog.getByRole("textbox", { name: "Name" })).toBeFocused();
+  await dialog.getByRole("button", { name: "Add author" }).click();
+  await expect(dialog.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("Enter the author's name.");
+  await expect(dialog.getByRole("textbox", { name: "Email" })).toHaveAccessibleDescription("Enter a valid email address.");
+  // Spaces are no name, and an address needs a domain.
+  await dialog.getByRole("textbox", { name: "Name" }).fill("   ");
+  await dialog.getByRole("textbox", { name: "Email" }).fill("someone@herald");
+  await dialog.getByRole("button", { name: "Add author" }).click();
+  await expect(dialog.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("Enter the author's name.");
+  await expect(dialog.getByRole("textbox", { name: "Email" })).toHaveAccessibleDescription("Enter a valid email address.");
+  expect(await axeViolations(page)).toEqual([]);
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(open).toBeFocused();
+  // Opened again, the old messages are gone.
+  await open.click();
+  await expect(dialog.getByText("Enter the author's name.")).toHaveCount(0);
+});
+
+test("the author manager passes axe with the temporary password on screen", async ({ page }) => {
+  await addAuthor(page);
+  await expect(page.getByRole("dialog", { name: "Add an author." })).toBeHidden();
+  expect(await axeViolations(page)).toEqual([]);
 });

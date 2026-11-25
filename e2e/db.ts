@@ -99,3 +99,36 @@ export async function statusOf(id: number): Promise<string | undefined> {
 export async function viewCountOf(id: number): Promise<number | undefined> {
   return withSql(async (sql) => (await sql<{ view_count: number }[]>`select view_count from articles where id = ${id}`)[0]?.view_count);
 }
+
+/** How many articles have a title starting with `prefix` (one test's own rows). */
+export async function countTestArticles(prefix: string): Promise<number> {
+  if (!prefix.startsWith(`${E2E_TITLE} `)) throw new Error("Only E2E rows are counted.");
+  return withSql(async (sql) => (await sql<{ n: number }[]>`
+    select count(*)::int as n from articles where starts_with(title, ${prefix})`)[0].n);
+}
+
+/**
+ * Dates one test's article in 2000, as if it had been public before, so approving it keeps
+ * that date (`coalesce(published_at, now())`) and it sorts after every sample article
+ * instead of moving the front page for the tests running alongside.
+ */
+export async function backdateTestArticle(id: number): Promise<void> {
+  await withSql((sql) => sql`
+    update articles set published_at = '2000-06-01T00:00:00Z', created_at = '2000-06-01T00:00:00Z'
+    where id = ${id} and starts_with(title, ${`${E2E_TITLE} `})`);
+}
+
+/**
+ * E2E articles and accounts left behind, plus recorded uploads no article uses (anyone's,
+ * since a test's own account may be gone), for a check by hand after a run.
+ */
+export async function leftovers(): Promise<{ articles: number; users: number; uploads: number }> {
+  return withSql(async (sql) => {
+    const [row] = await sql<{ articles: number; users: number; uploads: number }[]>`
+      select
+        (select count(*)::int from articles where starts_with(title, ${`${E2E_TITLE} `})) as articles,
+        (select count(*)::int from users where email like 'e2e-%@herald.test') as users,
+        (select count(*)::int from uploads u where not exists (select 1 from articles a where a.cover_image = u.path)) as uploads`;
+    return row;
+  });
+}

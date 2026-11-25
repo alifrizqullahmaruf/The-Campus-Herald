@@ -32,7 +32,7 @@ Fase 3 (login) selesai. Fase 4 membuat tombol dashboard benar-benar menyimpan. M
 | 7 | Sel 24 Nov (dikerjakan Min 22 Nov) | `view_count` sekali per browser per hari | Claude | `lib/data/view-writes.ts`, `app/api/views/[id]/route.ts`, `components/article/view-counter.tsx` (baru), `app/(public)/articles/[slug]/page.tsx`, `lib/data/articles.ts`, `__tests__/views.test.ts`, `__tests__/view-counter.test.tsx`, `e2e/views.spec.ts` (baru), `e2e/db.ts`, `CLAUDE.md` | ✅ |
 | – | Sel 24 Nov | Cadangan (dipakai untuk upgrade Next 16.4.6, `docs/plans/2026-11-24-upgrade-next.md`, dan perbaikan Ctrl+K setelah Esc, `docs/plans/2026-11-24-ctrl-k-setelah-esc.md`) | Claude | `package.json`, `package-lock.json`, `components/search/command-palette.tsx`, `components/search/command-palette-trigger.tsx`, `__tests__/search.test.tsx` | ✅ |
 | – | Rab 25 Nov | Cadangan (full-text dilewati; dipakai untuk artikel unggulan ikut Most read, `docs/plans/2026-11-25-artikel-unggulan-ikut-most-read.md`) | Claude | `lib/feature.ts` (baru), `lib/data/articles.ts`, `lib/mock/articles-data.ts`, `app/(public)/page.tsx`, `__tests__/feature.test.ts` (baru), `CLAUDE.md` | ✅ |
-| 8 | Kam 26 Nov | Fase 4 selesai (`qa-tester`) + brainstorm Fase 5 | User / Claude | – | Belum |
+| 8 | Kam 26 Nov (QA dimajukan ke Rab 25 Nov) | Fase 4 selesai (`qa-tester`, `docs/plans/2026-11-25-qa-fase-4.md`) + brainstorm Fase 5 | User / Claude | `e2e/` | QA ✅, brainstorm belum |
 
 Setiap hari: verifikasi, `code-reviewer` sekali, update plan, lalu commit dan push.
 
@@ -496,3 +496,7 @@ Sisa hari itu dipakai untuk test E2E "Ctrl+K opens quick search" yang sering gag
 ## Rab 25 Nov (cadangan): artikel unggulan ikut Most read
 
 Tindak lanjut Rendah hari 7: artikel unggulan beranda kini diurutkan dengan `getViewCounts()` (per jam, seperti Most read), bukan `viewCount` dari daftar `cacheLife("max")`. E2E penuh 556 lolos, 0 gagal. Rincian di `docs/plans/2026-11-25-artikel-unggulan-ikut-most-read.md`.
+
+## QA Fase 4 (dimajukan, Rab 25 Nov)
+
+`qa-tester` menguji semua alur di HP dan desktop dan menambah test (`e2e/workflow.spec.ts` dan lainnya); E2E penuh 585 lolos, 0 gagal. Satu bug: **QA-F4-1** (Sedang), halaman penulis publik menampilkan daftar lama pada kunjungan pertama setelah approve (`test.fixme`). Rincian di `docs/plans/2026-11-25-qa-fase-4.md`. Brainstorm Fase 5 tetap Kam 26 Nov.

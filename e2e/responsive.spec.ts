@@ -440,4 +440,84 @@ test.describe("dashboard", () => {
     const message = `natural ${size.natural}px, shown at ${size.shown} device px`;
     expect(size.natural, message).toBeGreaterThanOrEqual(size.shown);
   });
+
+  // Phase 4 QA (docs/plans/2026-11-25-qa-fase-4.md): the dashboard's states after a user acts,
+  // not only as each page opens. Nothing here is stored: every check stops at a message the
+  // browser shows before anything is sent, or at a confirmation that is cancelled.
+
+  /** Elements past the screen's edges, or covered by something else at their centre. */
+  async function unreachable(locators: Locator[]) {
+    const found: string[] = [];
+    for (const locator of locators) {
+      await locator.scrollIntoViewIfNeeded();
+      await expect(locator).toBeVisible();
+      const problem = await locator.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const cw = document.documentElement.clientWidth;
+        if (r.left < 0 || r.right > cw + 1 || r.top < 0 || r.bottom > innerHeight + 1) {
+          return `outside the screen: ${Math.round(r.left)}..${Math.round(r.right)} x ${Math.round(r.top)}..${Math.round(r.bottom)}`;
+        }
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return hit && (el === hit || el.contains(hit)) ? null : `covered by ${hit?.tagName.toLowerCase()}.${hit?.className}`;
+      });
+      if (problem) found.push(`${await locator.evaluate((el) => el.textContent?.trim() || el.getAttribute("aria-label") || el.tagName)}: ${problem}`);
+    }
+    return found;
+  }
+
+  async function noSidewaysScroll(page: Page) {
+    const report = await findHorizontalOverflow(page);
+    expect(report.offenders.length, formatOffenders(report.offenders, report.clientWidth)).toBe(0);
+    expect(report.docOverflow).toBeLessThanOrEqual(1);
+  }
+
+  test("the review page: the Send back note, its error and buttons stay on screen", async ({ page }) => {
+    await page.goto("/dashboard/review/21");
+    const note = page.getByRole("textbox", { name: "Note for the author" });
+    // A click before hydration does nothing, so press again until the note opens.
+    await expect(async () => {
+      if ((await note.count()) === 0) await page.getByRole("button", { name: "Send back" }).click();
+      await expect(note).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
+    await note.fill("Too short");
+    await page.getByRole("button", { name: "Send back" }).last().click();
+    await expect(note).toHaveAccessibleDescription(/at least 10 characters/);
+    expect(
+      await unreachable([
+        note,
+        page.getByText(/at least 10 characters/),
+        page.getByRole("button", { name: "Cancel" }),
+        page.getByRole("button", { name: "Send back" }).last(),
+      ]),
+    ).toEqual([]);
+    await noSidewaysScroll(page);
+    if (project() === "phone-320") expect(await axeViolations(page)).toEqual([]);
+  });
+
+  test("the editor: the error messages after Submit fit, and the buttons stay reachable", async ({ page }) => {
+    await page.goto("/dashboard/articles/new");
+    await expect(page.getByRole("textbox", { name: "Article" })).toBeVisible();
+    await page.getByRole("button", { name: "Submit for review" }).click();
+    await expect(page.getByText("Write the article before submitting it.")).toBeVisible();
+    await noSidewaysScroll(page);
+    expect(
+      await unreachable([page.getByRole("button", { name: "Save draft" }), page.getByRole("button", { name: "Submit for review" })]),
+    ).toEqual([]);
+    if (project() === "phone-320") expect(await axeViolations(page)).toEqual([]);
+  });
+
+  test("the author manager: the reset confirmation fits its row", async ({ page }) => {
+    await page.goto("/dashboard/authors");
+    const yes = page.getByRole("button", { name: "Yes, reset" });
+    await expect(async () => {
+      if ((await yes.count()) === 0) await page.getByRole("button", { name: "Reset password for Rafi Pratama" }).click();
+      await expect(yes).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
+    const cancel = page.getByRole("button", { name: "Cancel" });
+    expect(await unreachable([yes, cancel])).toEqual([]);
+    await noSidewaysScroll(page);
+    await cancel.click();
+    await expect(yes).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Reset password for Rafi Pratama" })).toBeVisible();
+  });
 });

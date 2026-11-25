@@ -4,8 +4,8 @@ import { deleteTestArticles, insertArticle, uniqueTitle, viewCountOf } from "./d
 
 // Counting reads (Phase 4 day 7, docs/plans/2026-11-17-fase-4-alur-kerja.md): once per browser
 // per article a day. The counts are checked on an article inserted by the test (desktop
-// project only, deleted afterwards); it is not in the cached lists, so its page is not
-// opened and the endpoint is called directly.
+// project only, deleted afterwards); it is not in the cached lists, so most tests do not open its page:
+// they call the endpoint directly.
 
 let title = "";
 test.beforeEach(({}, testInfo) => {
@@ -54,4 +54,29 @@ test("opening an article sends its read from the browser", async ({ page }) => {
   const sent = page.waitForResponse((r) => /\/api\/views\/\d+$/.test(r.url()) && r.request().method() === "POST");
   await page.goto(href!);
   expect((await sent).status()).toBe(204);
+});
+
+test("opening the same article again in the same browser does not count it again", async ({ page }) => {
+  // Its own article, so the reads of tests running alongside do not change the count. Opening
+  // its page can put the row in the cached published list (dated 2000, so last) until the next
+  // save expires it, as in submit.spec.ts; no other test looks for it.
+  const { id, slug } = await insertArticle(title);
+  const read = (on = page) =>
+    on.waitForResponse((r) => r.url().endsWith(`/api/views/${id}`) && r.request().method() === "POST");
+  const first = read();
+  await page.goto(`/articles/${slug}`);
+  expect((await first).status()).toBe(204);
+  expect(await viewCountOf(id)).toBe(1);
+
+  const again = read();
+  await page.reload();
+  expect((await again).status()).toBe(204);
+  expect(await viewCountOf(id), "a reload is the same reader").toBe(1);
+
+  // Another tab of the same browser shares the cookie.
+  const tab = await page.context().newPage();
+  const third = read(tab);
+  await tab.goto(`/articles/${slug}`);
+  await third;
+  expect(await viewCountOf(id)).toBe(1);
 });
